@@ -1,0 +1,111 @@
+package servers
+
+import (
+	"context"
+	"crypto/rand"
+	"encoding/base64"
+	"errors"
+	"net/http"
+
+	"github.com/jackc/pgx/v5"
+	"github.com/wirayuda299/backend/internal/databases"
+	"github.com/wirayuda299/backend/internal/httputil"
+)
+
+type CreateInvitationType struct {
+	ServerId string `json:"server_id"`
+	MaxUsers uint8  `json:"max_users"`
+}
+
+func generateInviteCode() (string, error) {
+	bytes := make([]byte, 8) // 8 bytes = ~11 base64 chars, we trim to 10
+	_, err := rand.Read(bytes)
+	if err != nil {
+		return "", err
+	}
+
+	code := base64.URLEncoding.EncodeToString(bytes)[:10] // URL-safe, no +/
+	return code, nil                                      // e.g. "aB3xK9mZ2Q"
+}
+
+func CreateInvitationCode(ctx context.Context, db *databases.Container, p *CreateInvitationType) (string, *httputil.ErrorResponse) {
+
+	if p.ServerId == "" {
+		return "", &httputil.ErrorResponse{
+			Err:  errors.New("Server ID is missing"),
+			Code: http.StatusBadRequest,
+		}
+	}
+
+	var isExist bool
+
+	if err := db.Postgres.QueryRow(ctx, "SELECT EXISTS(select 1 from servers where id = $1)", p.ServerId).Scan(&isExist); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return "", &httputil.ErrorResponse{
+				Err:  errors.New("Server doesn't exists"),
+				Code: http.StatusNotFound,
+			}
+		} else {
+			return "", &httputil.ErrorResponse{
+				Err:  err,
+				Code: http.StatusInternalServerError,
+			}
+		}
+	}
+
+	var code string
+	generatedCode, err := generateInviteCode()
+	if err != nil {
+		return "", &httputil.ErrorResponse{
+			Err:  err,
+			Code: http.StatusInternalServerError,
+		}
+	}
+	err = db.Postgres.QueryRow(ctx, "INSERT INTO invitations(code,server_id,max_users) VALUES($1,$2,$3) returning code;", generatedCode, p.ServerId, p.MaxUsers).Scan(&code)
+	if err != nil {
+		return "", &httputil.ErrorResponse{
+			Err:  err,
+			Code: http.StatusInternalServerError,
+		}
+	}
+
+	return code, nil
+
+}
+
+func JoinServerWithInvitationCode(ctx context.Context, db *databases.Container, code string, userId string) *httputil.ErrorResponse {
+
+	var insertedID string
+
+	err := db.Postgres.QueryRow(ctx, `
+		WITH invite AS (
+			UPDATE invitations
+			SET uses = uses + 1
+			WHERE code = $1
+			  AND uses < max_users
+			RETURNING server_id
+		),
+		inserted AS (
+			INSERT INTO members (user_id, server_id)
+			SELECT $2, server_id
+			FROM invite
+			ON CONFLICT (server_id, user_id) DO NOTHING
+			RETURNING id
+		)
+		SELECT id FROM inserted;
+	`, code, userId).Scan(&insertedID)
+	if err != nil {
+		if err == pgx.ErrNoRows {
+			return &httputil.ErrorResponse{
+				Err:  errors.New("Invalid code, invite full, or already joined"),
+				Code: http.StatusForbidden,
+			}
+		}
+
+		return &httputil.ErrorResponse{
+			Err:  err,
+			Code: http.StatusInternalServerError,
+		}
+	}
+	return nil
+}
