@@ -36,7 +36,11 @@ func (s *Server) Run() {
 	categoryHandler := handlers.NewCategoryHandler(s.db)
 	sh := handlers.NewServerHandler(s.db)
 	mh := handlers.NewMessageHandler(s.db)
+	rh := handlers.NewRoleHandler(s.db)
+	ph := handlers.NewPermissionHandler(s.db)
 
+	routes.RegisterPermissionRoute(r, ph)
+	routes.RegisterRoleRoute(r, rh)
 	routes.RegisterChannelRoutes(r, ch)
 	routes.RegisterImagesRoutes(r)
 	routes.ServerRoutes(r, sh)

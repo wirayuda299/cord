@@ -5,6 +5,13 @@ import { DialogContent, Dialog, DialogTrigger } from "@/components/ui/dialog"
 import { useState } from "react"
 import { cn } from "@/lib/utils"
 import ServerProfile from "./profile"
+import BoostPerks from "./BoostPerks"
+import Members from "./Members"
+import ServerRolesSettings from "./roles"
+import Invites from "./Invites"
+import SafetySetup from "./SafetySetup"
+import AuditLog from "./AuditLog"
+import Bans from "./Bans"
 
 
 const sidebarItems = ["server profile", "boost perks", "members", "roles", "invites", "safety setup", "audit log", "bans", "delete server"] as const
@@ -34,9 +41,14 @@ export default function ServerSettingDialog() {
               ))}
             </ul>
           </aside>
-          {active === "server profile" && (
-            <ServerProfile />
-          )}
+          {active === "server profile" && <ServerProfile />}
+          {active === "boost perks" && <BoostPerks />}
+          {active === "members" && <Members />}
+          {active === "roles" && <ServerRolesSettings />}
+          {active === "invites" && <Invites />}
+          {active === "safety setup" && <SafetySetup />}
+          {active === "audit log" && <AuditLog />}
+          {active === "bans" && <Bans />}
         </div>
       </DialogContent>
     </Dialog>

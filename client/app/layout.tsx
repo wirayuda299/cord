@@ -28,7 +28,7 @@ export default function RootLayout({
       lang="en"
       className={`${notoSans.variable} h-full antialiased`}
     >
-      <body className="min-h-screen  max-h-svh bg-overlay overflow-hidden" >
+      <body className="min-h-screen  max-h-svh bg-overlay overflow-hidden">
         <ServerHeader />
         <div className="flex">
           <Sidebar />

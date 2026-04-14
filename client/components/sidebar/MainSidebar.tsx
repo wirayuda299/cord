@@ -3,6 +3,7 @@ import Link from "next/link"
 import dynamic from "next/dynamic"
 
 import { getAllServers } from "@/lib/server/data/servers"
+import { cn } from "@/lib/utils"
 
 const CreateServerForm = dynamic(() => import("@/components/server/CreateServerForm"))
 
@@ -19,34 +20,34 @@ export default async function MainSidebar() {
       >
         <Image className="size-7" src="/vercel.svg" width={28} height={28} alt="logo" />
       </Link>
-      <phantom-ui loading={!servers}>
-        <ul className="space-y-4">
-          {servers?.map((server) => (
-            <li key={server.id}>
-              <Link
-                className="flex items-center justify-center w-12 h-12 bg-(--server-item) transition-all duration-300 cursor-pointer rounded-[50%] hover:bg-discord-blue hover:rounded-[20%]"
-                href={`/${server.id}?name=${server.name}`}
-              >
-                {server.logo ? (
-                  <Image
-                    src={server.logo}
-                    width={28}
-                    height={28}
-                    alt={server.name}
-                    loading="lazy"
-                  />
-                ) : (
-                  <p className="flex items-center justify-center size-12 text-base text-white rounded-full">
-                    {server.name.slice(0, 1)}
-                  </p>
-                )}
-              </Link>
-            </li>
-          ))}
 
-          <CreateServerForm />
-        </ul>
-      </phantom-ui>
+      <ul className="space-y-4">
+        {servers?.map((server) => (
+          <li key={server.id}>
+            <Link
+              className={cn("flex group items-center justify-center w-12 h-12 bg-(--server-item) transition-all duration-300 cursor-pointer rounded-[50%]  hover:rounded-[20%]", !server.logo ? "hover:bg-discord-blue" : "")}
+              href={`/${server.id}?name=${server.name}`}
+            >
+              {server.logo ? (
+                <Image
+                  src={server.logo}
+                  width={28}
+                  height={28}
+                  alt={server.name}
+                  className="object-cover size-full rounded-[50%]  group-hover:rounded-[20%] transition-all duration-300"
+                  loading="lazy"
+                />
+              ) : (
+                <p className="flex items-center justify-center size-12 text-base text-white rounded-full">
+                  {server.name.slice(0, 1)}
+                </p>
+              )}
+            </Link>
+          </li>
+        ))}
+
+        <CreateServerForm />
+      </ul>
     </aside>
   )
 }

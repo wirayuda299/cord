@@ -87,6 +87,23 @@ func (sh *ServerHandler) CreateInvitationCode(w http.ResponseWriter, r *http.Req
 	})
 }
 
+func (sh *ServerHandler) UpdateServer(w http.ResponseWriter, r *http.Request) {
+	var p servers.UpdateServerPayload
+
+	if err := json.NewDecoder(r.Body).Decode(&p); err != nil {
+		httputil.WriteErrorResponse(w, "Invalid request payload", http.StatusBadRequest)
+		return
+	}
+	defer r.Body.Close()
+
+	if err := servers.UpdateServer(r.Context(), sh.db, &p); err != nil {
+		httputil.WriteErrorResponse(w, err.Err.Error(), err.Code)
+		return
+	}
+
+	httputil.EncodeResponse(w, "Server updated successfully", http.StatusOK, nil)
+}
+
 func (sh *ServerHandler) FindAllServersByUserId(w http.ResponseWriter, r *http.Request) {
 	user_id := r.URL.Query().Get("user_id")
 
