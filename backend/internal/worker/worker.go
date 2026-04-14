@@ -12,6 +12,7 @@ import (
 	"github.com/wirayuda299/backend/internal/queue"
 	"github.com/wirayuda299/backend/internal/services/channels"
 	"github.com/wirayuda299/backend/internal/services/images"
+	"github.com/wirayuda299/backend/internal/services/permissions"
 )
 
 func StartWorker(ctx context.Context, db *databases.Container) {
@@ -65,6 +66,20 @@ func StartWorker(ctx context.Context, db *databases.Container) {
 func handleJob(ctx context.Context, db *databases.Container, job queue.Job) error {
 	switch job.Type {
 
+	case queue.UpdateRolePermission:
+
+		log.Println("📦 Raw payload:", string(job.Payload))
+		var p queue.UpdateRolePermissionPayload
+		if err := json.Unmarshal(job.Payload, &p); err != nil {
+			log.Println(err.Error())
+			return fmt.Errorf("failed to unmarshal payload: %s", err.Error())
+		}
+
+		err := permissions.UpdatePermission(ctx, db, &p)
+		if err != nil {
+			return fmt.Errorf("Error update permission :%s", err.Err.Error())
+		}
+		return nil
 	case queue.CreateChannel:
 		log.Println("📦 Raw payload:", string(job.Payload))
 		var p queue.CreateChannelPayload

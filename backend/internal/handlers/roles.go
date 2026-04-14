@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
+	"log"
 	"net/http"
 
 	"github.com/wirayuda299/backend/internal/databases"
@@ -42,4 +43,20 @@ func (rh *RoleHandler) GetAllRole(w http.ResponseWriter, r *http.Request) {
 	}
 
 	httputil.EncodeResponse(w, "Roles found", http.StatusOK, roles)
+}
+
+func (rh *RoleHandler) UpdateRole(w http.ResponseWriter, r *http.Request) {
+	var p roles.UpdatePayload
+	if err := json.NewDecoder(r.Body).Decode(&p); err != nil {
+		httputil.WriteErrorResponse(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	log.Println("Payload => ", p)
+	err := roles.UpdateRole(r.Context(), rh.db, p)
+	if err != nil {
+		httputil.WriteErrorResponse(w, err.Err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	httputil.EncodeResponse(w, "Role updated", http.StatusCreated, nil)
 }

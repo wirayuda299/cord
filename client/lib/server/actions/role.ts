@@ -57,6 +57,7 @@ export async function createRole(
 
 type UpdateRolePayload = {
   role_id: string
+  server_id: string
   name?: string
   color?: string
   icon?: string
@@ -68,6 +69,8 @@ type UpdateRolePayload = {
 export async function updateRole(
   p: UpdateRolePayload
 ): Promise<{ error: string } | undefined> {
+
+  console.log("Payload client -> ", p)
   const base = getPublicApiUrl()
   const res = await fetch(`${base}/roles/update`, {
     method: "PATCH",
@@ -75,6 +78,7 @@ export async function updateRole(
     body: JSON.stringify(p),
   })
   const json = (await res.json().catch(() => ({}))) as { message?: string }
+  console.log("Error -> ", json)
   if (!res.ok) {
     return { error: json.message ?? res.statusText }
   }

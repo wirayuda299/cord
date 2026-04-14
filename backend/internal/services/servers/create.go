@@ -48,7 +48,6 @@ func CreateServer(ctx context.Context, container *databases.Container, srv *Serv
 		ServerId:  serverId,
 		CreatedBy: "usr_001",
 	}); err != nil {
-		fmt.Println(err.Error())
 		return &httputil.ErrorResponse{
 			Err:  err,
 			Code: http.StatusInternalServerError,

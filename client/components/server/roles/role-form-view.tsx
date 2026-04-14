@@ -109,15 +109,19 @@ export default function RoleFormView(props: Props) {
       return
     }
 
-    const res = await updateRole({
+    const dirty = form.formState.dirtyFields
+    const payload: Parameters<typeof updateRole>[0] = {
+      server_id: params.id as string,
       role_id: props.role.id,
-      name: values.name,
-      color: values.role_color,
-      icon: values.icon ?? "",
-      hoist: values.hoist,
-      mentionable: values.mentionable,
-      permission_ids: values.permissions,
-    })
+    }
+    if (dirty.name)        payload.name           = values.name
+    if (dirty.role_color)  payload.color          = values.role_color
+    if (dirty.icon)        payload.icon           = values.icon ?? ""
+    if (dirty.hoist)       payload.hoist          = values.hoist
+    if (dirty.mentionable) payload.mentionable    = values.mentionable
+    if (dirty.permissions) payload.permission_ids = values.permissions
+
+    const res = await updateRole(payload)
     if (res?.error) {
       setStatus({ type: "error", message: res.error })
     } else {
