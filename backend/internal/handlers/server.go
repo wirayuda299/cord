@@ -50,43 +50,6 @@ func (sh *ServerHandler) CreateServer(w http.ResponseWriter, r *http.Request) {
 	httputil.EncodeResponse(w, "Server created successfully", http.StatusOK, nil)
 }
 
-func (sh *ServerHandler) JoinServerByCode(w http.ResponseWriter, r *http.Request) {
-	var p JoinServerWithCode
-
-	if err := json.NewDecoder(r.Body).Decode(&p); err != nil {
-		httputil.WriteErrorResponse(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-	err := servers.JoinServerWithInvitationCode(r.Context(), sh.db, p.Code, p.UserId)
-	if err != nil {
-		httputil.WriteErrorResponse(w, err.Err.Error(), err.Code)
-		return
-	}
-
-	httputil.EncodeResponse(w, "Success join", http.StatusCreated, nil)
-}
-
-func (sh *ServerHandler) CreateInvitationCode(w http.ResponseWriter, r *http.Request) {
-	var p servers.CreateInvitationType
-
-	if err := json.NewDecoder(r.Body).Decode(&p); err != nil {
-		httputil.WriteErrorResponse(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-
-	res, err := servers.CreateInvitationCode(r.Context(), sh.db, &p)
-	if err != nil {
-		httputil.WriteErrorResponse(w, err.Err.Error(), err.Code)
-		return
-	}
-	const msg = "invitation code created"
-	httputil.EncodeResponse(w, msg, http.StatusCreated, &httputil.Response{
-		Data:    res,
-		Message: msg,
-		Success: true,
-	})
-}
-
 func (sh *ServerHandler) UpdateServer(w http.ResponseWriter, r *http.Request) {
 	var p servers.UpdateServerPayload
 
