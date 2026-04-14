@@ -23,6 +23,20 @@ func NewServerHandler(db *databases.Container) *ServerHandler {
 	return &ServerHandler{db}
 }
 
+func (sh *ServerHandler) JoinServer(w http.ResponseWriter, r *http.Request) {
+	var p servers.JoinServerPayload
+	if err := json.NewDecoder(r.Body).Decode(&p); err != nil {
+		httputil.WriteErrorResponse(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	if err := servers.JoinServer(r.Context(), sh.db, &p); err != nil {
+		httputil.WriteErrorResponse(w, err.Err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	httputil.EncodeResponse(w, "Sucess", http.StatusOK, nil)
+}
+
 func (sh *ServerHandler) GetServerByID(w http.ResponseWriter, r *http.Request) {
 	serverID := r.URL.Query().Get("serverID")
 	server, err := servers.GetServerByID(sh.db, r.Context(), serverID)

@@ -13,5 +13,6 @@ func ServerRoutes(r *mux.Router, sh *handlers.ServerHandler) {
 	s.HandleFunc("", sh.GetServerByID).Methods(http.MethodGet)
 	s.HandleFunc("/find-all", sh.FindAllServersByUserId).Methods(http.MethodGet)
 	s.HandleFunc("/create", sh.CreateServer).Methods(http.MethodPost)
+	s.HandleFunc("/join", sh.JoinServer).Methods(http.MethodPost)
 	s.HandleFunc("/update", sh.UpdateServer).Methods(http.MethodPatch)
 }

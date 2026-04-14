@@ -10,9 +10,10 @@ type Job struct {
 }
 
 const (
-	DeleteImage          = "delete_image"
-	CreateChannel        = "create_channel"
-	UpdateRolePermission = "update_role_permission"
+	DeleteImage                = "delete_image"
+	CreateChannel              = "create_channel"
+	UpdateRolePermission       = "update_role_permission"
+	CreateDefaultServerProfile = "create_default_server_profile"
 )
 
 type CreateChannelPayload struct {
@@ -41,4 +42,9 @@ type DeleteImagePayload struct {
 type UpdateRolePermissionPayload struct {
 	Permission []string `json:"permission"`
 	RoleID     string   `json:"role_id"`
+}
+
+type CreateDefaultServerProfilePayload struct {
+	ServerID string `json:"server_id"`
+	UserID   string `json:"user_id"`
 }
