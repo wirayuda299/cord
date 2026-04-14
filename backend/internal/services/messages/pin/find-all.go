@@ -31,6 +31,8 @@ func GetAllPinnedMessage(ctx context.Context, db *databases.Container, channelId
 			Code: http.StatusInternalServerError,
 		}
 	}
+	defer rows.Close()
+
 	for rows.Next() {
 		var m PinnedMessageResponse
 		if err := rows.Scan(&m.ID, &m.Content, &m.Username, &m.UserID); err != nil {
@@ -41,7 +43,9 @@ func GetAllPinnedMessage(ctx context.Context, db *databases.Container, channelId
 		}
 		pinnedMessages = append(pinnedMessages, m)
 	}
-	defer rows.Close()
+	if err := rows.Err(); err != nil {
+		return nil, &httputil.ErrorResponse{Err: err, Code: http.StatusInternalServerError}
+	}
 
 	return pinnedMessages, nil
 }

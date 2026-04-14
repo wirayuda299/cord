@@ -47,7 +47,7 @@ func (sh *ServerHandler) CreateServer(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	httputil.EncodeResponse(w, "Server created successfully", http.StatusOK, nil)
+	httputil.EncodeResponse(w, "Server created successfully", http.StatusCreated, nil)
 }
 
 func (sh *ServerHandler) UpdateServer(w http.ResponseWriter, r *http.Request) {

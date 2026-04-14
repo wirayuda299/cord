@@ -1,7 +1,7 @@
 'use client'
 
 import { cn } from "@/lib/utils"
-import { ChevronLeft, ImageIcon, Palette, Pencil, Shield, Users } from "lucide-react"
+import { ChevronLeft, ImageIcon, Palette, Pencil, Shield, Trash, Users } from "lucide-react"
 import { useState } from "react"
 import MembersTab from "./members"
 import { Role } from "@/lib/types/role"
@@ -62,7 +62,6 @@ function DisplayTab({ role }: { role: Role }) {
         </div>
       </div>
 
-      {/* Color swatch */}
       <div className="flex flex-col gap-2">
         <label className="text-xs font-semibold uppercase tracking-widest text-white/40">
           Role Color
@@ -76,7 +75,6 @@ function DisplayTab({ role }: { role: Role }) {
         </div>
       </div>
 
-      {/* Icon */}
       <div className="flex flex-col gap-2">
         <label className="text-xs font-semibold uppercase tracking-widest text-white/40">
           Icon
@@ -97,7 +95,6 @@ function DisplayTab({ role }: { role: Role }) {
         </div>
       </div>
 
-      {/* Options */}
       <div className="flex flex-col gap-2">
         <label className="text-xs font-semibold uppercase tracking-widest text-white/40">
           Options
@@ -208,14 +205,27 @@ export default function RoleDetailView({
                 <p className="text-xs font-mono text-white/25 mt-px">{role.id}</p>
               </div>
             </div>
-            <button
-              type="button"
-              onClick={() => onEdit(data?.permissions ?? [])}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-white/40 hover:text-white hover:bg-white/10 border border-transparent hover:border-white/10 transition-all"
-            >
-              <Pencil size={12} />
-              Edit Role
-            </button>
+
+            <div className="flex items-center gap-2">
+
+              <button
+                type="button"
+                onClick={() => onEdit(data?.permissions ?? [])}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-white/40 hover:text-white hover:bg-white/10 border border-transparent hover:border-white/10 transition-all"
+              >
+                <Pencil size={12} />
+                Edit Role
+              </button>
+
+
+              <button
+                type="button"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-red-600! hover:bg-white/10 border border-transparent hover:border-white/10 transition-all"
+              >
+                <Trash size={12} className="text-red-600" />
+                Delete Role
+              </button>
+            </div>
           </div>
 
           {/* Tabs */}

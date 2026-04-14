@@ -24,14 +24,12 @@ func NewMessageHandler(db *databases.Container) *MessageHandler {
 func (mh *MessageHandler) FindAllPinnedMessages(w http.ResponseWriter, r *http.Request) {
 	channelId := r.URL.Query().Get("channelID")
 	res, err := pin.GetAllPinnedMessage(r.Context(), mh.db, channelId)
-
 	if err != nil {
 		httputil.WriteErrorResponse(w, err.Err.Error(), err.Code)
 		return
 	}
 
 	httputil.EncodeResponse(w, "Pinned messages fetched successfully", http.StatusOK, res)
-
 }
 
 func (mh *MessageHandler) DeletePinnedMessage(w http.ResponseWriter, r *http.Request) {
@@ -47,7 +45,7 @@ func (mh *MessageHandler) DeletePinnedMessage(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	httputil.EncodeResponse(w, "Message deleted", http.StatusCreated, nil)
+	httputil.EncodeResponse(w, "Message deleted", http.StatusOK, nil)
 }
 
 func (mh *MessageHandler) PinMessage(w http.ResponseWriter, r *http.Request) {
@@ -78,19 +76,17 @@ func (mh *MessageHandler) DeleteMessage(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	httputil.EncodeResponse(w, "Message deleted", http.StatusCreated, nil)
+	httputil.EncodeResponse(w, "Message deleted", http.StatusOK, nil)
 }
 
 func (mh *MessageHandler) FindAllMessages(w http.ResponseWriter, r *http.Request) {
 	channelID := r.URL.Query().Get("channelId")
 
 	messages, err := messages.GetAllMessages(r.Context(), mh.db, channelID)
-
 	if err != nil {
 		httputil.WriteErrorResponse(w, err.Err.Error(), err.Code)
 		return
 	}
 
 	httputil.EncodeResponse(w, "All messages fetched successfully", http.StatusOK, messages)
-
 }

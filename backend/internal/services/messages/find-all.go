@@ -11,10 +11,8 @@ import (
 )
 
 func GetAllMessages(ctx context.Context, db *databases.Container, channelId string) ([]services.MessageRow, *httputil.ErrorResponse) {
-
 	if channelId == "" {
 		return nil, &httputil.ErrorResponse{Err: errors.New("Channel ID is missing"), Code: http.StatusBadRequest}
-
 	}
 
 	var messages []services.MessageRow
@@ -45,6 +43,7 @@ func GetAllMessages(ctx context.Context, db *databases.Container, channelId stri
 		}
 	}
 
+	defer rows.Close()
 	for rows.Next() {
 		var m services.MessageRow
 		err = rows.Scan(
@@ -70,6 +69,9 @@ func GetAllMessages(ctx context.Context, db *databases.Container, channelId stri
 		}
 		messages = append(messages, m)
 	}
-	defer rows.Close()
+
+	if err := rows.Err(); err != nil {
+		return nil, &httputil.ErrorResponse{Err: err, Code: http.StatusInternalServerError}
+	}
 	return messages, nil
 }

@@ -3,6 +3,7 @@ package websocket
 import (
 	"encoding/json"
 	"log"
+	"sync"
 
 	"github.com/wirayuda299/backend/internal/services"
 )
@@ -18,6 +19,7 @@ type BroadcastPayload struct {
 type Hub struct {
 	// Registered clients.
 	clients map[string]map[string]map[*Client]bool
+	mu      sync.RWMutex
 
 	// pesan masuk dari client ( browser )
 	broadcast chan BroadcastPayload
@@ -51,6 +53,7 @@ func (h *Hub) Run() {
 	for {
 		select {
 		case client := <-h.register:
+			h.mu.Lock()
 			if h.clients[client.ServerID] == nil {
 				h.clients[client.ServerID] = make(map[string]map[*Client]bool)
 			}
@@ -58,8 +61,10 @@ func (h *Hub) Run() {
 				h.clients[client.ServerID][client.channelID] = make(map[*Client]bool)
 			}
 			h.clients[client.ServerID][client.channelID][client] = true
+			h.mu.Unlock()
 
 		case client := <-h.unregister:
+			h.mu.Lock()
 			if servers, ok := h.clients[client.ServerID]; ok {
 				if channels, ok := servers[client.channelID]; ok {
 					if _, exists := channels[client]; exists {
@@ -74,16 +79,24 @@ func (h *Hub) Run() {
 					}
 				}
 			}
+			h.mu.Unlock()
 
 		case message := <-h.broadcast:
-			if servers, ok := h.clients[message.ServerId]; ok {
+			h.mu.RLock()
+			servers := h.clients[message.ServerId]
+			h.mu.RUnlock()
 
+			if servers != nil {
 				log.Println("Servers -> ", servers)
 				if clients, ok := servers[message.ChannelId]; ok {
-
 					log.Println("Clients -> ", clients)
+					b, err := json.Marshal(message)
+					if err != nil {
+						log.Printf("broadcast: failed to marshal message: %v", err)
+						continue
+					}
+					h.mu.Lock()
 					for client := range clients {
-						b, _ := json.Marshal(message)
 						select {
 						case client.send <- b:
 						default:
@@ -91,6 +104,7 @@ func (h *Hub) Run() {
 							delete(clients, client)
 						}
 					}
+					h.mu.Unlock()
 				}
 			}
 		}
@@ -104,10 +118,19 @@ func (h *Hub) BroadcastDelete(serverId, channelId, messageId string) {
 		ServerId:  serverId,
 		ChannelId: channelId,
 	}
-	data, _ := json.Marshal(payload)
+	data, err := json.Marshal(payload)
+	if err != nil {
+		log.Printf("BroadcastDelete: failed to marshal payload: %v", err)
+		return
+	}
 
-	if servers, ok := h.clients[serverId]; ok {
+	h.mu.RLock()
+	servers := h.clients[serverId]
+	h.mu.RUnlock()
+
+	if servers != nil {
 		if clients, ok := servers[channelId]; ok {
+			h.mu.Lock()
 			for client := range clients {
 				select {
 				case client.send <- data:
@@ -116,6 +139,7 @@ func (h *Hub) BroadcastDelete(serverId, channelId, messageId string) {
 					delete(clients, client)
 				}
 			}
+			h.mu.Unlock()
 		}
 	}
 }

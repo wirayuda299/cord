@@ -34,16 +34,18 @@ func FindAllCategories(ctx context.Context, db *databases.Container, serverId st
 		log.Println(err.Error())
 		return nil, &httputil.ErrorResponse{Err: err, Code: http.StatusInternalServerError}
 	}
+	defer rows.Close()
 
 	for rows.Next() {
 		var c Category
 		if err := rows.Scan(&c.Id, &c.Name, &c.ServerId, &c.CreatedBy, &c.ServerName); err != nil {
-
 			log.Println(err.Error())
 			return nil, &httputil.ErrorResponse{Err: err, Code: http.StatusInternalServerError}
 		}
-
 		categories = append(categories, c)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, &httputil.ErrorResponse{Err: err, Code: http.StatusInternalServerError}
 	}
 	log.Println(categories)
 

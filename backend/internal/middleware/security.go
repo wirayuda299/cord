@@ -1,13 +1,19 @@
 package middleware
 
-import "net/http"
+import (
+	"net/http"
+	"path"
+	"strings"
+)
 
 func securityMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path[0] == '/' && len(r.URL.Path) > 1 && r.URL.Path[1] == '.' {
+		cleaned := path.Clean(r.URL.Path)
+		if strings.Contains(cleaned, "..") {
 			http.Error(w, "403 Forbidden", http.StatusForbidden)
 			return
 		}
+		r.URL.Path = cleaned
 		next.ServeHTTP(w, r)
 	})
 }

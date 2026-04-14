@@ -34,6 +34,8 @@ func GetAllServersByUserId(ctx context.Context, db *databases.Container, userId 
 		}
 	}
 
+	defer rows.Close()
+
 	for rows.Next() {
 		var server ServerResponse
 		if err := rows.Scan(&server.Id, &server.Name, &server.Logo); err != nil {
@@ -45,7 +47,9 @@ func GetAllServersByUserId(ctx context.Context, db *databases.Container, userId 
 		}
 		servers = append(servers, server)
 	}
+	if err := rows.Err(); err != nil {
+		return nil, &httputil.ErrorResponse{Err: err, Code: http.StatusInternalServerError}
+	}
 
-	defer rows.Close()
 	return servers, nil
 }

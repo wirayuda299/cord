@@ -54,12 +54,18 @@ func UpdateServer(ctx context.Context, db *databases.Container, p *UpdateServerP
 	if p.Icon != nil && *p.Icon != "" {
 		// Enqueue old logo deletion in the background
 		var currentLogoID *string
-		_ = db.Postgres.QueryRow(ctx, "SELECT logo_asset_id FROM servers WHERE id = $1", p.ServerID).Scan(&currentLogoID)
+		err := db.Postgres.QueryRow(ctx, "SELECT logo_asset_id FROM servers WHERE id = $1", p.ServerID).Scan(&currentLogoID)
+		if err != nil {
+			return &httputil.ErrorResponse{Err: err, Code: http.StatusInternalServerError}
+		}
 		if currentLogoID != nil && *currentLogoID != "" {
-			_ = queue.PushJob(ctx, db.Redis, queue.DeleteImage, queue.DeleteImagePayload{
+			err := queue.PushJob(ctx, db.Redis, queue.DeleteImage, queue.DeleteImagePayload{
 				PublicID: *currentLogoID,
 				ServerID: p.ServerID,
 			})
+			if err != nil {
+				return &httputil.ErrorResponse{Err: err, Code: http.StatusInternalServerError}
+			}
 		}
 
 		setClauses = append(setClauses,

@@ -37,8 +37,10 @@ func GetAllInvitationCode(ctx context.Context, db *databases.Container, serverID
 		if err := rows.Scan(&i.Id, &i.Code, &i.ServerID, &i.CreatedBy, &i.MaxUsers, &i.CreatedAt, &i.Uses); err != nil {
 			return nil, &httputil.ErrorResponse{Err: err, Code: http.StatusInternalServerError}
 		}
-
 		invitations = append(invitations, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, &httputil.ErrorResponse{Err: err, Code: http.StatusInternalServerError}
 	}
 	return invitations, nil
 }

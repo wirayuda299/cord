@@ -2,6 +2,7 @@ package config
 
 import (
 	"fmt"
+	"log"
 	"net/http"
 	"time"
 
@@ -57,5 +58,7 @@ func (s *Server) Run() {
 
 	fmt.Println("Listening on port 8080...")
 
-	server.ListenAndServe()
+	if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+		log.Fatal("server failed to start:", err)
+	}
 }

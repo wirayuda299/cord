@@ -44,5 +44,9 @@ func GetAllRoles(ctx context.Context, db *databases.Container, serverID string) 
 
 	}
 
+	if err := rows.Err(); err != nil {
+		return nil, &httputil.ErrorResponse{Err: err, Code: http.StatusInternalServerError}
+	}
+
 	return roles, nil
 }

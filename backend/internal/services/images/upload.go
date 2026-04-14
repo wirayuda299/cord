@@ -24,7 +24,6 @@ type UploadImagePayload struct {
 }
 
 func HandleUpload(p *UploadImagePayload) (*UploadResponse, *httputil.ErrorResponse) {
-
 	if len(p.Attachment) == 0 {
 		return nil, &httputil.ErrorResponse{
 			Err:  errors.New("no file uploaded"),
@@ -81,7 +80,7 @@ func HandleUpload(p *UploadImagePayload) (*UploadResponse, *httputil.ErrorRespon
 	})
 	if uploadErr != nil {
 		return nil, &httputil.ErrorResponse{
-			Err:  err,
+			Err:  uploadErr,
 			Code: http.StatusInternalServerError,
 		}
 	}

@@ -9,7 +9,6 @@ import (
 )
 
 func DeleteImage(w http.ResponseWriter, r *http.Request) {
-
 	var id string
 	if err := json.NewDecoder(r.Body).Decode(&id); err != nil {
 		httputil.WriteErrorResponse(w, err.Error(), http.StatusBadRequest)
@@ -18,7 +17,10 @@ func DeleteImage(w http.ResponseWriter, r *http.Request) {
 
 	if err := images.DeleteImage(r.Context(), id); err != nil {
 		httputil.WriteErrorResponse(w, err.Err.Error(), err.Code)
+		return
 	}
+
+	httputil.EncodeResponse(w, "Image deleted", http.StatusOK, nil)
 }
 
 func HandleUpload(w http.ResponseWriter, r *http.Request) {
@@ -31,12 +33,10 @@ func HandleUpload(w http.ResponseWriter, r *http.Request) {
 		Attachment: r.MultipartForm.File["attachment"],
 		Ctx:        r.Context(),
 	})
-
 	if err != nil {
 		httputil.WriteErrorResponse(w, err.Err.Error(), err.Code)
 		return
 	}
 
 	httputil.EncodeResponse(w, "Image uploaded", http.StatusCreated, res)
-
 }

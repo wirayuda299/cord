@@ -46,14 +46,23 @@ func StartWorker(ctx context.Context, db *databases.Container) {
 			if job.Attempts < job.MaxRetry {
 				delay := time.Duration(job.Attempts) * 5 * time.Second
 				time.Sleep(delay)
-				data, _ := json.Marshal(job)
+				data, err := json.Marshal(job)
+				if err != nil {
+					log.Printf("❌ Failed to marshal job %s for retry: %v", job.Type, err)
+					continue
+				}
+
 				db.Redis.LPush(ctx, queue.JobsQueue, data)
 				log.Printf("🔁 Retrying job %s (attempt %d/%d)", job.Type, job.Attempts, job.MaxRetry)
-				continue // keep worker alive
+				continue
 			}
 
-			// only reach here if max retries exceeded
-			data, _ := json.Marshal(job)
+			// max retries exceeded — move to dead letter queue
+			data, err := json.Marshal(job)
+			if err != nil {
+				log.Printf("❌ Failed to marshal job %s for dead letter: %v", job.Type, err)
+				continue
+			}
 			db.Redis.LPush(ctx, queue.DeadLetterQueue, data)
 			log.Printf("💀 Job %s moved to dead letter queue", job.Type)
 			continue
