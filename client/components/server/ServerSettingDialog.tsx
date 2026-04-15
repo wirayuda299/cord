@@ -5,7 +5,7 @@ import {
   Zap, ShieldCheck, ScrollText, Ban, Trash2, X,
 } from "lucide-react"
 import { Dialog, DialogClose, DialogContent, DialogTrigger } from "@/components/ui/dialog"
-import { useState } from "react"
+import { memo, useState } from "react"
 import { cn } from "@/lib/utils"
 import ServerProfile from "./profile"
 import BoostPerks from "./BoostPerks"
@@ -15,7 +15,7 @@ import Invites from "./Invites"
 import SafetySetup from "./SafetySetup"
 import AuditLog from "./AuditLog"
 import Bans from "./Bans"
-import { useSearchParams } from "next/navigation"
+import { useParams, useSearchParams } from "next/navigation"
 
 
 type SidebarItem = {
@@ -160,9 +160,8 @@ function SettingsSidebar({
   )
 }
 
-// ─── root ─────────────────────────────────────────────────────────────────────
 
-export default function ServerSettingDialog() {
+function ServerSettingDialog({ serverId }: { serverId: string }) {
   const [active, setActive] = useState("server profile")
   const sp = useSearchParams()
   const serverName = sp.get("name") ?? "Server"
@@ -196,7 +195,7 @@ export default function ServerSettingDialog() {
             {active === "boost perks" && <BoostPerks />}
             {active === "members" && <Members />}
             {active === "roles" && <ServerRolesSettings />}
-            {active === "invites" && <Invites />}
+            {active === "invites" && <Invites serverID={serverId} />}
             {active === "safety setup" && <SafetySetup />}
             {active === "audit log" && <AuditLog />}
             {active === "bans" && <Bans />}
@@ -211,3 +210,4 @@ export default function ServerSettingDialog() {
     </Dialog>
   )
 }
+export default memo(ServerSettingDialog)

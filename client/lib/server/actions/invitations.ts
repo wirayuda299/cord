@@ -8,16 +8,24 @@ export async function createInvitationCode(server_id: string, max_users: number 
 
   const base = getPublicApiUrl()
 
-  return await fetch(`${base}/invitation/create`, {
+  const res = await fetch(`${base}/invitation/create`, {
     headers: {
       "Content-Type": "application/json"
     },
     method: "POST",
     body: JSON.stringify({
       server_id,
-      max_users
+      max_users,
+      created_by: "usr_001"
     })
   })
+
+  if (!res.ok) {
+    return {
+      error: await res.json().then(d => d.message)
+    }
+  }
+  return await res.json().then(c => c.data)
 }
 
 export async function joinServerByCode(code: string, user_id: string) {
@@ -27,7 +35,7 @@ export async function joinServerByCode(code: string, user_id: string) {
 
   const base = getPublicApiUrl()
 
-  return await fetch(`${base}/invitation/join`, {
+  const res = await fetch(`${base}/invitation/join`, {
     headers: {
       "Content-Type": "application/json"
     },
@@ -37,4 +45,10 @@ export async function joinServerByCode(code: string, user_id: string) {
       user_id
     })
   })
+
+  if (!res.ok) {
+    return {
+      error: await res.json().then((r) => r.message)
+    }
+  }
 }

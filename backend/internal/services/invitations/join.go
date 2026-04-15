@@ -13,7 +13,14 @@ import (
 func JoinServerWithInvitationCode(ctx context.Context, db *databases.Container, code string, userId string) *httputil.ErrorResponse {
 	var insertedID string
 
-	err := db.Postgres.QueryRow(ctx, `
+	tx, err := db.Postgres.Begin(ctx)
+	if err != nil {
+		return &httputil.ErrorResponse{Err: err, Code: http.StatusInternalServerError}
+	}
+
+	defer tx.Rollback(ctx)
+
+	err = tx.QueryRow(ctx, `
 		WITH invite AS (
 			UPDATE invitations
 			SET uses = uses + 1
@@ -42,6 +49,10 @@ func JoinServerWithInvitationCode(ctx context.Context, db *databases.Container, 
 			Err:  err,
 			Code: http.StatusInternalServerError,
 		}
+	}
+	err = tx.Commit(ctx)
+	if err != nil {
+		return &httputil.ErrorResponse{Err: err, Code: http.StatusInternalServerError}
 	}
 	return nil
 }

@@ -1,26 +1,16 @@
-'use client'
 
 import { useState } from "react"
 import { Copy, Check, Trash2, Plus, Link, Users, Clock } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { copyText } from "@/lib/client/clipboard"
+import useSWR from "swr"
+import { getAllInvitation } from "@/lib/server/data/invitations"
+import { createInvitationCode } from "@/lib/server/actions/invitations"
+import { Invitation } from "@/lib/types/invitation"
+import { getPublicApiUrl } from "@/lib/env"
+import { deleteInvitationCode } from "@/lib/client/api/invitation"
 
-type Invite = {
-  code: string
-  uses: number
-  max_users: number
-  created_at: string
-}
 
-// Replace with real SWR fetch once backend GET /server/invitations is wired
-const MOCK_INVITES: Invite[] = [
-  { code: "aB3xK9mZ2Q", uses: 8,  max_users: 10,  created_at: "2026-04-01T10:00:00Z" },
-  { code: "xR7pL2qN5T", uses: 25, max_users: 25,  created_at: "2026-03-28T14:30:00Z" },
-  { code: "kM4wJ8vC1H", uses: 3,  max_users: 50,  created_at: "2026-04-10T09:15:00Z" },
-  { code: "dY6nU0eF3G", uses: 0,  max_users: 100, created_at: "2026-04-12T18:45:00Z" },
-]
-
-const BASE_URL = "https://discord.clone.app/"
 
 function UsageBar({ uses, maxUsers }: { uses: number; maxUsers: number }) {
   const pct = maxUsers === 0 ? 0 : Math.min((uses / maxUsers) * 100, 100)
@@ -51,7 +41,7 @@ function CopyButton({ code }: { code: string }) {
   const [copied, setCopied] = useState(false)
 
   const handle = () => {
-    copyText(BASE_URL + code).then(() => {
+    copyText(code).then(() => {
       setCopied(true)
       setTimeout(() => setCopied(false), 2000)
     })
@@ -73,7 +63,7 @@ function InviteRow({
   invite,
   onDelete,
 }: {
-  invite: Invite
+  invite: Invitation
   onDelete: (code: string) => void
 }) {
   const full = invite.uses >= invite.max_users
@@ -81,21 +71,22 @@ function InviteRow({
     month: "short", day: "numeric", year: "numeric",
   })
 
+  const code = `http://localhost:3000/invite/${invite.code}?server_id=${invite.server_id}`
+
   return (
     <div className={cn(
       "grid grid-cols-[1fr_9rem_7rem_auto] items-center gap-4 px-4 py-3.5 rounded-xl border transition-colors",
       full
         ? "bg-red-500/5 border-red-500/15"
-        : "bg-white/[0.02] border-white/5 hover:bg-white/[0.04]"
+        : "bg-white/2 border-white/5 hover:bg-white/4"
     )}>
 
-      {/* Link */}
       <div className="flex items-center gap-2.5 min-w-0">
         <div className="flex items-center justify-center size-8 rounded-lg bg-discord-blue/15 shrink-0">
           <Link size={13} className="text-discord-blue" />
         </div>
         <div className="min-w-0">
-          <p className="text-sm font-mono text-white truncate">{BASE_URL}{invite.code}</p>
+          <p className="text-sm font-mono text-white truncate max-w-xs">{code}</p>
           <div className="flex items-center gap-1.5 mt-0.5">
             <Clock size={10} className="text-white/25 shrink-0" />
             <p className="text-xs text-white/30">Created {date}</p>
@@ -108,18 +99,15 @@ function InviteRow({
         </div>
       </div>
 
-      {/* Usage bar */}
       <UsageBar uses={invite.uses} maxUsers={invite.max_users} />
 
-      {/* Max uses label */}
       <div className="flex items-center gap-1.5 text-xs text-white/40">
         <Users size={11} className="shrink-0" />
         {invite.max_users} max
       </div>
 
-      {/* Actions */}
       <div className="flex items-center gap-2">
-        <CopyButton code={invite.code} />
+        <CopyButton code={code} />
         <button
           type="button"
           onClick={() => onDelete(invite.code)}
@@ -197,103 +185,96 @@ function CreateInviteForm({ onClose, onCreate }: {
   )
 }
 
-export default function Invites() {
-  const [invites, setInvites] = useState<Invite[]>(MOCK_INVITES)
+export default function Invites({ serverID }: { serverID: string }) {
   const [creating, setCreating] = useState(false)
 
-  const handleDelete = (code: string) => {
-    setInvites((prev) => prev.filter((i) => i.code !== code))
-    // TODO: call DELETE /server/invitation
+  const { data, isLoading } = useSWR("/api/invitations", () => getAllInvitation(serverID))
+  const handleDelete = async (code: string) => {
+    try {
+
+      return await deleteInvitationCode(code, "usr_001").then(r => alert("Code deleted"))
+    } catch (e) {
+      alert(e)
+    }
   }
 
-  const handleCreate = (maxUsers: number) => {
-    // TODO: call POST /server/invitation/create and use returned code
-    const newInvite: Invite = {
-      code: Math.random().toString(36).slice(2, 12).toUpperCase(),
-      uses: 0,
-      max_users: maxUsers,
-      created_at: new Date().toISOString(),
+  const handleCreate = async (maxUsers: number) => {
+
+    try {
+      const res = await createInvitationCode(serverID, maxUsers)
+      if (res && "error" in res) {
+        alert(res.error)
+        return
+      }
+      alert("Invitation code created")
+
+    } catch (e) {
+      alert(e)
+
     }
-    setInvites((prev) => [newInvite, ...prev])
     setCreating(false)
   }
 
-  const active = invites.filter((i) => i.uses < i.max_users)
-  const full   = invites.filter((i) => i.uses >= i.max_users)
 
   return (
-    <div className="flex flex-col w-full max-h-screen overflow-hidden text-white">
-
-      {/* Header */}
-      <div className="px-8 pt-8 pb-5 shrink-0 border-b border-white/5">
-        <div className="flex items-end justify-between">
-          <div>
-            <h2 className="font-semibold text-xl">Invites</h2>
-            <p className="text-sm text-white/40 mt-0.5">
-              {invites.length} invite{invites.length !== 1 ? "s" : ""} · {active.length} active
-            </p>
-          </div>
-          <button
-            type="button"
-            onClick={() => setCreating((v) => !v)}
-            className="flex items-center gap-2 px-3 py-2 rounded-lg bg-discord-blue hover:opacity-90 text-white text-sm font-medium transition-opacity"
-          >
-            <Plus size={14} />
-            Create Invite
-          </button>
-        </div>
-      </div>
-
-      {/* List */}
-      <div className="flex-1 overflow-y-auto px-8 py-5 flex flex-col gap-3">
-
-        {creating && (
-          <CreateInviteForm
-            onClose={() => setCreating(false)}
-            onCreate={handleCreate}
-          />
-        )}
-
-        {invites.length === 0 && !creating ? (
-          <div className="flex flex-col items-center justify-center py-24 text-white/25 gap-3">
-            <Link size={32} className="opacity-40" />
-            <p className="text-sm">No invite links yet</p>
+    <phantom-ui loading={isLoading}>
+      <div className="flex flex-col w-full max-h-screen overflow-hidden text-white">
+        <div className="px-8 pt-8 pb-5 shrink-0 border-b border-white/5">
+          <div className="flex items-end justify-between">
+            <div>
+              <h2 className="font-semibold text-xl">Invites</h2>
+              <p className="text-sm text-white/40 mt-0.5">
+                {data?.length} invite{data?.length !== 1 ? "s" : ""}               </p>
+            </div>
             <button
               type="button"
-              onClick={() => setCreating(true)}
-              className="text-xs text-discord-blue hover:underline"
+              onClick={() => setCreating((v) => !v)}
+              className="flex items-center gap-2 px-3 py-2 rounded-lg bg-discord-blue hover:opacity-90 text-white text-sm font-medium transition-opacity"
             >
-              Create your first invite
+              <Plus size={14} />
+              Create Invite
             </button>
           </div>
-        ) : (
-          <>
-            {/* Column headers */}
-            <div className="grid grid-cols-[1fr_9rem_7rem_auto] gap-4 px-4 pb-1">
-              <p className="text-[11px] font-semibold uppercase tracking-widest text-white/25">Link</p>
-              <p className="text-[11px] font-semibold uppercase tracking-widest text-white/25">Uses</p>
-              <p className="text-[11px] font-semibold uppercase tracking-widest text-white/25">Max</p>
-              <p className="text-[11px] font-semibold uppercase tracking-widest text-white/25">Actions</p>
+        </div>
+
+        <div className="flex-1 overflow-y-auto px-8 py-5 flex flex-col gap-3">
+          {creating && (
+            <CreateInviteForm
+              onClose={() => setCreating(false)}
+              onCreate={handleCreate}
+            />
+          )}
+
+          {data?.length === 0 && !creating ? (
+            <div className="flex flex-col items-center justify-center py-24 text-white/25 gap-3">
+              <Link size={32} className="opacity-40" />
+              <p className="text-sm">No invite links yet</p>
+              <button
+                type="button"
+                onClick={() => setCreating(true)}
+                className="text-xs text-discord-blue hover:underline"
+              >
+                Create your first invite
+              </button>
             </div>
+          ) : (
+            <>
+              <div className="grid grid-cols-[1fr_9rem_7rem_auto] gap-4 px-4 pb-1">
+                <p className="text-[11px] font-semibold uppercase tracking-widest text-white/25">Link</p>
+                <p className="text-[11px] font-semibold uppercase tracking-widest text-white/25">Uses</p>
+                <p className="text-[11px] font-semibold uppercase tracking-widest text-white/25">Max</p>
+                <p className="text-[11px] font-semibold uppercase tracking-widest text-white/25">Actions</p>
+              </div>
 
-            {active.map((inv) => (
-              <InviteRow key={inv.code} invite={inv} onDelete={handleDelete} />
-            ))}
+              {data?.map((inv) => (
+                <InviteRow key={inv.code} invite={inv} onDelete={handleDelete} />
+              ))}
 
-            {full.length > 0 && (
-              <>
-                <p className="text-[11px] font-semibold uppercase tracking-widest text-white/25 px-4 pt-3">
-                  Full — {full.length}
-                </p>
-                {full.map((inv) => (
-                  <InviteRow key={inv.code} invite={inv} onDelete={handleDelete} />
-                ))}
-              </>
-            )}
-          </>
-        )}
+            </>
+          )}
+        </div>
+
       </div>
-
-    </div>
+    </phantom-ui>
   )
 }

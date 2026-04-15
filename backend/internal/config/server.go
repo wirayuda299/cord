@@ -39,7 +39,11 @@ func (s *Server) Run() {
 	mh := handlers.NewMessageHandler(s.db)
 	rh := handlers.NewRoleHandler(s.db)
 	ph := handlers.NewPermissionHandler(s.db)
+	mrh := handlers.NewMemberHandler(s.db)
+	ih := handlers.NewInvitationHandler(s.db)
 
+	routes.RegisterMemberRoutes(r, mrh)
+	routes.RegisterInvitationRoutes(r, ih)
 	routes.RegisterPermissionRoute(r, ph)
 	routes.RegisterRoleRoute(r, rh)
 	routes.RegisterChannelRoutes(r, ch)

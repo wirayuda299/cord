@@ -5,6 +5,7 @@ import (
 	"crypto/rand"
 	"encoding/base64"
 	"errors"
+	"fmt"
 	"net/http"
 
 	"github.com/jackc/pgx/v5"
@@ -13,8 +14,9 @@ import (
 )
 
 type CreateInvitationType struct {
-	ServerId string `json:"server_id"`
-	MaxUsers uint8  `json:"max_users"`
+	ServerId  string `json:"server_id"`
+	MaxUsers  uint8  `json:"max_users"`
+	CreatedBy string `json:"created_by"`
 }
 
 func generateInviteCode() (string, error) {
@@ -28,7 +30,8 @@ func generateInviteCode() (string, error) {
 	return code, nil                                      // e.g. "aB3xK9mZ2Q"
 }
 
-func CreateInvitationCode(ctx context.Context, db *databases.Container, p *CreateInvitationType) (string, *httputil.ErrorResponse) {
+func CreateInvitationCode(ctx context.Context, db *databases.Container, p CreateInvitationType) (string, *httputil.ErrorResponse) {
+	fmt.Println("Payload -> ", p)
 	if p.ServerId == "" {
 		return "", &httputil.ErrorResponse{
 			Err:  errors.New("Server ID is missing"),
@@ -60,7 +63,7 @@ func CreateInvitationCode(ctx context.Context, db *databases.Container, p *Creat
 			Code: http.StatusInternalServerError,
 		}
 	}
-	err = db.Postgres.QueryRow(ctx, "INSERT INTO invitations(code,server_id,max_users) VALUES($1,$2,$3) returning code;", generatedCode, p.ServerId, p.MaxUsers).Scan(&code)
+	err = db.Postgres.QueryRow(ctx, "INSERT INTO invitations(code,server_id,max_users,created_by) VALUES($1,$2,$3,$4) returning code;", generatedCode, p.ServerId, p.MaxUsers, p.CreatedBy).Scan(&code)
 	if err != nil {
 		return "", &httputil.ErrorResponse{
 			Err:  err,

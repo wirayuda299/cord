@@ -10,7 +10,9 @@ import (
 func RegisterInvitationRoutes(r *mux.Router, ih *handlers.InvitationHandler) {
 	ir := r.PathPrefix("/invitation").Subrouter()
 
+	ir.HandleFunc("/find-one", ih.FindInvitationByCode).Methods(http.MethodGet)
 	ir.HandleFunc("/find-all", ih.FindAllInvitations).Methods(http.MethodGet)
 	ir.HandleFunc("/join", ih.JoinServerByCode).Methods(http.MethodPost)
 	ir.HandleFunc("/create", ih.CreateInvitationCode).Methods(http.MethodPost)
+	ir.HandleFunc("/delete", ih.DeleteInvitationCode).Methods(http.MethodDelete)
 }

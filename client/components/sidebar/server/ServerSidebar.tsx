@@ -17,7 +17,7 @@ import Link from "next/link"
 import ChannelList from "./ChannelList"
 import { getAllChannel } from "@/lib/server/data/channels"
 
-export default async function ServerSidebar({ serverId, }: { serverId: string }) {
+export default async function ServerSidebar({ serverId }: { serverId: string }) {
   const channels = await getAllChannel(serverId)
 
   return (
@@ -37,7 +37,7 @@ export default async function ServerSidebar({ serverId, }: { serverId: string })
             <DropdownMenuContent className="w-52 p-2 bg-sidebar-secondary shadow backdrop-blur-lg text-white space-y-3">
               <InviteFriendDialog />
               <CreateChannel serverID={serverId} />
-              <ServerSettingDialog />
+              <ServerSettingDialog serverId={serverId} />
               <CreateCategoryDialog serverId={serverId} userId="usr_001" />
               <Link
                 href="/"
