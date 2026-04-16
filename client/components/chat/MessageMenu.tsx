@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, useCallback, memo } from "react";
+import { useEffect, useRef, useState, useCallback, memo, useMemo } from "react";
 import {
   Bookmark,
   Copy,
@@ -124,7 +124,7 @@ function useMenuActions(
   const selectMessage = useAppStore((m) => m.setSelectedMsg);
   const pathname = usePathname();
 
-  return [
+  return useMemo(() => [
     {
       icon: <Reply size={15} />,
       label: "Reply",
@@ -197,7 +197,7 @@ function useMenuActions(
       },
       danger: true,
     },
-  ];
+  ], [message, userId, onEdit, onDelete, onForward, onReaction, onBookmark, onMore, selectMessage, pathname]);
 }
 
 function MessageMenu(props: MessageMenuProps) {
@@ -250,10 +250,11 @@ function MessageMenu(props: MessageMenuProps) {
   }, []);
 
   useEffect(() => {
-    // checkFlip();
+    const raf = requestAnimationFrame(checkFlip);
     window.addEventListener("scroll", checkFlip, true);
     window.addEventListener("resize", checkFlip);
     return () => {
+      cancelAnimationFrame(raf);
       window.removeEventListener("scroll", checkFlip, true);
       window.removeEventListener("resize", checkFlip);
     };

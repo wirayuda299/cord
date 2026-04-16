@@ -11,7 +11,7 @@ export type StoreState = {
 
 export type StoreActions = {
   setSelectedMsg: (m: Message | null) => void
-  setShowMemberPanel: (isOpen: boolean) => void
+  toggleMemberPanel: () => void
   setSelectedCategory: (c: Category | null) => void
 }
 
@@ -27,7 +27,7 @@ export const useAppStore = create<AppStore>(
   ssrSafe<AppStore>((set) => ({
     ...defaultInitState,
     setSelectedMsg: (m: Message | null) => set({ selectedMsg: m }),
-    setShowMemberPanel: (isOpen: boolean) => set({ isMemberOpen: isOpen }),
+    toggleMemberPanel: () => set((state) => ({ isMemberOpen: !state.isMemberOpen })),
     setSelectedCategory: (c: Category | null) => set({ selectedCategory: c })
   }))
 )

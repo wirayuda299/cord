@@ -39,7 +39,7 @@ export async function getAllChannel(serverID: string): Promise<GroupedChannels> 
     const res = await fetch(`${base}/channel/find-all?serverID=${serverID}`, {
       method: "GET",
       headers: {
-        "Content-Type": "appliaction/json"
+        "Content-Type": "application/json"
       },
       next: { tags: ["channels"] }
     })

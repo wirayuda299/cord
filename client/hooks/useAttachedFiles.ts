@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { validateFiles, MAX_FILES } from "@/lib/shared/file-validation";
 
 type AttachedFile = {
@@ -19,12 +19,14 @@ export function useAttachedFiles(): UseAttachedFilesReturn {
   const [attachedFiles, setAttachedFiles] = useState<AttachedFile[]>([]);
   const [errors, setErrors] = useState<string[]>([]);
 
-  // Cleanup object URLs on unmount or file removal
+  const attachedFilesRef = useRef(attachedFiles);
+  attachedFilesRef.current = attachedFiles;
+
   useEffect(() => {
     return () => {
-      attachedFiles.forEach((f) => URL.revokeObjectURL(f.preview));
+      attachedFilesRef.current.forEach((f) => URL.revokeObjectURL(f.preview));
     };
-  }, [attachedFiles]);
+  }, []);
 
   const addFiles = useCallback((files: File[]) => {
     const { valid, errors: validationErrors } = validateFiles(

@@ -9,6 +9,15 @@ import Notification from "./_components/Notification"
 import PinnedMessages from "./_components/PinnedMessages"
 import SearchForm from "./_components/SearchForm"
 
+function isApiError(value: unknown): value is { error: string } {
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    "error" in value &&
+    typeof (value as { error: unknown }).error === "string"
+  )
+}
+
 export default async function ChannelDetail({
   params,
 }: {
@@ -21,11 +30,11 @@ export default async function ChannelDetail({
     getChannelById(channel_id)
   ])
 
-  if (messages && "error" in messages) {
+  if (isApiError(messages)) {
     return "Failed to fetch messages"
   }
 
-  if (channel && "error" in channel) {
+  if (isApiError(channel)) {
     return "Failed to fetch channel"
   }
 

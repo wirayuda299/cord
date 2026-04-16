@@ -3,6 +3,7 @@
 import { deletePinnedMessage } from "@/lib/server/actions/messages";
 import type { PinnedMessage } from "@/lib/types/chat";
 import { X } from "lucide-react";
+import { useCallback } from "react";
 
 export default function PinnedMessageItem({
   pinnedMessages,
@@ -10,15 +11,15 @@ export default function PinnedMessageItem({
   pinnedMessages: PinnedMessage[];
 }) {
 
-const handleDelete=async (id:string)=>{
-  try{
-    const res=await deletePinnedMessage(id)
-    console.log(res)
-  }catch(e){
-    alert(e)
-  }
+  const handleDelete = useCallback(async (id: string) => {
+    try {
+      const res = await deletePinnedMessage(id)
+      console.log(res)
+    } catch (e) {
+      alert(e)
+    }
 
-}
+  }, [])
   return (
     <>
       <header className="flex items-center justify-between bg-sidebar-primary sticky top-0 h-10 px-3">
@@ -41,8 +42,8 @@ const handleDelete=async (id:string)=>{
                 {m.content}
               </p>
             </div>
-          <button className='cursor-pointer' onClick={()=>handleDelete(m.id)}>
-            <X size={18}/>
+            <button className='cursor-pointer' onClick={() => handleDelete(m.id)}>
+              <X size={18} />
             </button>
           </li>
         ))}

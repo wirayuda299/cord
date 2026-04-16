@@ -7,15 +7,15 @@ import { useShallow } from "zustand/react/shallow";
 export default function MembersButton() {
 
 
-  const { isOpen, showMemberPanel } = useAppStore(
+  const { isOpen, toggleMemberPanel } = useAppStore(
     useShallow((state) => ({
       isOpen: state.isMemberOpen,
-      showMemberPanel: state.setShowMemberPanel,
+      toggleMemberPanel: state.toggleMemberPanel,
     })),
   );
 
   return (
-    <button className="cursor-pointer" onClick={() => showMemberPanel(!isOpen)}>
+    <button className="cursor-pointer" onClick={toggleMemberPanel}>
       <Users className={cn("text-sm text-gray-500 hover:text-white", isOpen ? "text-white" : "")} />
     </button>
   );

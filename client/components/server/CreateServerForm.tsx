@@ -2,7 +2,7 @@
 
 import { Edit, ImagePlus, Plus } from "lucide-react"
 import Image from "next/image"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -25,6 +25,15 @@ import { zodResolver } from "@hookform/resolvers/zod"
 
 export default function CreateServerForm() {
   const [preview, setPreview] = useState<string | null>(null)
+  const [imageFile, setImageFile] = useState<File | null>(null)
+
+  useEffect(() => {
+    if (!imageFile) return
+    const url = URL.createObjectURL(imageFile)
+    setPreview(url)
+    return () => URL.revokeObjectURL(url)
+  }, [imageFile])
+
   const form = useForm<CreateServerSchemaType>({
     resolver: zodResolver(createServerSchema as any),
     defaultValues: {
@@ -35,7 +44,7 @@ export default function CreateServerForm() {
   const handleImage = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
-    setPreview(URL.createObjectURL(file))
+    setImageFile(file)
   }
 
   const handleSubmit = async (data: CreateServerSchemaType) => {

@@ -4,11 +4,9 @@ import { Copy, Check, Trash2, Plus, Link, Users, Clock } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { copyText } from "@/lib/client/clipboard"
 import useSWR from "swr"
-import { getAllInvitation } from "@/lib/server/data/invitations"
 import { createInvitationCode } from "@/lib/server/actions/invitations"
 import { Invitation } from "@/lib/types/invitation"
-import { getPublicApiUrl } from "@/lib/env"
-import { deleteInvitationCode } from "@/lib/client/api/invitation"
+import { deleteInvitationCode, getAllInvitation } from "@/lib/client/api/invitation"
 
 
 

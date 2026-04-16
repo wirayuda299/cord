@@ -88,11 +88,14 @@ export function useWebSocket(
     };
   }, [serverId, channelId]);
 
-  const sendMessage = useCallback((msg: object) => {
-    if (wsRef.current?.readyState === WebSocket.OPEN) {
+  const sendMessage = useCallback((msg: object): boolean => {
+    if (wsRef.current?.readyState !== WebSocket.OPEN) return false;
+    try {
       wsRef.current.send(JSON.stringify(msg));
+      return true;
+    } catch {
+      return false;
     }
-    // Message not sent if WebSocket is not connected
   }, []);
 
   return { sendMessage, status };

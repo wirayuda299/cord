@@ -1,7 +1,7 @@
 import { getPublicApiUrl } from "@/lib/env"
 import { RolePermission } from "@/lib/types/permission"
 
-export async function findPermissionByRoleId(roleId: string): Promise<RolePermission> {
+export async function findPermissionByRoleId(roleId: string): Promise<RolePermission | null> {
 
   const base = getPublicApiUrl()
 
@@ -12,5 +12,8 @@ export async function findPermissionByRoleId(roleId: string): Promise<RolePermis
     }
   })
   const data = await res.json()
-  return data.data[0]
+  if (data.data.length >= 0) {
+    return data.data[0]
+  }
+  return null
 }
