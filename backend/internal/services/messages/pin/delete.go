@@ -10,7 +10,6 @@ import (
 )
 
 func DeletePinMessage(ctx context.Context, db *databases.Container, id string) *httputil.ErrorResponse {
-
 	if id == "" {
 		return &httputil.ErrorResponse{
 			Err:  errors.New("Message ID is missing"),
@@ -18,7 +17,7 @@ func DeletePinMessage(ctx context.Context, db *databases.Container, id string) *
 		}
 	}
 	var exists bool
-	if err := db.Postgres.QueryRow(ctx, "SELECT EXISTS(select 1 from channel_pinned_messages where message_id = $1)", id).Scan(&exists); err != nil {
+	if err := db.Postgres.QueryRow(ctx, "SELECT EXISTS(select 1 from pinned_messages where message_id = $1)", id).Scan(&exists); err != nil {
 		return &httputil.ErrorResponse{
 			Err:  err,
 			Code: http.StatusInternalServerError,
@@ -30,7 +29,7 @@ func DeletePinMessage(ctx context.Context, db *databases.Container, id string) *
 			Code: http.StatusNotFound,
 		}
 	}
-	if _, err := db.Postgres.Exec(ctx, "DELETE FROM channel_pinned_messages where message_id = $1", id); err != nil {
+	if _, err := db.Postgres.Exec(ctx, "DELETE FROM pinned_messages where message_id = $1", id); err != nil {
 		return &httputil.ErrorResponse{
 			Err:  err,
 			Code: http.StatusInternalServerError,

@@ -10,7 +10,7 @@ import (
 )
 
 func UpdatePermission(ctx context.Context, db *databases.Container, p *queue.UpdateRolePermissionPayload) *httputil.ErrorResponse {
-	_, err := db.Postgres.Exec(ctx, "UPDATE permission set permission = $1 where role_id = $2", p.Permission, p.RoleID)
+	_, err := db.Postgres.Exec(ctx, "UPDATE permissions set list = $1 where role_id = $2", p.Permission, p.RoleID)
 	if err != nil {
 		return &httputil.ErrorResponse{Err: err, Code: http.StatusInternalServerError}
 	}

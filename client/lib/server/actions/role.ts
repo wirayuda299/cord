@@ -45,6 +45,7 @@ export async function createRole(
       hoist,
       mentionable,
       permission_ids,
+      created_by: "usr_001"
     })
   })
 

@@ -1,4 +1,4 @@
-package services
+package messages
 
 import (
 	"context"
@@ -6,10 +6,19 @@ import (
 	"log"
 
 	"github.com/wirayuda299/backend/internal/databases"
+	"github.com/wirayuda299/backend/internal/services"
 )
 
-func Send(ctx context.Context, m Message, db *databases.Container, channelID string) (*MessageRow, error) {
-	var row MessageRow
+type Message struct {
+	Message         string  `json:"message"`
+	AttachmentURL   string  `json:"attachment_url"`
+	AttachmentID    string  `json:"attachment_id"`
+	UserID          string  `json:"user_id"`
+	ParentMessageId *string `json:"parent_message_id"`
+}
+
+func Send(ctx context.Context, m Message, db *databases.Container, channelID string) (*services.MessageRow, error) {
+	var row services.MessageRow
 
 	var parentMsgID *string
 	err := db.Postgres.QueryRow(ctx, `
@@ -48,7 +57,7 @@ func Send(ctx context.Context, m Message, db *databases.Container, channelID str
 		return nil, fmt.Errorf("error inserting message: %w", err)
 	}
 	row.ParentMsgID = parentMsgID
-	err = db.Postgres.QueryRow(ctx, "SELECT username, image FROM users WHERE id = $1", m.UserID).Scan(&row.Username, &row.Avatar)
+	err = db.Postgres.QueryRow(ctx, "SELECT username, avatar_url FROM users WHERE id = $1", m.UserID).Scan(&row.Username, &row.Avatar)
 	if err != nil {
 
 		log.Println("Error fetch user -> ", err.Error())

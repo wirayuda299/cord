@@ -51,7 +51,7 @@ export default function RolesSettings() {
       <aside className="min-h-screen">
         <RoleList
           selectedId={selectedRole?.id ?? null}
-          onSelect={(id, role) => {
+          onSelect={(_, role) => {
             setSelectedRole(role)
             setView("detail")
           }}

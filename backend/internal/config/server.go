@@ -41,7 +41,9 @@ func (s *Server) Run() {
 	ph := handlers.NewPermissionHandler(s.db)
 	mrh := handlers.NewMemberHandler(s.db)
 	ih := handlers.NewInvitationHandler(s.db)
+	uh := handlers.NewUserHandler(s.db)
 
+	routes.RegisterUserRoutes(r, uh)
 	routes.RegisterMemberRoutes(r, mrh)
 	routes.RegisterInvitationRoutes(r, ih)
 	routes.RegisterPermissionRoute(r, ph)

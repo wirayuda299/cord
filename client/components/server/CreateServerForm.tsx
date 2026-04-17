@@ -128,6 +128,7 @@ export default function CreateServerForm() {
                   </FieldLabel>
                   <Input
                     {...field}
+                    autoComplete="off"
                     placeholder="Enter server name"
                     className="bg-bg-input border-none text-white placeholder-gray-500 focus-visible:ring-1 focus-visible:ring-indigo-500"
                   />
@@ -144,10 +145,11 @@ export default function CreateServerForm() {
             </p>
 
             <div className="flex justify-between items-center pt-2">
-              <DialogClose className="text-gray-300 hover:text-white">
+              <DialogClose type="button" className="text-gray-300 hover:text-white">
                 Back
               </DialogClose>
               <Button
+                type="submit"
                 className="bg-indigo-500 hover:bg-indigo-600 text-white px-6 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Create

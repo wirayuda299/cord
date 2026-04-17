@@ -11,6 +11,7 @@ import (
 	"github.com/gorilla/websocket"
 	"github.com/wirayuda299/backend/internal/databases"
 	"github.com/wirayuda299/backend/internal/services"
+	"github.com/wirayuda299/backend/internal/services/messages"
 )
 
 const (
@@ -66,7 +67,7 @@ func (c *Client) ReadIncomingMessage(db *databases.Container) {
 		}
 		message = bytes.TrimSpace(bytes.ReplaceAll(message, newline, space))
 
-		var m services.Message
+		var m messages.Message
 		err = json.Unmarshal(message, &m)
 		if err != nil {
 			log.Println("error unmarshalling", err)
@@ -74,7 +75,7 @@ func (c *Client) ReadIncomingMessage(db *databases.Container) {
 		}
 
 		log.Println("Messages -> ", m)
-		row, err := services.Send(c.ctx, m, db, c.channelID)
+		row, err := messages.Send(c.ctx, m, db, c.channelID)
 		if err != nil {
 			log.Println("error sending message", err.Error())
 			continue

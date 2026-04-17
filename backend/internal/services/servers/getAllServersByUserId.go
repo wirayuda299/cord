@@ -17,7 +17,6 @@ type ServerResponse struct {
 }
 
 func GetAllServersByUserId(ctx context.Context, db *databases.Container, userId string) ([]ServerResponse, *httputil.ErrorResponse) {
-
 	if userId == "" {
 		return nil, &httputil.ErrorResponse{
 			Err:  errors.New("User ID is missing"),
@@ -26,7 +25,7 @@ func GetAllServersByUserId(ctx context.Context, db *databases.Container, userId 
 	}
 	var servers []ServerResponse
 
-	rows, err := db.Postgres.Query(ctx, `select id, name, COALESCE(logo, '') as logo from servers where owner_id = $1`, userId)
+	rows, err := db.Postgres.Query(ctx, `select id, name, COALESCE(logo, '') as logo from servers where created_by = $1`, userId)
 	if err != nil {
 		return nil, &httputil.ErrorResponse{
 			Err:  err,

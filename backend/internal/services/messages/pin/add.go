@@ -15,8 +15,7 @@ type PinMessagePayload struct {
 }
 
 func PinMessage(ctx context.Context, db *databases.Container, p *PinMessagePayload) *httputil.ErrorResponse {
-
-	if _, err := db.Postgres.Exec(ctx, "INSERT INTO channel_pinned_messages(message_id, channel_id,pinned_by) values($1,$2,$3)", p.MessageID, p.ChannelID, p.PinnedBy); err != nil {
+	if _, err := db.Postgres.Exec(ctx, "INSERT INTO pinned_messages(message_id, channel_id,pinned_by) values($1,$2,$3)", p.MessageID, p.ChannelID, p.PinnedBy); err != nil {
 		return &httputil.ErrorResponse{
 			Err:  err,
 			Code: http.StatusInternalServerError,

@@ -7,12 +7,15 @@ import (
 	"github.com/wirayuda299/backend/internal/databases"
 	"github.com/wirayuda299/backend/internal/httputil"
 	"github.com/wirayuda299/backend/internal/queue"
-	"github.com/wirayuda299/backend/internal/websocket"
 )
+
+type BroadcastDeleter interface {
+	BroadcastDelete(serverId, channelId, messageId string)
+}
 
 type DeleteMessagePayload struct {
 	ctx              context.Context
-	hub              *websocket.Hub
+	hub              BroadcastDeleter
 	container        *databases.Container
 	deleteImgPayload queue.DeleteImagePayload
 }

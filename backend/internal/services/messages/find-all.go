@@ -29,7 +29,7 @@ func GetAllMessages(ctx context.Context, db *databases.Container, channelId stri
     m.parent_msg_id,
     pm.content AS parent_content,
     pu.username AS parent_username,
-    u.image as avatar
+    u.avatar_url as avatar
     FROM messages as m
     JOIN users as u ON m.user_id = u.id
     LEFT JOIN messages as pm ON m.parent_msg_id = pm.id

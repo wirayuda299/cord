@@ -131,7 +131,7 @@ function ChatItem({ message, serverId, handleDelete }: ChatItemProps) {
           alt={message.username}
           width={40}
           height={40}
-          className="rounded-full mt-0.5 shrink-0"
+          className="rounded-full mt-0.5 shrink-0 size-9"
           loading="lazy"
         />
         <div className="flex flex-col min-w-0 flex-1">

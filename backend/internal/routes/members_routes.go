@@ -9,5 +9,7 @@ import (
 
 func RegisterMemberRoutes(r *mux.Router, mh *handlers.MemberHandler) {
 	mr := r.PathPrefix("/members").Subrouter()
+
 	mr.HandleFunc("/is-join", mh.IsUserJoined).Methods(http.MethodGet)
+	mr.HandleFunc("/find-all", mh.FindAllMemberInServer).Methods(http.MethodGet)
 }

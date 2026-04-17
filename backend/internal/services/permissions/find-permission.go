@@ -24,7 +24,7 @@ func FindPermissionByRoleId(ctx context.Context, db *databases.Container, roleID
 	}
 	var permissions []Permission
 
-	rows, err := db.Postgres.Query(ctx, "SELECT id,role_id,permission,created_at,updated_at from permission where role_id = $1", roleID)
+	rows, err := db.Postgres.Query(ctx, "SELECT id,role_id,list,created_at,updated_at from permissions where role_id = $1", roleID)
 	if err != nil {
 		return nil, &httputil.ErrorResponse{Err: err, Code: http.StatusInternalServerError}
 	}

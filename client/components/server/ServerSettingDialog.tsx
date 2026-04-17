@@ -15,7 +15,7 @@ import Invites from "./Invites"
 import SafetySetup from "./SafetySetup"
 import AuditLog from "./AuditLog"
 import Bans from "./Bans"
-import { useParams, useSearchParams } from "next/navigation"
+import { useSearchParams } from "next/navigation"
 
 
 type SidebarItem = {
@@ -193,7 +193,7 @@ function ServerSettingDialog({ serverId }: { serverId: string }) {
 
             {active === "server profile" && <ServerProfile />}
             {active === "boost perks" && <BoostPerks />}
-            {active === "members" && <Members />}
+            {active === "members" && <Members serverID={serverId} />}
             {active === "roles" && <ServerRolesSettings />}
             {active === "invites" && <Invites serverID={serverId} />}
             {active === "safety setup" && <SafetySetup />}

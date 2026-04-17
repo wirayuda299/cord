@@ -12,6 +12,7 @@ export default async function MainSidebar() {
 
   const servers = await getAllServers(userId)
 
+  console.log(servers)
   return (
     <aside className="flex gap-5 min-w-20 flex-col items-center min-h-screen w-20 max-h-screen p-3 bg-overlay overflow-y-auto ">
       <Link

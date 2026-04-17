@@ -8,6 +8,7 @@ import { Role } from "@/lib/types/role"
 import useSWR from "swr"
 import { findPermissionByRoleId } from "@/lib/client/api/permissions"
 import { PERMISSION_LIST } from "@/constants/permissions"
+import { deleteRole } from "@/lib/client/api/roles"
 
 type Tab = "display" | "permissions" | "members"
 
@@ -44,7 +45,6 @@ function ReadOnlyToggle({ label, description, value }: {
 function DisplayTab({ role }: { role: Role }) {
   return (
     <div className="flex flex-col gap-6">
-      {/* Name + color */}
       <div className="flex flex-col gap-2">
         <label className="text-xs font-semibold uppercase tracking-widest text-white/40">
           Role Name
@@ -176,6 +176,18 @@ export default function RoleDetailView({
     { id: "members", label: "Members", icon: <Users size={13} /> },
   ]
 
+  const handleDelete = async () => {
+    try {
+
+      await deleteRole(role.id, "usr_001").then(r => {
+        alert("Role deleted")
+        onBack()
+      })
+    } catch (e) {
+      alert(e)
+    }
+  }
+
 
   return (
     <phantom-ui loading={isLoading}>
@@ -219,6 +231,7 @@ export default function RoleDetailView({
 
 
               <button
+                onClick={handleDelete}
                 type="button"
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-red-600! hover:bg-white/10 border border-transparent hover:border-white/10 transition-all"
               >

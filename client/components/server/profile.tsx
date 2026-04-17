@@ -116,6 +116,7 @@ export default function ServerProfile() {
         const uploaded = await uploadImage(attachedFiles[0].file)
         iconUrl = uploaded.url
         iconAssetId = uploaded.public_id
+        console.log({ uploaded })
       }
 
       const result = await updateServer({
@@ -136,7 +137,7 @@ export default function ServerProfile() {
         return
       }
 
-      form.reset(data)
+      form.reset({ ...data, icon: iconUrl })
       setSubmitStatus({ type: 'success', message: 'Changes saved!' })
       setTimeout(() => setSubmitStatus(null), 3000)
     } catch {

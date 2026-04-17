@@ -17,11 +17,3 @@ type MessageRow struct {
 	ParentContent  *string   `json:"parent_content"`
 	ParentUsername *string   `json:"parent_username"`
 }
-
-type Message struct {
-	Message         string  `json:"message"`
-	AttachmentURL   string  `json:"attachment_url"`
-	AttachmentID    string  `json:"attachment_id"`
-	UserID          string  `json:"user_id"`
-	ParentMessageId *string `json:"parent_message_id"`
-}

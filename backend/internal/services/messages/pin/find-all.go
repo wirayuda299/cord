@@ -24,7 +24,7 @@ func GetAllPinnedMessage(ctx context.Context, db *databases.Container, channelId
 			Code: http.StatusBadRequest,
 		}
 	}
-	rows, err := db.Postgres.Query(ctx, "SELECT m.id,m.content,u.username,u.id from channel_pinned_messages as cpm left join messages as m on m.id = cpm.message_id left join users as u on m.user_id = u.id where cpm.channel_id = $1", channelId)
+	rows, err := db.Postgres.Query(ctx, "SELECT m.id,m.content,u.username,u.id from pinned_messages as cpm left join messages as m on m.id = cpm.message_id left join users as u on m.user_id = u.id where cpm.channel_id = $1", channelId)
 	if err != nil {
 		return nil, &httputil.ErrorResponse{
 			Err:  err,

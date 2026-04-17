@@ -18,6 +18,36 @@ func NewRoleHandler(db *databases.Container) *RoleHandler {
 	return &RoleHandler{db: db}
 }
 
+func (rh *RoleHandler) AssignRole(w http.ResponseWriter, r *http.Request) {
+	var p roles.AssignRolePayload
+	if err := json.NewDecoder(r.Body).Decode(&p); err != nil {
+		httputil.WriteErrorResponse(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	if err := roles.AssignRole(r.Context(), rh.db, &p); err != nil {
+		httputil.WriteErrorResponse(w, err.Err.Error(), err.Code)
+		return
+	}
+
+	httputil.EncodeResponse(w, "Role assigned", http.StatusOK, nil)
+}
+
+func (rh *RoleHandler) DeleteRole(w http.ResponseWriter, r *http.Request) {
+	var p roles.DeleteRolePayload
+
+	if err := json.NewDecoder(r.Body).Decode(&p); err != nil {
+		httputil.WriteErrorResponse(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	if err := roles.DeleteRole(r.Context(), rh.db, &p); err != nil {
+		httputil.WriteErrorResponse(w, err.Err.Error(), err.Code)
+		return
+	}
+
+	httputil.EncodeResponse(w, "Role deleted", http.StatusOK, nil)
+}
+
 func (rh *RoleHandler) CreateRole(w http.ResponseWriter, r *http.Request) {
 	var p roles.CreateRolePayload
 	err := json.NewDecoder(r.Body).Decode(&p)

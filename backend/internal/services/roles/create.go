@@ -15,20 +15,26 @@ type CreateRolePayload struct {
 	Color         string   `json:"color"`
 	Icon          string   `json:"icon"`
 	Hoist         bool     `json:"hoist"`
+	CreatedBy     string   `json:"created_by"`
 	Mentionable   bool     `json:"mentionable"`
 	PermissionIDs []string `json:"permission_ids"`
+	IconID        string   `json:"icon_id"`
 }
 
 func CreateRole(ctx context.Context, db *databases.Container, p *CreateRolePayload) *httputil.ErrorResponse {
 	if p.Name == "" {
-		return &httputil.ErrorResponse{Err: errors.New("Role name is required")}
+		return &httputil.ErrorResponse{Err: errors.New("Role name is required"), Code: http.StatusBadRequest}
 	}
 
 	if p.ServerID == "" {
-		return &httputil.ErrorResponse{Err: errors.New("Server ID is required")}
+		return &httputil.ErrorResponse{Err: errors.New("Server ID is required"), Code: http.StatusBadRequest}
 	}
 	if p.Color == "" {
-		return &httputil.ErrorResponse{Err: errors.New("Color is required")}
+		return &httputil.ErrorResponse{Err: errors.New("Color is required"), Code: http.StatusBadRequest}
+	}
+
+	if p.CreatedBy == "" {
+		return &httputil.ErrorResponse{Err: errors.New("User ID is missing"), Code: http.StatusBadRequest}
 	}
 
 	var id string
@@ -39,12 +45,12 @@ func CreateRole(ctx context.Context, db *databases.Container, p *CreateRolePaylo
 	}
 	defer tx.Rollback(ctx)
 
-	err = tx.QueryRow(ctx, "INSERT INTO roles(name,server_id,role_color,icon,hoist,mentionable) values($1,$2,$3,$4,$5,$6) returning id;", p.Name, p.ServerID, p.Color, p.Icon, p.Hoist, p.Mentionable).Scan(&id)
+	err = tx.QueryRow(ctx, "INSERT INTO roles(name,server_id,color,icon,hoist,mentionable,created_by,icon_id) values($1,$2,$3,$4,$5,$6,$7,$8) returning id;", p.Name, p.ServerID, p.Color, p.Icon, p.Hoist, p.Mentionable, p.CreatedBy, p.IconID).Scan(&id)
 	if err != nil {
 		return &httputil.ErrorResponse{Err: err, Code: http.StatusInternalServerError}
 	}
 
-	_, err = tx.Exec(ctx, "INSERT INTO permission(role_id,permission) values($1,$2)", id, p.PermissionIDs)
+	_, err = tx.Exec(ctx, "INSERT INTO permissions(role_id,list) values($1,$2)", id, p.PermissionIDs)
 	if err != nil {
 		return &httputil.ErrorResponse{Err: err, Code: http.StatusInternalServerError}
 	}

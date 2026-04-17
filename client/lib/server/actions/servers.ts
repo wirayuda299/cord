@@ -22,7 +22,10 @@ export async function updateServer({ serverId, payload, fields }: UpdateServerPr
 
   const update: Partial<typeof payload> = {}
   if (fields.name) update.name = payload.name
-  if (fields.icon) update.icon = payload.icon
+  if (fields.icon) {
+    update.icon = payload.icon
+    update.icon_asset_id = payload.icon_asset_id
+  }
   if (fields.banner) update.banner_colors = payload.banner_colors
   if (fields.description) update.description = payload.description
   if (fields.private) update.private = payload.private

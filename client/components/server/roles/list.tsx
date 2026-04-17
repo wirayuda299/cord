@@ -17,7 +17,7 @@ export default function RoleList({
   memberCounts: Record<string, number>
 }) {
   const params = useParams()
-  const { data: roles, isLoading } = useSWR("/api/roles", () => getAllRoles(params.id as string))
+  const { data: roles, isLoading, mutate } = useSWR("/api/roles", () => getAllRoles(params.id as string))
   return (
     <phantom-ui loading={isLoading}>
       <div className="w-52 shrink-0 border-r border-white/5 flex flex-col h-screen">
@@ -30,7 +30,10 @@ export default function RoleList({
           </div>
           <button
             type="button"
-            onClick={onCreateClick}
+            onClick={() => {
+              onCreateClick()
+              mutate()
+            }}
             className="w-full flex items-center gap-2 px-3 py-2 rounded-lg bg-white/5 hover:bg-white/10 text-white/60 hover:text-white text-xs font-medium transition-colors"
           >
             <Plus size={13} />

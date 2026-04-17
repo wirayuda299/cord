@@ -34,7 +34,7 @@ func (sh *ServerHandler) JoinServer(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	httputil.EncodeResponse(w, "Sucess", http.StatusOK, nil)
+	httputil.EncodeResponse(w, "Success", http.StatusOK, nil)
 }
 
 func (sh *ServerHandler) GetServerByID(w http.ResponseWriter, r *http.Request) {

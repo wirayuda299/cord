@@ -38,7 +38,7 @@ func UpdateRole(ctx context.Context, db *databases.Container, p UpdatePayload) *
 		idx++
 	}
 	if p.Color != nil {
-		setClauses = append(setClauses, fmt.Sprintf("role_color = $%d", idx))
+		setClauses = append(setClauses, fmt.Sprintf("color = $%d", idx))
 		args = append(args, *p.Color)
 		idx++
 	}

@@ -30,7 +30,7 @@ func GetServerByID(db *databases.Container, ctx context.Context, serverID string
 
 	var server Server
 
-	err := db.Postgres.QueryRow(ctx, "SELECT id,name,logo,logo_asset_id,owner_id,banner,banner_asset_id,description, private,banner_colors from servers where id = $1", serverID).Scan(&server.Id, &server.Name, &server.Logo, &server.LogoID, &server.OwnerID, &server.Banner, &server.BannerID, &server.Description, &server.Private, &server.BannerColors)
+	err := db.Postgres.QueryRow(ctx, "SELECT id,name,logo,logo_id,created_by,banner,banner_id,description, private,banner_colors from servers where id = $1", serverID).Scan(&server.Id, &server.Name, &server.Logo, &server.LogoID, &server.OwnerID, &server.Banner, &server.BannerID, &server.Description, &server.Private, &server.BannerColors)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, &httputil.ErrorResponse{Err: errors.New("Server not found"), Code: http.StatusNotFound}

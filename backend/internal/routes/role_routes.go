@@ -10,7 +10,9 @@ import (
 func RegisterRoleRoute(r *mux.Router, rh *handlers.RoleHandler) {
 	rs := r.PathPrefix("/roles").Subrouter()
 
+	rs.HandleFunc("", rh.DeleteRole).Methods(http.MethodDelete)
 	rs.HandleFunc("/create", rh.CreateRole).Methods(http.MethodPost)
+	rs.HandleFunc("/assign", rh.AssignRole).Methods(http.MethodPost)
 	rs.HandleFunc("/update", rh.UpdateRole).Methods(http.MethodPatch)
 	rs.HandleFunc("/find-all", rh.GetAllRole).Methods(http.MethodGet)
 }

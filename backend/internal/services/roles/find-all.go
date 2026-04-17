@@ -26,7 +26,7 @@ func GetAllRoles(ctx context.Context, db *databases.Container, serverID string) 
 
 	var roles []Role
 
-	rows, err := db.Postgres.Query(ctx, "select id,name,server_id,role_color,icon,hoist,mentionable from roles where server_id = $1", serverID)
+	rows, err := db.Postgres.Query(ctx, "select id,name,server_id,color,icon,hoist,mentionable from roles where server_id = $1", serverID)
 	if err != nil {
 		return nil, &httputil.ErrorResponse{Err: err, Code: http.StatusInternalServerError}
 	}

@@ -16,6 +16,16 @@ func NewMemberHandler(db *databases.Container) *MemberHandler {
 	return &MemberHandler{db: db}
 }
 
+func (mh *MemberHandler) FindAllMemberInServer(w http.ResponseWriter, r *http.Request) {
+	members, err := members.FindAllMemberInServer(r.Context(), mh.db, r.URL.Query().Get("serverID"))
+	if err != nil {
+		httputil.WriteErrorResponse(w, err.Err.Error(), err.Code)
+		return
+	}
+
+	httputil.EncodeResponse(w, "Member found", http.StatusOK, members)
+}
+
 func (mh *MemberHandler) IsUserJoined(w http.ResponseWriter, r *http.Request) {
 	joined, err := members.IsUserJoinedServer(r.Context(), mh.db, r.URL.Query().Get("user_id"), r.URL.Query().Get("server_id"))
 	if err != nil {

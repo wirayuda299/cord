@@ -51,26 +51,16 @@ func UpdateServer(ctx context.Context, db *databases.Container, p *UpdateServerP
 		args = append(args, *p.Private)
 		idx++
 	}
-	if p.Icon != nil && *p.Icon != "" {
-		// Enqueue old logo deletion in the background
-		var currentLogoID *string
-		err := db.Postgres.QueryRow(ctx, "SELECT logo_asset_id FROM servers WHERE id = $1", p.ServerID).Scan(&currentLogoID)
-		if err != nil {
-			return &httputil.ErrorResponse{Err: err, Code: http.StatusInternalServerError}
-		}
-		if currentLogoID != nil && *currentLogoID != "" {
-			err := queue.PushJob(ctx, db.Redis, queue.DeleteImage, queue.DeleteImagePayload{
-				PublicID: *currentLogoID,
-				ServerID: p.ServerID,
-			})
-			if err != nil {
-				return &httputil.ErrorResponse{Err: err, Code: http.StatusInternalServerError}
-			}
+	var oldLogoID *string
+	if p.Icon != nil && *p.Icon != "" && p.IconAssetID != nil {
+		findLogoErr := db.Postgres.QueryRow(ctx, "SELECT logo_id FROM servers WHERE id = $1", p.ServerID).Scan(&oldLogoID)
+		if findLogoErr != nil {
+			return &httputil.ErrorResponse{Err: findLogoErr, Code: http.StatusInternalServerError}
 		}
 
 		setClauses = append(setClauses,
 			fmt.Sprintf("logo = $%d", idx),
-			fmt.Sprintf("logo_asset_id = $%d", idx+1),
+			fmt.Sprintf("logo_id = $%d", idx+1),
 		)
 		args = append(args, *p.Icon, *p.IconAssetID)
 		idx += 2
@@ -89,6 +79,15 @@ func UpdateServer(ctx context.Context, db *databases.Container, p *UpdateServerP
 
 	if _, err := db.Postgres.Exec(ctx, query, args...); err != nil {
 		return &httputil.ErrorResponse{Err: err, Code: http.StatusInternalServerError}
+	}
+
+	if oldLogoID != nil && *oldLogoID != "" {
+		if err := queue.PushJob(ctx, db.Redis, queue.DeleteImage, queue.DeleteImagePayload{
+			PublicID: *oldLogoID,
+			ServerID: p.ServerID,
+		}); err != nil {
+			return &httputil.ErrorResponse{Err: err, Code: http.StatusInternalServerError}
+		}
 	}
 
 	return nil
