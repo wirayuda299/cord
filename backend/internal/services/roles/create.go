@@ -3,6 +3,7 @@ package roles
 import (
 	"context"
 	"errors"
+	"log"
 	"net/http"
 
 	"github.com/wirayuda299/backend/internal/databases"
@@ -43,7 +44,11 @@ func CreateRole(ctx context.Context, db *databases.Container, p *CreateRolePaylo
 	if err != nil {
 		return &httputil.ErrorResponse{Err: err, Code: http.StatusInternalServerError}
 	}
-	defer tx.Rollback(ctx)
+	defer func() {
+		if err := tx.Rollback(ctx); err != nil {
+			log.Println("error -> ", err)
+		}
+	}()
 
 	err = tx.QueryRow(ctx, "INSERT INTO roles(name,server_id,color,icon,hoist,mentionable,created_by,icon_id) values($1,$2,$3,$4,$5,$6,$7,$8) returning id;", p.Name, p.ServerID, p.Color, p.Icon, p.Hoist, p.Mentionable, p.CreatedBy, p.IconID).Scan(&id)
 	if err != nil {

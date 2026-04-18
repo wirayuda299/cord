@@ -1,7 +1,6 @@
 import {
   ChevronDown,
   Copy,
-  Pen,
   UserPlus,
 } from "lucide-react"
 import {
@@ -13,7 +12,7 @@ import InviteFriendDialog from "@/components/server/InviteFriendDialog"
 import CreateChannel from "@/components/server/CreateChannel"
 import ServerSettingDialog from "@/components/server/ServerSettingDialog"
 import CreateCategoryDialog from "@/components/server/CreateCategoryDialog"
-import Link from "next/link"
+import EditPerServerProfileDialog from "@/components/server/EditPerServerProfileDialog"
 import ChannelList from "./ChannelList"
 import { getAllChannel } from "@/lib/server/data/channels"
 
@@ -39,13 +38,7 @@ export default async function ServerSidebar({ serverId }: { serverId: string }) 
               <CreateChannel serverID={serverId} />
               <ServerSettingDialog serverId={serverId} />
               <CreateCategoryDialog serverId={serverId} userId="usr_001" />
-              <Link
-                href="/"
-                className="w-full p-1.5 text-sm rounded flex justify-between items-center hover:bg-sidebar-primary/15"
-              >
-                <p>Edit Per-server profile</p>
-                <Pen size={20} />
-              </Link>
+              <EditPerServerProfileDialog serverId={serverId} userId="usr_001" />
               <button className="w-full p-1.5 text-sm rounded flex justify-between items-center hover:bg-sidebar-primary/15">
                 <p>Copy server ID</p>
                 <Copy size={20} />

@@ -81,6 +81,16 @@ func (sh *ServerHandler) UpdateServer(w http.ResponseWriter, r *http.Request) {
 	httputil.EncodeResponse(w, "Server updated successfully", http.StatusOK, nil)
 }
 
+func (sh *ServerHandler) BrowseServers(w http.ResponseWriter, r *http.Request) {
+	userId := r.URL.Query().Get("user_id")
+	res, err := servers.BrowseServers(r.Context(), sh.db, userId)
+	if err != nil {
+		httputil.WriteErrorResponse(w, err.Err.Error(), err.Code)
+		return
+	}
+	httputil.EncodeResponse(w, "Servers fetched successfully", http.StatusOK, res)
+}
+
 func (sh *ServerHandler) FindAllServersByUserId(w http.ResponseWriter, r *http.Request) {
 	user_id := r.URL.Query().Get("user_id")
 
@@ -91,4 +101,31 @@ func (sh *ServerHandler) FindAllServersByUserId(w http.ResponseWriter, r *http.R
 		return
 	}
 	httputil.EncodeResponse(w, "Servers fetched sucessfully", http.StatusOK, res)
+}
+
+func (sh *ServerHandler) GetServerProfile(w http.ResponseWriter, r *http.Request) {
+	serverID := r.URL.Query().Get("server_id")
+	userID := r.URL.Query().Get("user_id")
+
+	profile, err := servers.GetServerProfile(r.Context(), sh.db, serverID, userID)
+	if err != nil {
+		httputil.WriteErrorResponse(w, err.Err.Error(), err.Code)
+		return
+	}
+	httputil.EncodeResponse(w, "Profile found", http.StatusOK, profile)
+}
+
+func (sh *ServerHandler) UpdateServerProfile(w http.ResponseWriter, r *http.Request) {
+	var p servers.UpdateServerProfilePayload
+	if err := json.NewDecoder(r.Body).Decode(&p); err != nil {
+		httputil.WriteErrorResponse(w, "Invalid request payload", http.StatusBadRequest)
+		return
+	}
+	defer r.Body.Close()
+
+	if err := servers.UpdateServerProfile(r.Context(), sh.db, &p); err != nil {
+		httputil.WriteErrorResponse(w, err.Err.Error(), err.Code)
+		return
+	}
+	httputil.EncodeResponse(w, "Profile updated successfully", http.StatusOK, nil)
 }

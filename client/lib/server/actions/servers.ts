@@ -46,6 +46,24 @@ export async function updateServer({ serverId, payload, fields }: UpdateServerPr
   return { error: null }
 }
 
+export async function joinServer(server_id: string, user_id: string) {
+  if (!server_id) return { error: "Server ID is missing" }
+  if (!user_id) return { error: "User ID is missing" }
+
+  const base = getPublicApiUrl()
+  const res = await fetch(`${base}/server/join`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ server_id, user_id }),
+  })
+
+  if (!res.ok) {
+    return { error: (await res.json()).message }
+  }
+  updateTag("servers")
+  return { error: null }
+}
+
 export async function createServer(name: string, ownerId: string) {
   if (name === "") {
     return { error: "Server name is required" }

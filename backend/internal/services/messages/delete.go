@@ -14,28 +14,27 @@ type BroadcastDeleter interface {
 }
 
 type DeleteMessagePayload struct {
-	ctx              context.Context
-	hub              BroadcastDeleter
-	container        *databases.Container
-	deleteImgPayload queue.DeleteImagePayload
+	Ctx              context.Context
+	Hub              BroadcastDeleter
+	db               *databases.Container
+	DeleteImgPayload queue.DeleteImagePayload
 }
 
 func DeleteMessage(p *DeleteMessagePayload) *httputil.ErrorResponse {
-
-	if _, deleteErr := p.container.Postgres.Exec(p.ctx, "DELETE FROM messages WHERE id = $1", p.deleteImgPayload.ID); deleteErr != nil {
+	if _, deleteErr := p.db.Postgres.Exec(p.Ctx, "DELETE FROM messages WHERE id = $1", p.DeleteImgPayload.ID); deleteErr != nil {
 		return &httputil.ErrorResponse{
 			Err:  deleteErr,
 			Code: http.StatusInternalServerError,
 		}
 	}
-	if p.deleteImgPayload.PublicID != "" {
-		if err := queue.PushJob(p.ctx, p.container.Redis, queue.DeleteImage, p); err != nil {
+	if p.DeleteImgPayload.PublicID != "" {
+		if err := queue.PushJob(p.Ctx, p.db.Redis, queue.DeleteImage, p); err != nil {
 			return &httputil.ErrorResponse{
 				Err:  err,
 				Code: http.StatusInternalServerError,
 			}
 		}
 	}
-	p.hub.BroadcastDelete(p.deleteImgPayload.ServerID, p.deleteImgPayload.ChannelID, p.deleteImgPayload.ID)
+	p.Hub.BroadcastDelete(p.DeleteImgPayload.ServerID, p.DeleteImgPayload.ChannelID, p.DeleteImgPayload.ID)
 	return nil
 }

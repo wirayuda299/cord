@@ -3,6 +3,7 @@ package invitations
 import (
 	"context"
 	"errors"
+	"log"
 	"net/http"
 
 	"github.com/jackc/pgx/v5"
@@ -19,7 +20,11 @@ func JoinServerWithInvitationCode(ctx context.Context, db *databases.Container, 
 		return &httputil.ErrorResponse{Err: err, Code: http.StatusInternalServerError}
 	}
 
-	defer tx.Rollback(ctx)
+	defer func() {
+		if err := tx.Rollback(ctx); err != nil {
+			log.Println(err)
+		}
+	}()
 
 	err = tx.QueryRow(ctx, `
 		WITH invite AS (

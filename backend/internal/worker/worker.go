@@ -77,7 +77,6 @@ func handleJob(ctx context.Context, db *databases.Container, job queue.Job) erro
 	switch job.Type {
 
 	case queue.CreateDefaultServerProfile:
-
 		log.Println("📦 Raw payload:", string(job.Payload))
 		var p queue.CreateDefaultServerProfilePayload
 		if err := json.Unmarshal(job.Payload, &p); err != nil {

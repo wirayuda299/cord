@@ -63,10 +63,8 @@ export default function ChatList({
   }, [])
 
   return (
-    <div className="flex h-screen ">
-      <div
-        className={cn("flex-1 ", messages.length > 0 ? "overflow-y-auto" : "overflow-hidden")}
-      >
+    <div className="flex h-screen">
+      <div className={cn("flex-1 ", messages.length > 0 ? "overflow-y-auto" : "overflow-hidden")} >
         <ChannelHeader channel={channel} />
 
         <ScrollArea>
@@ -97,7 +95,7 @@ export default function ChatList({
           )}
           <ChatForm
             channelName={channel.name}
-            channelId={channel.channel_id}
+            channelId={channel.id}
             serverId={serverId}
             handleMessages={handleMessages}
             handleDelete={handleDelete}

@@ -14,7 +14,6 @@ func main() {
 
 	ctx := context.Background()
 	container, err := databases.NewContainer(ctx)
-
 	if err != nil {
 		panic(err)
 	}
@@ -23,5 +22,4 @@ func main() {
 
 	srv := config.NewServer(container)
 	srv.Run()
-
 }

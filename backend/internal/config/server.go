@@ -30,9 +30,6 @@ func (s *Server) Run() {
 
 	middleware.SetupMiddleware(r)
 
-	r.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("Hello world"))
-	})
 	ch := handlers.NewChannelHandler(s.db)
 	categoryHandler := handlers.NewCategoryHandler(s.db)
 	sh := handlers.NewServerHandler(s.db)

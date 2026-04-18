@@ -1,8 +1,9 @@
-async function joinServerDirect(){
+
+async function joinServerDirect() {
   for (let i = 2; i < 20; i++) {
     const payload = {
-      user_id:"usr_00"+i,
-      server_id:"03ff2547-da15-4e07-ad0a-5f8f4dceff0d"
+      user_id: "usr_00" + i,
+      server_id: "03ff2547-da15-4e07-ad0a-5f8f4dceff0d"
     }
 
     let attempts = 0
@@ -19,11 +20,9 @@ async function joinServerDirect(){
         })
 
 
-         if (!res.ok) {
-    const body = await res.text()
-    console.error(`Failed for ${payload.user_id}:`, body)  // add this
-    throw new Error(`HTTP ${res.status}`)
-  }
+        if (!res.ok) {
+          throw new Error(`HTTP ${res.status}`)
+        }
 
 
         break
@@ -40,6 +39,6 @@ async function joinServerDirect(){
   }
 }
 
-(async ()=>{
+(async () => {
   await joinServerDirect()
 })()

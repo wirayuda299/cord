@@ -3,6 +3,7 @@ package invitations
 import (
 	"context"
 	"errors"
+	"log"
 	"net/http"
 
 	"github.com/wirayuda299/backend/internal/databases"
@@ -26,7 +27,11 @@ func DeleteInvitationCode(ctx context.Context, db *databases.Container, p *Delet
 	if err != nil {
 		return &httputil.ErrorResponse{Err: err, Code: http.StatusInternalServerError}
 	}
-	defer tx.Rollback(ctx)
+	defer func() {
+		if err := tx.Rollback(ctx); err != nil {
+			log.Printf("Error rollback invitation delete -> %s", err)
+		}
+	}()
 
 	var exist bool
 	err = tx.QueryRow(ctx, "SELECT EXISTS(select 1 from invitations where code = $1)", p.Code).Scan(&exist)

@@ -75,6 +75,19 @@ func (rh *RoleHandler) GetAllRole(w http.ResponseWriter, r *http.Request) {
 	httputil.EncodeResponse(w, "Roles found", http.StatusOK, roles)
 }
 
+func (rh *RoleHandler) UnassignRole(w http.ResponseWriter, r *http.Request) {
+	var p roles.UnassignRolePayload
+	if err := json.NewDecoder(r.Body).Decode(&p); err != nil {
+		httputil.WriteErrorResponse(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	if err := roles.UnassignRole(r.Context(), rh.db, &p); err != nil {
+		httputil.WriteErrorResponse(w, err.Err.Error(), err.Code)
+		return
+	}
+	httputil.EncodeResponse(w, "Role unassigned", http.StatusOK, nil)
+}
+
 func (rh *RoleHandler) UpdateRole(w http.ResponseWriter, r *http.Request) {
 	var p roles.UpdatePayload
 	if err := json.NewDecoder(r.Body).Decode(&p); err != nil {

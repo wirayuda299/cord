@@ -59,15 +59,11 @@ func Send(ctx context.Context, m Message, db *databases.Container, channelID str
 	row.ParentMsgID = parentMsgID
 	err = db.Postgres.QueryRow(ctx, "SELECT username, avatar_url FROM users WHERE id = $1", m.UserID).Scan(&row.Username, &row.Avatar)
 	if err != nil {
-
-		log.Println("Error fetch user -> ", err.Error())
 		return nil, fmt.Errorf("error fetching user: %w", err)
 	}
 	if parentMsgID != nil {
 		err = db.Postgres.QueryRow(ctx, "SELECT m.content, u.username from messages as m left join users as u on m.user_id = u.id where m.id=$1", parentMsgID).Scan(&row.ParentContent, &row.ParentUsername)
 		if err != nil {
-
-			log.Println("Error to get parent message -> ", err.Error())
 			return nil, fmt.Errorf("Failed to get parent message %w", err)
 		}
 	}

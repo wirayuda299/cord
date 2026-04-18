@@ -1,6 +1,7 @@
 import Image from "next/image"
 import Link from "next/link"
 import dynamic from "next/dynamic"
+import { Compass } from "lucide-react"
 
 import { getAllServers } from "@/lib/server/data/servers"
 import { cn } from "@/lib/utils"
@@ -12,7 +13,6 @@ export default async function MainSidebar() {
 
   const servers = await getAllServers(userId)
 
-  console.log(servers)
   return (
     <aside className="flex gap-5 min-w-20 flex-col items-center min-h-screen w-20 max-h-screen p-3 bg-overlay overflow-y-auto ">
       <Link
@@ -21,7 +21,6 @@ export default async function MainSidebar() {
       >
         <Image className="size-7" src="/vercel.svg" width={28} height={28} alt="logo" />
       </Link>
-
       <ul className="space-y-4">
         {servers?.map((server) => (
           <li key={server.id}>
@@ -48,6 +47,15 @@ export default async function MainSidebar() {
         ))}
 
         <CreateServerForm />
+
+        <Link
+          href="/browse"
+          title="Discover Servers"
+          className="flex items-center justify-center w-12 h-12 min-h-12 bg-(--server-item) transition-all duration-500 rounded-[50%] hover:rounded-[20%] hover:bg-(--discord-green)"
+        >
+          <Compass className="size-5 text-white" />
+        </Link>
+
       </ul>
     </aside>
   )

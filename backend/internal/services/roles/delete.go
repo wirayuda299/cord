@@ -3,6 +3,7 @@ package roles
 import (
 	"context"
 	"errors"
+	"log"
 	"net/http"
 
 	"github.com/jackc/pgx/v5"
@@ -27,7 +28,11 @@ func DeleteRole(ctx context.Context, db *databases.Container, p *DeleteRolePaylo
 	if err != nil {
 		return &httputil.ErrorResponse{Err: err, Code: http.StatusInternalServerError}
 	}
-	defer tx.Rollback(ctx)
+	defer func() {
+		if err := tx.Rollback(ctx); err != nil {
+			log.Printf("Error rollback -> %s", err)
+		}
+	}()
 	err = tx.QueryRow(ctx, "SELECT id, created_by from roles where id = $1", p.RoleId).Scan(&r.RoleId, &r.UserID)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
