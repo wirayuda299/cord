@@ -7,7 +7,7 @@ import RoleFormView from "./role-form-view"
 
 type View = "list" | "create" | "detail" | "edit"
 
-export default function RolesSettings() {
+export default function RolesSettings({ serverOwner }: { serverOwner: string }) {
   const [view, setView] = useState<View>("list")
   const [selectedRole, setSelectedRole] = useState<Role | null>(null)
   const [editPermissions, setEditPermissions] = useState<string[]>([])
@@ -32,6 +32,7 @@ export default function RolesSettings() {
     return (
       <div className="w-full">
         <RoleDetailView
+          serverOwner={serverOwner}
           role={selectedRole}
           onBack={() => {
             setView("list")

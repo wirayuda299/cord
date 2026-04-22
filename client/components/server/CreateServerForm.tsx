@@ -58,7 +58,7 @@ export default function CreateServerForm() {
       }
       alert("Server created")
     } catch (e) {
-      console.log(e)
+      alert(e)
     }
   }
 

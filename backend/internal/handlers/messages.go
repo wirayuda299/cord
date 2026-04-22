@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"encoding/json"
-	"log"
 	"net/http"
 
 	"github.com/wirayuda299/backend/internal/databases"
@@ -55,7 +54,6 @@ func (mh *MessageHandler) PinMessage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	log.Printf("PinnedMessagePayload After scan -> %v", p)
 	res := pin.PinMessage(r.Context(), mh.db, &p)
 	if res != nil {
 		httputil.WriteErrorResponse(w, res.Err.Error(), res.Code)

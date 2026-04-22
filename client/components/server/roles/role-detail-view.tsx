@@ -162,10 +162,12 @@ export default function RoleDetailView({
   role,
   onBack,
   onEdit,
+  serverOwner
 }: {
   role: Role
   onBack: () => void
-  onEdit: (permissions: string[]) => void
+  onEdit: (permissions: string[]) => void,
+  serverOwner: string
 }) {
   const { data, isLoading } = useSWR("/api/permission", () => findPermissionByRoleId(role.id))
   const [activeTab, setActiveTab] = useState<Tab>("display")
@@ -241,7 +243,6 @@ export default function RoleDetailView({
             </div>
           </div>
 
-          {/* Tabs */}
           <div className="flex items-center gap-1 border-b border-white/5 -mb-px">
             {tabs.map((tab) => (
               <button
@@ -266,7 +267,10 @@ export default function RoleDetailView({
         <div className="flex-1 overflow-y-auto px-8 py-6">
           {activeTab === "display" && <DisplayTab role={role} />}
           {activeTab === "permissions" && <PermissionsTab permissionIds={data?.permissions || []} />}
-          {activeTab === "members" && <MembersTab userRows={[]} />}
+          {activeTab === "members" && <MembersTab
+            role={role}
+            serverOwner={serverOwner}
+            serverID={role.server_id} />}
         </div>
       </div>
     </phantom-ui>

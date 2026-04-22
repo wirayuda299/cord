@@ -29,6 +29,7 @@ export type GroupedChannels = {
     id: string
     name: string
     logo?: string
+    created_by: string
   }
   uncategorized: Channel[]
   categories: CategoryWithChannels[]

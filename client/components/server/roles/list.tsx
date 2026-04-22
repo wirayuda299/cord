@@ -5,17 +5,19 @@ import { GripVertical, Plus } from "lucide-react"
 import { useParams } from "next/navigation"
 import useSWR from "swr"
 
+type Props = {
+  selectedId: string | null
+  onSelect: (id: string, role: Role) => void
+  onCreateClick: () => void
+  memberCounts: Record<string, number>
+}
+
 export default function RoleList({
   selectedId,
   onSelect,
   onCreateClick,
   memberCounts,
-}: {
-  selectedId: string | null
-  onSelect: (id: string, role: Role) => void
-  onCreateClick: () => void
-  memberCounts: Record<string, number>
-}) {
+}: Props) {
   const params = useParams()
   const { data: roles, isLoading, mutate } = useSWR("/api/roles", () => getAllRoles(params.id as string))
   return (

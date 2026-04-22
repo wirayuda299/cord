@@ -6,14 +6,14 @@ import { updateTag } from "next/cache"
 
 type UpdateServerProps = {
   serverId: string
-  payload: {
+  payload: Partial<{
     name: string
     icon: string
     icon_asset_id: string
     banner_colors: string[]
     description: string
     private: boolean
-  }
+  }>
   fields: Partial<Record<keyof UpdateServerType, boolean | boolean[]>>
 }
 

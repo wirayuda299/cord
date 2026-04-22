@@ -14,6 +14,26 @@ export async function getAllRoles(serverID: string): Promise<Role[]> {
   return data.data as Role[]
 }
 
+
+export type UserRole = {
+  user_id: string
+  username: string
+  avatar_url: string
+  role_id: string
+}
+
+export async function getAllMemberByRole(roleID: string): Promise<UserRole[]> {
+
+  const base = getPublicApiUrl()
+  const res = await fetch(`${base}/roles/find-all-members?role_id=${roleID}`, {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json"
+    }
+  })
+  return await res.json().then(d => d.data as UserRole[])
+}
+
 export async function assignRole(member_user_id: string, server_id: string, role_id: string, assigned_by: string) {
   const res = await fetch(`${getPublicApiUrl()}/roles/assign`, {
     method: "POST",

@@ -19,7 +19,7 @@ export default function CreateCategoryDialog({ serverId, userId }: { serverId: s
         return
       }
     } catch (e) {
-      console.log(e)
+      alert(e)
     } finally {
       reset()
     }

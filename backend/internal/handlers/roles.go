@@ -18,6 +18,16 @@ func NewRoleHandler(db *databases.Container) *RoleHandler {
 	return &RoleHandler{db: db}
 }
 
+func (rh *RoleHandler) FindAllMemberInRole(w http.ResponseWriter, r *http.Request) {
+	members, err := roles.FindAllMemberByRole(r.Context(), rh.db, r.URL.Query().Get("role_id"))
+	if err != nil {
+		httputil.WriteErrorResponse(w, err.Err.Error(), err.Code)
+		return
+	}
+
+	httputil.EncodeResponse(w, "Members found", http.StatusOK, members)
+}
+
 func (rh *RoleHandler) AssignRole(w http.ResponseWriter, r *http.Request) {
 	var p roles.AssignRolePayload
 	if err := json.NewDecoder(r.Body).Decode(&p); err != nil {

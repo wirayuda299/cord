@@ -20,13 +20,11 @@ import { cn } from "@/lib/utils"
 function ProfileCard({ username, avatar, bio }: { username: string; avatar: string; bio: string }) {
   return (
     <div className="rounded-2xl overflow-hidden w-full bg-[#111214] shadow-2xl ring-1 ring-white/10">
-      {/* Banner */}
       <div
         className="h-15"
         style={{ background: "linear-gradient(135deg,#5865f2 0%,#4752c4 50%,#3b3fa8 100%)" }}
       />
 
-      {/* Avatar */}
       <div className="px-3 relative">
         <div className="absolute -top-17 left-3 size-16 rounded-full ring-4 ring-[#111214] overflow-hidden bg-[#1e1f22] flex items-center justify-center">
           {avatar ? (
@@ -37,7 +35,6 @@ function ProfileCard({ username, avatar, bio }: { username: string; avatar: stri
         </div>
         <div className="absolute -top-5 left-13 size-3.5 rounded-full bg-[#23a559] ring-2 ring-[#111214]" />
 
-        {/* Name row */}
         <div className="mt-10 pb-2">
           <p className="font-bold text-[#f2f3f5] text-sm leading-tight truncate">
             {username || <span className="text-[#4e5058]">Display Name</span>}
@@ -70,7 +67,6 @@ function ProfileCard({ username, avatar, bio }: { username: string; avatar: stri
   )
 }
 
-// ─── Section ──────────────────────────────────────────────────────────────────
 
 function Section({ label, hint, children }: { label: string; hint?: string; children: React.ReactNode }) {
   return (
@@ -84,7 +80,6 @@ function Section({ label, hint, children }: { label: string; hint?: string; chil
   )
 }
 
-// ─── Editor ───────────────────────────────────────────────────────────────────
 
 type Props = { serverId: string; userId: string }
 
@@ -141,7 +136,6 @@ function ProfileEditorContent({ serverId, userId }: Props) {
       </DialogClose>
 
       <div className="flex flex-1 overflow-hidden">
-
         <div className="flex-1 overflow-y-auto px-10 py-10 pb-28">
           <phantom-ui loading={isLoading}>
             <div className="space-y-8">

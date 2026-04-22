@@ -21,6 +21,7 @@ export default function CreateChannel({ serverID }: { serverID: string }) {
   const selectedType = watch("type")
 
   const handleCreateChannel: SubmitHandler<CreateChannelPayload> = async (data) => {
+
     try {
       const res = await createChannel({
         name: data.name,
@@ -28,6 +29,7 @@ export default function CreateChannel({ serverID }: { serverID: string }) {
         type: data.type,
         serverID: serverID
       })
+
       if (res && res.error) {
         alert(res.error)
         return
@@ -71,18 +73,16 @@ export default function CreateChannel({ serverID }: { serverID: string }) {
                     <div
                       onClick={() => setValue("type", type.id as typeof selectedType)}
                       key={type.id}
-                      className={`flex items-center gap-3 px-3 py-3 rounded cursor-pointer border-[1.5px] transition-colors ${
-                        selectedType === type.id
-                          ? "bg-discord-brand/15 border-discord-brand"
-                          : "border-transparent hover:bg-white/4"
-                      }`}
+                      className={`flex items-center gap-3 px-3 py-3 rounded cursor-pointer border-[1.5px] transition-colors ${selectedType === type.id
+                        ? "bg-discord-brand/15 border-discord-brand"
+                        : "border-transparent hover:bg-white/4"
+                        }`}
                     >
                       <div
-                        className={`w-9 h-9 rounded-full flex items-center justify-center shrink-0 ${
-                          selectedType === type.id
-                            ? "bg-discord-brand text-white"
-                            : "bg-bg-input text-text-secondary"
-                        }`}
+                        className={`w-9 h-9 rounded-full flex items-center justify-center shrink-0 ${selectedType === type.id
+                          ? "bg-discord-brand text-white"
+                          : "bg-bg-input text-text-secondary"
+                          }`}
                       >
                         <type.icon size={18} />
                       </div>
@@ -97,11 +97,10 @@ export default function CreateChannel({ serverID }: { serverID: string }) {
                       </div>
 
                       <div
-                        className={`w-4.5 h-4.5 rounded-full border-2 flex items-center justify-center shrink-0 ${
-                          selectedType === type.id
-                            ? "border-discord-brand"
-                            : "border-text-placeholder"
-                        }`}
+                        className={`w-4.5 h-4.5 rounded-full border-2 flex items-center justify-center shrink-0 ${selectedType === type.id
+                          ? "border-discord-brand"
+                          : "border-text-placeholder"
+                          }`}
                       >
                         {selectedType === type.id && (
                           <div className="w-2 h-2 rounded-full bg-discord-brand" />

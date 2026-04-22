@@ -102,11 +102,7 @@ export default function FriendList() {
         <button
           className="cursor-pointer"
           onClick={() =>
-            copyText("https://discord.clone.app/1233").then(() =>
-              alert("Invitation code copied"),
-            )
-          }
-        >
+            copyText("https://discord.clone.app/1233").then(() => alert("Invitation code copied"))}>
           <Copy size={20} />
         </button>
       </div>

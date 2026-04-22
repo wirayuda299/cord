@@ -4,7 +4,6 @@ import { useState, useMemo } from "react"
 import { Ban, Search, ShieldOff, RotateCcw } from "lucide-react"
 import { cn } from "@/lib/utils"
 
-// ─── types & mock data ────────────────────────────────────────────────────────
 
 type BannedMember = {
   id: number
@@ -23,25 +22,23 @@ const d = (daysAgo: number) => {
 }
 
 const BANNED: BannedMember[] = [
-  { id: 1,  name: "draven_x",    initials: "DX", color: "bg-orange-500/20 text-orange-400",  reason: "Repeated harassment of members",      bannedAt: d(1),  bannedBy: "alexknight" },
-  { id: 2,  name: "wraithmode",  initials: "WM", color: "bg-zinc-500/20 text-zinc-400",      reason: "Spamming invite links",               bannedAt: d(3),  bannedBy: "frost_byte" },
-  { id: 3,  name: "cipher_k",    initials: "CK", color: "bg-zinc-500/20 text-zinc-400",      reason: "Sharing explicit content",            bannedAt: d(7),  bannedBy: "alexknight" },
-  { id: 4,  name: "solaris_7",   initials: "S7", color: "bg-zinc-500/20 text-zinc-400",      reason: null,                                  bannedAt: d(12), bannedBy: "sakura_r"   },
-  { id: 5,  name: "riptide99",   initials: "RT", color: "bg-zinc-500/20 text-zinc-400",      reason: "Doxxing attempt",                     bannedAt: d(18), bannedBy: "alexknight" },
-  { id: 6,  name: "ironclad",    initials: "IC", color: "bg-zinc-500/20 text-zinc-400",      reason: "Bot / automated account",             bannedAt: d(24), bannedBy: "frost_byte" },
-  { id: 7,  name: "shadowvex",   initials: "SV", color: "bg-red-500/20 text-red-400",        reason: "Threatening other members",           bannedAt: d(30), bannedBy: "alexknight" },
-  { id: 8,  name: "nullptr",     initials: "NP", color: "bg-gray-500/20 text-gray-400",      reason: "Evading a previous ban",              bannedAt: d(35), bannedBy: "sakura_r"   },
-  { id: 9,  name: "xpl0it",      initials: "XP", color: "bg-red-500/20 text-red-400",        reason: "Posting malware / phishing links",    bannedAt: d(42), bannedBy: "alexknight" },
-  { id: 10, name: "void_runner",  initials: "VR", color: "bg-gray-500/20 text-gray-400",     reason: null,                                  bannedAt: d(60), bannedBy: "frost_byte"  },
+  { id: 1, name: "draven_x", initials: "DX", color: "bg-orange-500/20 text-orange-400", reason: "Repeated harassment of members", bannedAt: d(1), bannedBy: "alexknight" },
+  { id: 2, name: "wraithmode", initials: "WM", color: "bg-zinc-500/20 text-zinc-400", reason: "Spamming invite links", bannedAt: d(3), bannedBy: "frost_byte" },
+  { id: 3, name: "cipher_k", initials: "CK", color: "bg-zinc-500/20 text-zinc-400", reason: "Sharing explicit content", bannedAt: d(7), bannedBy: "alexknight" },
+  { id: 4, name: "solaris_7", initials: "S7", color: "bg-zinc-500/20 text-zinc-400", reason: null, bannedAt: d(12), bannedBy: "sakura_r" },
+  { id: 5, name: "riptide99", initials: "RT", color: "bg-zinc-500/20 text-zinc-400", reason: "Doxxing attempt", bannedAt: d(18), bannedBy: "alexknight" },
+  { id: 6, name: "ironclad", initials: "IC", color: "bg-zinc-500/20 text-zinc-400", reason: "Bot / automated account", bannedAt: d(24), bannedBy: "frost_byte" },
+  { id: 7, name: "shadowvex", initials: "SV", color: "bg-red-500/20 text-red-400", reason: "Threatening other members", bannedAt: d(30), bannedBy: "alexknight" },
+  { id: 8, name: "nullptr", initials: "NP", color: "bg-gray-500/20 text-gray-400", reason: "Evading a previous ban", bannedAt: d(35), bannedBy: "sakura_r" },
+  { id: 9, name: "xpl0it", initials: "XP", color: "bg-red-500/20 text-red-400", reason: "Posting malware / phishing links", bannedAt: d(42), bannedBy: "alexknight" },
+  { id: 10, name: "void_runner", initials: "VR", color: "bg-gray-500/20 text-gray-400", reason: null, bannedAt: d(60), bannedBy: "frost_byte" },
 ]
 
-// ─── helpers ──────────────────────────────────────────────────────────────────
 
 function formatDate(date: Date) {
   return date.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
 }
 
-// ─── unban confirm ────────────────────────────────────────────────────────────
 
 function UnbanConfirm({ name, onConfirm, onCancel }: {
   name: string
@@ -85,13 +82,11 @@ function UnbanConfirm({ name, onConfirm, onCancel }: {
   )
 }
 
-// ─── ban row ─────────────────────────────────────────────────────────────────
 
 function BanRow({ member, onUnban }: { member: BannedMember; onUnban: () => void }) {
   return (
-    <div className="flex items-center gap-4 px-5 py-3.5 rounded-xl bg-white/[0.02] border border-white/5 hover:bg-white/[0.04] transition-colors group">
+    <div className="flex items-center gap-4 px-5 py-3.5 rounded-xl bg-white/2 border border-white/5 hover:bg-white/4 transition-colors group">
 
-      {/* Avatar */}
       <div className={cn(
         "size-10 rounded-full flex items-center justify-center text-xs font-semibold shrink-0",
         member.color
@@ -99,7 +94,6 @@ function BanRow({ member, onUnban }: { member: BannedMember; onUnban: () => void
         {member.initials}
       </div>
 
-      {/* Info */}
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
           <p className="text-sm font-medium text-white truncate">{member.name}</p>
@@ -119,7 +113,6 @@ function BanRow({ member, onUnban }: { member: BannedMember; onUnban: () => void
         </div>
       </div>
 
-      {/* Unban */}
       <button
         type="button"
         onClick={onUnban}
@@ -164,7 +157,6 @@ export default function Bans() {
         />
       )}
 
-      {/* Header */}
       <div className="px-8 pt-8 pb-5 shrink-0 border-b border-white/5">
         <div className="flex items-center justify-between mb-5">
           <div className="flex items-center gap-3">
@@ -195,7 +187,6 @@ export default function Bans() {
         </div>
       </div>
 
-      {/* List */}
       <div className="flex-1 overflow-y-auto px-8 py-4">
         {filtered.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-24 text-white/25 gap-3">
@@ -204,7 +195,6 @@ export default function Bans() {
           </div>
         ) : (
           <div className="flex flex-col gap-2">
-            {/* Column headers */}
             <div className="grid grid-cols-[auto_1fr_auto] gap-4 px-5 pb-1">
               <span />
               <p className="text-[11px] font-semibold uppercase tracking-widest text-white/25">Member</p>
@@ -221,7 +211,6 @@ export default function Bans() {
           </div>
         )}
       </div>
-
     </div>
   )
 }

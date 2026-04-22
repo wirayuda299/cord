@@ -17,11 +17,11 @@ import {
 } from "@/components/ui/dropdown-menu"
 import useSWR from "swr"
 import { getAllMembers, Member } from "@/lib/client/api/members"
-import { getAllRoles, assignRole, unassignRole } from "@/lib/client/api/roles"
+import { getAllRoles, unassignRole } from "@/lib/client/api/roles"
 import { Role } from "@/lib/types/role"
 import Image from "next/image"
+import useToggleRoleMember from "@/hooks/useToggleRole"
 
-// ─── Avatar ───────────────────────────────────────────────────────────────────
 
 function MemberAvatar({ member }: { member: Member }) {
   if (member.avatar_url) {
@@ -54,7 +54,6 @@ function MemberAvatar({ member }: { member: Member }) {
   )
 }
 
-// ─── Role badge ───────────────────────────────────────────────────────────────
 
 function RoleBadge({ name, color }: { name: string; color: string }) {
   return (
@@ -72,54 +71,35 @@ function RoleBadge({ name, color }: { name: string; color: string }) {
   )
 }
 
-// ─── Member row ───────────────────────────────────────────────────────────────
 
 type MemberRowProps = {
   member: Member
   allRoles: Role[]
   serverID: string
   onMutate: () => void
+  serverOwner: string
 }
 
-function MemberRow({ member, allRoles, serverID, onMutate }: MemberRowProps) {
-  const [pendingRoleId, setPendingRoleId] = useState<string | null>(null)
-  const [error, setError] = useState<string | null>(null)
-  const isOwner = member.role === "owner"
-
-  const handleToggleRole = async (role: Role) => {
-    if (isOwner || pendingRoleId) return
-    setError(null)
-    setPendingRoleId(role.id)
-    try {
-      if (member.role_id === role.id) {
-        await unassignRole(member.user_id, serverID, role.id)
-      } else {
-        if (member.role_id) {
-          await unassignRole(member.user_id, serverID, member.role_id)
-        }
-        await assignRole(member.user_id, serverID, role.id, "usr_001")
-      }
-      onMutate()
-    } catch (err) {
-      console.log(err)
-      setError(err instanceof Error ? err.message : "Failed")
-    } finally {
-      setPendingRoleId(null)
-    }
-  }
-
+function MemberRow({ member, allRoles, serverID, onMutate, serverOwner }: MemberRowProps) {
+  const isOwner = member.user_id === serverOwner
+  const { error, pendingRoleId, handleToggleRole, setError } = useToggleRoleMember({
+    member: {
+      user_id: member.user_id,
+      role_id: member.role_id,
+    },
+    serverID,
+    onMutate,
+    serverOwner,
+  })
   const handleRemoveRole = async () => {
     if (!member.role_id || pendingRoleId) return
     setError(null)
     const roleId = member.role_id
-    setPendingRoleId(roleId)
     try {
       await unassignRole(member.user_id, serverID, roleId)
       onMutate()
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to remove role")
-    } finally {
-      setPendingRoleId(null)
     }
   }
 
@@ -154,7 +134,6 @@ function MemberRow({ member, allRoles, serverID, onMutate }: MemberRowProps) {
           align="start"
           className="w-52 bg-[#111214] border-white/10 text-white p-1.5"
         >
-          {/* Roles section */}
           {!isOwner && allRoles.length > 0 && (
             <>
               <DropdownMenuGroup>
@@ -172,7 +151,10 @@ function MemberRow({ member, allRoles, serverID, onMutate }: MemberRowProps) {
                     <DropdownMenuItem
                       key={role.id}
                       className="flex items-center gap-2.5 px-2 py-1.5 rounded cursor-pointer text-xs hover:bg-white/5 focus:bg-white/5"
-                      onClick={() => handleToggleRole(role)}
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        handleToggleRole(role.id)
+                      }}
                     >
                       <span
                         className="size-2.5 rounded-full shrink-0 ring-1 ring-white/10"
@@ -237,9 +219,8 @@ function MemberRow({ member, allRoles, serverID, onMutate }: MemberRowProps) {
   )
 }
 
-// ─── Members panel ────────────────────────────────────────────────────────────
 
-export default function Members({ serverID }: { serverID: string }) {
+export default function Members({ serverID, serverOwner }: { serverOwner: string, serverID: string }) {
   const [query, setQuery] = useState("")
   const [roleFilter, setRoleFilter] = useState<string>("all")
 
@@ -264,8 +245,6 @@ export default function Members({ serverID }: { serverID: string }) {
   return (
     <phantom-ui loading={isLoading}>
       <div className="flex flex-col h-screen text-white overflow-hidden">
-
-        {/* Header */}
         <div className="px-8 pt-8 pb-4 shrink-0 space-y-4">
           <div className="flex items-end justify-between">
             <div>
@@ -280,7 +259,6 @@ export default function Members({ serverID }: { serverID: string }) {
             </div>
           </div>
 
-          {/* Search */}
           <div className="flex items-center gap-2 bg-[#1e1f22] border border-white/10 rounded-lg px-3 py-2 focus-within:border-[#5865f2] transition-colors">
             <Search size={13} className="text-[#6d6f78] shrink-0" />
             <input
@@ -300,7 +278,6 @@ export default function Members({ serverID }: { serverID: string }) {
             )}
           </div>
 
-          {/* Role filters */}
           <div className="flex items-center gap-1 flex-wrap">
             <button
               onClick={() => setRoleFilter("all")}
@@ -345,9 +322,8 @@ export default function Members({ serverID }: { serverID: string }) {
           </div>
         </div>
 
-        <div className="h-px bg-white/[0.06] shrink-0" />
+        <div className="h-px bg-white/6 shrink-0" />
 
-        {/* List */}
         <div className="flex-1 overflow-y-auto px-4 py-2">
           {filtered?.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-20 text-[#4e5058] gap-3">
@@ -357,6 +333,7 @@ export default function Members({ serverID }: { serverID: string }) {
           ) : (
             filtered?.map((m) => (
               <MemberRow
+                serverOwner={serverOwner}
                 key={m.id}
                 member={m}
                 allRoles={allRoles}

@@ -97,8 +97,7 @@ export default function BoostPerks() {
         </div>
       </div>
 
-      {/* Boost progress */}
-      <div className="px-8 py-5 border-b border-white/5 bg-white/[0.02]">
+      <div className="px-8 py-5 border-b border-white/5 bg-white/2">
         <div className="flex items-center justify-between mb-2.5">
           <span className="text-sm text-white/50">
             {level < 3
@@ -166,7 +165,7 @@ export default function BoostPerks() {
                       "flex items-center gap-3 rounded-lg px-3 py-2.5 transition-colors",
                       unlocked
                         ? "bg-white/5 hover:bg-white/8"
-                        : "bg-white/[0.02] opacity-40"
+                        : "bg-white/2 opacity-40"
                     )}
                   >
                     <div

@@ -15,9 +15,10 @@ type Category struct {
 }
 
 type ServerInfo struct {
-	Id   string `json:"id"`
-	Name string `json:"name"`
-	Logo string `json:"logo"`
+	Id        string `json:"id"`
+	Name      string `json:"name"`
+	Logo      string `json:"logo"`
+	CreatedBy string `json:"created_by"`
 }
 
 type Channel struct {
@@ -46,15 +47,13 @@ func FindAllChannelInServer(ctx context.Context, db *databases.Container, server
 		Categories:    []CategoryWithChannels{},
 	}
 
-	// Query 1: server info
 	err := db.Postgres.QueryRow(ctx, `
-        SELECT id::text, name, COALESCE(logo, '') FROM servers WHERE id = $1
-    `, serverID).Scan(&result.Server.Id, &result.Server.Name, &result.Server.Logo)
+        SELECT id::text, name, COALESCE(logo, ''),created_by FROM servers WHERE id = $1
+    `, serverID).Scan(&result.Server.Id, &result.Server.Name, &result.Server.Logo, &result.Server.CreatedBy)
 	if err != nil {
 		return nil, &httputil.ErrorResponse{Err: err, Code: http.StatusNotFound}
 	}
 
-	// Query 2: all categories for this server (even empty ones)
 	catRows, err := db.Postgres.Query(ctx, `
         SELECT id::text, name FROM category WHERE server_id = $1 ORDER BY name
     `, serverID)
@@ -77,7 +76,6 @@ func FindAllChannelInServer(ctx context.Context, db *databases.Container, server
 		return nil, &httputil.ErrorResponse{Err: err, Code: http.StatusInternalServerError}
 	}
 
-	// Query 3: all channels for this server
 	chRows, err := db.Postgres.Query(ctx, `
         SELECT
             id::text,

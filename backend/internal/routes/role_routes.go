@@ -16,4 +16,5 @@ func RegisterRoleRoute(r *mux.Router, rh *handlers.RoleHandler) {
 	rs.HandleFunc("/assign", rh.AssignRole).Methods(http.MethodPost)
 	rs.HandleFunc("/update", rh.UpdateRole).Methods(http.MethodPatch)
 	rs.HandleFunc("/find-all", rh.GetAllRole).Methods(http.MethodGet)
+	rs.HandleFunc("/find-all-members", rh.FindAllMemberInRole).Methods(http.MethodGet)
 }

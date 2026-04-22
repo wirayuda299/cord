@@ -116,7 +116,6 @@ export default function ServerProfile() {
         const uploaded = await uploadImage(attachedFiles[0].file)
         iconUrl = uploaded.url
         iconAssetId = uploaded.public_id
-        console.log({ uploaded })
       }
 
       const result = await updateServer({
@@ -166,7 +165,7 @@ export default function ServerProfile() {
                       maxLength={50}
                       required
                       autoComplete="off"
-                      className="rounded border border-sidebar-secondary focus-visible:outline-none ring-0!"
+                      className="rounded border border-sidebar-primary/20 focus-visible:outline-none ring-0!"
                       {...field}
                       placeholder="server name..." />
                   </Field>

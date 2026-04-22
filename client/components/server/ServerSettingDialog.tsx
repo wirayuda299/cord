@@ -161,7 +161,7 @@ function SettingsSidebar({
 }
 
 
-function ServerSettingDialog({ serverId }: { serverId: string }) {
+function ServerSettingDialog({ serverId, serverOwner }: { serverId: string, serverOwner: string }) {
   const [active, setActive] = useState("server profile")
   const sp = useSearchParams()
   const serverName = sp.get("name") ?? "Server"
@@ -193,8 +193,8 @@ function ServerSettingDialog({ serverId }: { serverId: string }) {
 
             {active === "server profile" && <ServerProfile />}
             {active === "boost perks" && <BoostPerks />}
-            {active === "members" && <Members serverID={serverId} />}
-            {active === "roles" && <ServerRolesSettings />}
+            {active === "members" && <Members serverID={serverId} serverOwner={serverOwner} />}
+            {active === "roles" && <ServerRolesSettings serverOwner={serverOwner} />}
             {active === "invites" && <Invites serverID={serverId} />}
             {active === "safety setup" && <SafetySetup />}
             {active === "audit log" && <AuditLog />}
