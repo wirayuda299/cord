@@ -18,6 +18,7 @@ import { getAllChannel } from "@/lib/server/data/channels"
 
 export default async function ServerSidebar({ serverId }: { serverId: string }) {
   const channels = await getAllChannel(serverId)
+  const serverOwner = channels.server.created_by
 
   return (
     <aside className="bg-overlay min-w-64 w-64 h-screen flex flex-col rounded-l-2xl">
@@ -36,9 +37,9 @@ export default async function ServerSidebar({ serverId }: { serverId: string }) 
             <DropdownMenuContent className="w-52 p-2 bg-sidebar-secondary shadow backdrop-blur-lg text-white space-y-3">
               <InviteFriendDialog />
               <CreateChannel serverID={serverId} />
-              <ServerSettingDialog serverId={serverId} />
-              <CreateCategoryDialog serverId={serverId} userId="usr_001" />
-              <EditPerServerProfileDialog serverId={serverId} userId="usr_001" />
+              <ServerSettingDialog serverId={serverId} serverOwner={serverOwner} />
+              <CreateCategoryDialog serverId={serverId} userId={serverOwner} />
+              <EditPerServerProfileDialog serverId={serverId} userId={serverOwner} />
               <button className="w-full p-1.5 text-sm rounded flex justify-between items-center hover:bg-sidebar-primary/15">
                 <p>Copy server ID</p>
                 <Copy size={20} />

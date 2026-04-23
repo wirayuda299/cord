@@ -6,7 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { Field, FieldDescription, FieldLabel } from "../ui/field"
 import { Input } from "../ui/input"
 import { useAttachedFiles } from "@/hooks/useAttachedFiles"
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useState } from "react"
 import { ALLOWED_FILE_EXTENSIONS } from "@/lib/shared/file-validation"
 import { cn } from "@/lib/utils"
 import { Switch } from "../ui/switch"
@@ -76,7 +76,6 @@ export default function ServerProfile() {
 
   const { isLoading, data, error } = useSWR(() => id ? "/api/server" : null, () => getServerById(id))
 
-  const fileRef = useRef<HTMLInputElement>(null)
   const form = useForm<UpdateServerType>({
     resolver: zodResolver(updateServerSchema),
     defaultValues: {
@@ -88,7 +87,7 @@ export default function ServerProfile() {
     },
     mode: 'all'
   })
-  const { addFiles, attachedFiles, removeFile, errors } = useAttachedFiles()
+  const { addFiles, attachedFiles, removeFile, errors, isDragging, onDragOver, onDragLeave, onDrop } = useAttachedFiles()
   const selected = form.watch("banner")
   const isChange = form.formState.isDirty
   const isSubmitting = form.formState.isSubmitting
@@ -194,7 +193,12 @@ export default function ServerProfile() {
                 control={form.control}
                 name="icon"
                 render={() => (
-                  <Field>
+                  <Field
+                    onDragOver={onDragOver}
+                    onDragLeave={onDragLeave}
+                    onDrop={onDrop}
+                    className={isDragging ? "ring-2 ring-[#5865f2] rounded-md" : ""}
+                  >
                     <FieldLabel>
                       Icon
                     </FieldLabel>
@@ -203,7 +207,6 @@ export default function ServerProfile() {
                       className="bg-discord-blue cursor-pointer block px-3 py-2 rounded-md text-sm max-w-max text-center"
                       htmlFor="attachment">Change server icon</label>
                     <input
-                      ref={fileRef}
                       id="attachment"
                       type="file"
                       multiple={false}

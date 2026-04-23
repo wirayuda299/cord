@@ -20,6 +20,7 @@ type Message struct {
 func Send(ctx context.Context, m Message, db *databases.Container, channelID string) (*services.MessageRow, error) {
 	var row services.MessageRow
 
+	log.Println("Payload -> ", row)
 	var parentMsgID *string
 	err := db.Postgres.QueryRow(ctx, `
         INSERT INTO messages (content, user_id, image_url, image_asset_id, channel_id, parent_msg_id)

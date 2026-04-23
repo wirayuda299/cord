@@ -2,8 +2,6 @@
 
 import { getPublicApiUrl } from "@/lib/env"
 import { Invitation } from "@/lib/types/invitation"
-import { function } from "zod"
-
 
 export async function findInvitationByCode(code: string): Promise<Invitation> {
   try {

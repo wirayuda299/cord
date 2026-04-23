@@ -10,9 +10,9 @@ import (
 )
 
 type ChannelResponse struct {
-	ChannelID string `json:"channel_id"`
+	ChannelID string `json:"id"`
 	Name      string `json:"name"`
-	Type      string `json:"type"`
+	Type      string `json:"channel_type"`
 	Topic     string `json:"topic"`
 }
 

@@ -10,8 +10,9 @@ export async function getAllRoles(serverID: string): Promise<Role[]> {
       "Content-Type": "application/json"
     }
   })
-  const data = await res.json()
-  return data.data as Role[]
+  if (!res.ok) throw new Error("Failed to fetch all role")
+
+  return await res.json().then(d => d.data as Role[])
 }
 
 
@@ -24,13 +25,13 @@ export type UserRole = {
 
 export async function getAllMemberByRole(roleID: string): Promise<UserRole[]> {
 
-  const base = getPublicApiUrl()
-  const res = await fetch(`${base}/roles/find-all-members?role_id=${roleID}`, {
+  const res = await fetch(`${getPublicApiUrl()}/roles/find-all-members?role_id=${roleID}`, {
     method: "GET",
     headers: {
       "Content-Type": "application/json"
     }
   })
+  if (!res.ok) throw new Error("Failed to fetch member role")
   return await res.json().then(d => d.data as UserRole[])
 }
 

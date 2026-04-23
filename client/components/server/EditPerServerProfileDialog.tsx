@@ -4,7 +4,7 @@ import { Check, Loader2, Pen, UserCircle2, X } from "lucide-react"
 import { Dialog, DialogClose, DialogContent, DialogTrigger } from "@/components/ui/dialog"
 import { Controller, useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useState } from "react"
 import Image from "next/image"
 import useSWR from "swr"
 import { useAttachedFiles } from "@/hooks/useAttachedFiles"
@@ -87,13 +87,12 @@ function ProfileEditorContent({ serverId, userId }: Props) {
   const cacheKey = serverId && userId ? `/server/profile/${serverId}/${userId}` : null
   const { data, isLoading } = useSWR(cacheKey, () => getServerProfile(serverId, userId))
 
-  const fileRef = useRef<HTMLInputElement>(null)
   const form = useForm<UpdateServerProfileType>({
     resolver: zodResolver(updateServerProfileSchema),
     defaultValues: { username: "", avatar: "", bio: "" },
     mode: "all",
   })
-  const { addFiles, attachedFiles, removeFile, errors: fileErrors } = useAttachedFiles()
+  const { addFiles, attachedFiles, removeFile, errors: fileErrors, isDragging, onDragOver, onDragLeave, onDrop } = useAttachedFiles()
   const [submitStatus, setSubmitStatus] = useState<{ type: "success" | "error"; message: string } | null>(null)
 
   const watched = form.watch()
@@ -147,7 +146,12 @@ function ProfileEditorContent({ serverId, userId }: Props) {
               </header>
 
               <Section label="Server Avatar" hint="Replaces your global avatar in this server.">
-                <div className="flex items-center gap-5 p-4 rounded-xl bg-[#2b2d31] border border-white/5">
+                <div
+                  className={`flex items-center gap-5 p-4 rounded-xl bg-[#2b2d31] border transition-colors ${isDragging ? "border-[#5865f2] bg-[#5865f2]/10" : "border-white/5"}`}
+                  onDragOver={onDragOver}
+                  onDragLeave={onDragLeave}
+                  onDrop={onDrop}
+                >
                   <div className="size-20 rounded-full overflow-hidden bg-[#1e1f22] ring-2 ring-white/10 shrink-0 flex items-center justify-center">
                     {previewAvatar ? (
                       <Image src={previewAvatar} width={80} height={80} alt="avatar" className="size-full object-cover" />
@@ -181,7 +185,6 @@ function ProfileEditorContent({ serverId, userId }: Props) {
                     name="avatar"
                     render={() => (
                       <input
-                        ref={fileRef}
                         id="sp-avatar"
                         type="file"
                         accept={ALLOWED_FILE_EXTENSIONS}

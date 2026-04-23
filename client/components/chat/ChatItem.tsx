@@ -2,7 +2,7 @@
 import { format } from "date-fns"
 import Image from "next/image"
 import { memo, useEffect, useState } from "react"
-import { Reply } from "lucide-react"
+import { AlertCircle, Loader2, Reply } from "lucide-react"
 
 import MessageMenu from "./MessageMenu"
 import type { Message } from "@/lib/types/chat"
@@ -44,44 +44,50 @@ function ReplyThread({
 }
 
 type MessageContentProps = {
-  message: Pick<Message, "image_url" | "content">
+  message: Pick<Message, "image_url" | "content" | "_status">
 }
 
-function MessageContent({ message }: MessageContentProps) {
-  const hasImageOnly = message.image_url && message.content === ""
-  const hasImageWithText = message.image_url && message.content !== ""
+function AttachmentImage({ src, status }: { src: string; status?: Message["_status"] }) {
+  const isBlob = src.startsWith("blob:")
+  const img = isBlob ? (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img src={src} className="rounded max-w-[300px]" alt="attachment" />
+  ) : (
+    <Image
+      className="rounded aspect-contain"
+      src={src}
+      width={300}
+      height={300}
+      alt="attachment"
+      loading="lazy"
+    />
+  )
 
-  if (hasImageOnly) {
+  if (status === "uploading") {
     return (
-      <Image
-        className="rounded aspect-contain"
-        src={message.image_url}
-        width={300}
-        height={300}
-        alt="attachment"
-        loading="lazy"
-      />
-    )
-  }
-  if (hasImageWithText) {
-    return (
-      <div>
-        <Image
-          className="rounded aspect-contain"
-          src={message.image_url}
-          width={300}
-          height={300}
-          alt="attachment"
-          loading="lazy"
-        />
-        <p className="text-sm text-gray-300 wrap-break-word">
-          {message.content}
-        </p>
+      <div className="relative inline-block">
+        <div className="opacity-50">{img}</div>
+        <div className="absolute inset-0 flex items-center justify-center">
+          <Loader2 size={24} className="animate-spin text-white drop-shadow" />
+        </div>
       </div>
     )
   }
+
+  return img
+}
+
+function MessageContent({ message }: MessageContentProps) {
+  if (!message.image_url) {
+    return <p className="text-sm text-gray-300 wrap-break-word">{message.content}</p>
+  }
   return (
-    <p className="text-sm text-gray-300 wrap-break-word">{message.content}</p>
+    <div>
+      <AttachmentImage src={message.image_url} status={message._status} />
+      {message.content && (
+        <p className="text-sm text-gray-300 wrap-break-word">{message.content}</p>
+      )}
+    </div>
   )
 }
 
@@ -114,11 +120,13 @@ function MessageHeader({ username, isBot, created_at }: MessageHeaderProps) {
 }
 
 function ChatItem({ message, serverId, handleDelete }: ChatItemProps) {
+  const isFailed = message._status === "failed"
+
   return (
     <div
       id={message.id}
       data-chat-item
-      className="hover:bg-white/5 group transition-colors px-4 py-1 relative"
+      className={`hover:bg-white/5 group transition-colors px-4 py-1 relative ${isFailed ? "opacity-60" : ""}`}
     >
       <ReplyThread
         parent_content={message.parent_content}
@@ -126,14 +134,20 @@ function ChatItem({ message, serverId, handleDelete }: ChatItemProps) {
         parent_username={message.parent_username}
       />
       <div className="flex items-start gap-3">
-        <Image
-          src={message.avatar}
-          alt={message.username}
-          width={40}
-          height={40}
-          className="rounded-full mt-0.5 shrink-0 size-9"
-          loading="lazy"
-        />
+        {message.avatar ? (
+          <Image
+            src={message.avatar}
+            alt={message.username}
+            width={40}
+            height={40}
+            className="rounded-full mt-0.5 shrink-0 size-9"
+            loading="lazy"
+          />
+        ) : (
+          <div className="rounded-full mt-0.5 shrink-0 size-9 bg-indigo-600 flex items-center justify-center text-white text-sm font-semibold select-none">
+            {message.username.charAt(0).toUpperCase()}
+          </div>
+        )}
         <div className="flex flex-col min-w-0 flex-1">
           <MessageHeader
             username={message.username}
@@ -141,12 +155,26 @@ function ChatItem({ message, serverId, handleDelete }: ChatItemProps) {
             created_at={message.created_at}
           />
           <MessageContent message={message} />
+          {isFailed && (
+            <div className="flex items-center gap-1.5 mt-1 text-red-400 text-xs">
+              <AlertCircle size={12} />
+              <span>Failed to send.</span>
+              <button
+                onClick={() => handleDelete?.(message.id)}
+                className="underline hover:text-red-300 transition-colors"
+              >
+                Dismiss
+              </button>
+            </div>
+          )}
         </div>
-        <MessageMenu
-          onDelete={handleDelete ?? (() => { })}
-          message={message}
-          serverId={serverId}
-        />
+        {!isFailed && (
+          <MessageMenu
+            onDelete={handleDelete ?? (() => { })}
+            message={message}
+            serverId={serverId}
+          />
+        )}
       </div>
     </div>
   )

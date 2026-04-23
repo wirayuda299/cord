@@ -2,7 +2,6 @@
 
 import { Edit, ImagePlus, Plus } from "lucide-react"
 import Image from "next/image"
-import { useState, useEffect } from "react"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -17,39 +16,22 @@ import { Input } from "@/components/ui/input"
 import { Field, FieldLabel } from "@/components/ui/field"
 import { createServer } from "@/lib/server/actions/servers"
 import { Controller, useForm } from "react-hook-form"
-import {
-  createServerSchema,
-  type CreateServerSchemaType,
-} from "@/lib/validation/server"
+import { createServerSchema, type CreateServerSchemaType } from "@/lib/validation/server"
 import { zodResolver } from "@hookform/resolvers/zod"
+import { useAttachedFiles } from "@/hooks/useAttachedFiles"
+import { ALLOWED_FILE_EXTENSIONS } from "@/lib/shared/file-validation"
 
 export default function CreateServerForm() {
-  const [preview, setPreview] = useState<string | null>(null)
-  const [imageFile, setImageFile] = useState<File | null>(null)
-
-  useEffect(() => {
-    if (!imageFile) return
-    const url = URL.createObjectURL(imageFile)
-    setPreview(url)
-    return () => URL.revokeObjectURL(url)
-  }, [imageFile])
+  const { attachedFiles, addFiles, isDragging, onDragOver, onDragLeave, onDrop } = useAttachedFiles()
+  const preview = attachedFiles[0]?.preview ?? null
 
   const form = useForm<CreateServerSchemaType>({
     resolver: zodResolver(createServerSchema as any),
-    defaultValues: {
-      name: "",
-    }
+    defaultValues: { name: "" },
   })
-
-  const handleImage = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (!file) return
-    setImageFile(file)
-  }
 
   const handleSubmit = async (data: CreateServerSchemaType) => {
     if (!data.name.trim()) return
-
     try {
       const res = await createServer(data.name, "usr_001")
       if (res.error) {
@@ -64,7 +46,7 @@ export default function CreateServerForm() {
 
   return (
     <Dialog>
-      <DialogTrigger className=" w-12 group flex items-center justify-center h-12 rounded-[50%] hover:rounded-[20%] transition-all ease duration-300  text-(--discord-green) bg-(--server-item) hover:bg-(--discord-green)">
+      <DialogTrigger className="w-12 group flex items-center justify-center h-12 rounded-[50%] hover:rounded-[20%] transition-all ease duration-300 text-(--discord-green) bg-(--server-item) hover:bg-(--discord-green)">
         <Plus className="text-(--discord-green) group-hover:text-white" />
       </DialogTrigger>
       <DialogContent
@@ -74,14 +56,23 @@ export default function CreateServerForm() {
       >
         <form onSubmit={form.handleSubmit(handleSubmit)}>
           <div className="flex flex-col items-center gap-4 pt-8 px-6">
-            <label className="cursor-pointer group">
+            <label
+              className="cursor-pointer group"
+              onDragOver={onDragOver}
+              onDragLeave={onDragLeave}
+              onDrop={onDrop}
+            >
               <input
                 type="file"
-                accept="image/*"
+                accept={ALLOWED_FILE_EXTENSIONS}
                 className="hidden"
-                onChange={handleImage}
+                onChange={(e) => e.target.files && addFiles(Array.from(e.target.files))}
               />
-              <div className="w-20 h-20 rounded-full relative border-2 border-dashed border-gray-500 group-hover:border-indigo-400 transition-colors flex items-center justify-center overflow-hidden">
+              <div className={`w-20 h-20 rounded-full relative border-2 border-dashed transition-colors flex items-center justify-center overflow-hidden ${
+                isDragging
+                  ? "border-indigo-400 bg-indigo-400/10"
+                  : "border-gray-500 group-hover:border-indigo-400"
+              }`}>
                 {preview ? (
                   <>
                     <Image
@@ -99,7 +90,7 @@ export default function CreateServerForm() {
                   <div className="flex flex-col items-center gap-1 text-gray-400 group-hover:text-indigo-400 transition-colors">
                     <ImagePlus size={22} />
                     <span className="text-[10px] font-semibold uppercase">
-                      Upload
+                      {isDragging ? "Drop here" : "Upload"}
                     </span>
                   </div>
                 )}
@@ -111,8 +102,7 @@ export default function CreateServerForm() {
                 Customize your server
               </DialogTitle>
               <p className="text-gray-400 text-sm">
-                Give your server a name and an icon. You can always change it
-                later.
+                Give your server a name and an icon. You can always change it later.
               </p>
             </DialogHeader>
           </div>
@@ -137,7 +127,7 @@ export default function CreateServerForm() {
             />
 
             <p className="text-xs text-gray-500">
-              By creating a server, you agree to Discord's
+              By creating a server, you agree to Discord&apos;s{" "}
               <span className="text-indigo-400 cursor-pointer hover:underline">
                 Community Guidelines
               </span>

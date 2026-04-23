@@ -1,7 +1,5 @@
 #!/bin/bash
 
-echo "🚀 Starting all services..."
-
 # Kill all child processes on Ctrl+C
 trap "echo '⛔ Stopping all services...'; kill 0" SIGINT SIGTERM
 

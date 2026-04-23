@@ -20,3 +20,12 @@ export async function uploadImage(file: File) {
     throw e;
   }
 }
+
+export async function deleteImage(publicId: string) {
+  const base = getPublicApiUrl();
+  await fetch(`${base}/image/delete`, {
+    method: "DELETE",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(publicId),
+  });
+}

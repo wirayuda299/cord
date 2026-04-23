@@ -245,7 +245,7 @@ function MessageMenu(props: MessageMenuProps) {
       );
     } else {
       const rect = menu.getBoundingClientRect();
-      setFlipUp(window.innerHeight - rect.top < menuHeight + 20);
+      setFlipUp(window.innerHeight - rect.top < menuHeight);
     }
   }, []);
 

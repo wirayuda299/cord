@@ -1,13 +1,18 @@
 "use client";
 
 import { Plus, Smile, Gift, Sticker, X, ImageIcon } from "lucide-react";
-import { useRef, useState, useCallback } from "react";
+import { useRef, useState, useCallback, useEffect } from "react";
 import { useWebSocket } from "@/hooks/useWebsocket";
 import type { Message, ResponseMessage } from "@/lib/types/chat";
-import { uploadImage } from "@/lib/server/actions/images";
+import { deleteImage, uploadImage } from "@/lib/server/actions/images";
+import { getPublicApiUrl } from "@/lib/env";
 import { ALLOWED_FILE_EXTENSIONS } from "@/lib/shared/file-validation";
 import { useAttachedFiles } from "@/hooks/useAttachedFiles";
+import { useAppStore } from "@/stores/store";
 import { FilePreview } from "./FilePreview";
+
+type UploadResult = { url: string; public_id: string };
+type UploadState = "idle" | "active" | "consumed";
 
 type ChatFormProps = {
   channelName: string;
@@ -15,8 +20,9 @@ type ChatFormProps = {
   channelId: string;
   handleMessages: (msg: ResponseMessage) => void;
   handleDelete?: (id: string) => void;
-  parentMsgId: string | null;
-  setSelectedMsg: (m: Message | null) => void;
+  onOptimistic?: (msg: Message) => void;
+  onUploadComplete?: (tempId: string) => void;
+  onUploadFailed?: (tempId: string) => void;
   userId?: string;
 };
 
@@ -26,15 +32,20 @@ export default function ChatForm({
   channelId,
   handleMessages,
   handleDelete,
-  parentMsgId,
-  setSelectedMsg,
+  onOptimistic,
+  onUploadComplete,
+  onUploadFailed,
   userId = "usr_001",
 }: ChatFormProps) {
+  const selectedMsg = useAppStore((s) => s.selectedMsg);
+  const setSelectedMsg = useAppStore((s) => s.setSelectedMsg);
   const [message, setMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [isDragging, setIsDragging] = useState(false);
+  const uploadPromiseRef = useRef<Promise<UploadResult> | null>(null);
+  const uploadResultRef = useRef<UploadResult | null>(null);
+  const uploadStateRef = useRef<UploadState>("idle");
 
   const { sendMessage } = useWebSocket(serverId, channelId, {
     onMessage: handleMessages,
@@ -46,11 +57,61 @@ export default function ChatForm({
   const {
     attachedFiles,
     errors: fileErrors,
+    isDragging,
     addFiles,
     removeFile,
     clearFiles,
     clearErrors,
+    onDragOver,
+    onDragLeave,
+    onDrop,
+    onPaste,
   } = useAttachedFiles();
+
+  // Start uploading as soon as a file is attached; delete orphaned asset if file is removed
+  useEffect(() => {
+    if (attachedFiles.length === 0) {
+      // File removed: if upload completed and was never consumed, delete the asset
+      if (uploadResultRef.current && uploadStateRef.current !== "consumed") {
+        deleteImage(uploadResultRef.current.public_id).catch(() => {});
+      }
+      uploadPromiseRef.current = null;
+      uploadResultRef.current = null;
+      uploadStateRef.current = "idle";
+      return;
+    }
+    if (uploadPromiseRef.current !== null) return;
+
+    uploadStateRef.current = "active";
+    const promise = uploadImage(attachedFiles[0].file);
+    uploadPromiseRef.current = promise;
+    promise
+      .then((r) => {
+        uploadResultRef.current = r;
+        // If file was removed while upload was in-flight (state reset to "idle"), delete now
+        if (uploadStateRef.current === "idle") {
+          deleteImage(r.public_id).catch(() => {});
+          uploadResultRef.current = null;
+        }
+      })
+      .catch(() => { uploadPromiseRef.current = null; });
+  }, [attachedFiles]);
+
+  // Delete orphaned asset if page is closed/reloaded before send
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      if (uploadResultRef.current && uploadStateRef.current !== "consumed") {
+        fetch(`${getPublicApiUrl()}/image/delete`, {
+          method: "DELETE",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(uploadResultRef.current.public_id),
+          keepalive: true,
+        });
+      }
+    };
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+  }, []);
 
   const handleInput = useCallback(() => {
     const el = textareaRef.current;
@@ -62,32 +123,68 @@ export default function ChatForm({
   const handleSubmit = useCallback(async () => {
     if (attachedFiles.length <= 0 && !message.trim()) return;
 
+    const blobPreview = attachedFiles[0]?.preview ?? "";
+    const fileToUpload = attachedFiles[0]?.file;
+    const trimmed = message.trim();
+
+    // Capture upload refs before clearFiles() nulls them via useEffect
+    const cachedResult = uploadResultRef.current;
+    const cachedPromise = uploadPromiseRef.current;
+
+    const tempId = `temp_${Date.now()}`;
+
+    // Optimistic update: show message immediately with uploading status
+    if (onOptimistic) {
+      onOptimistic({
+        id: tempId,
+        content: trimmed,
+        user_id: userId,
+        username: "You",
+        avatar: "",
+        image_url: blobPreview,
+        image_asset_id: "",
+        channel_id: channelId,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        parent_msg_id: selectedMsg?.id ?? null,
+        parent_content: selectedMsg?.content ?? null,
+        parent_username: selectedMsg?.username ?? null,
+        _status: blobPreview ? "uploading" : undefined,
+      });
+    }
+
+    setMessage("");
+    uploadStateRef.current = "consumed"; // prevent cleanup from deleting the asset we're about to use
+    clearFiles();
+    clearErrors();
+    if (textareaRef.current) textareaRef.current.style.height = "auto";
+    if (selectedMsg) setSelectedMsg(null);
+
     try {
       setIsSubmitting(true);
 
       let attachmentUrl = "";
       let attachmentId = "";
 
-      if (attachedFiles.length > 0) {
-        const res = await uploadImage(attachedFiles[0].file);
-        attachmentUrl = res.url;
-        attachmentId = res.public_id;
+      if (blobPreview && fileToUpload) {
+        // Use cached result/promise (started on file attach) — avoids double upload
+        const result = cachedResult ?? await (cachedPromise ?? uploadImage(fileToUpload));
+        attachmentUrl = result.url;
+        attachmentId = result.public_id;
       }
 
       sendMessage({
-        message: message || "",
+        channel_id: channelId,
+        message: trimmed,
         user_id: userId,
         attachment_url: attachmentUrl,
         attachment_id: attachmentId,
-        ...(parentMsgId && { parent_message_id: parentMsgId }),
+        ...(selectedMsg && { parent_message_id: selectedMsg.id }),
       });
-
-      setMessage("");
-      clearFiles();
-      clearErrors();
-
-      if (textareaRef.current) textareaRef.current.style.height = "auto";
-      if (parentMsgId) setSelectedMsg(null);
+      // Upload done + WS send queued — clear spinner immediately
+      if (blobPreview) onUploadComplete?.(tempId);
+    } catch {
+      onUploadFailed?.(tempId);
     } finally {
       setIsSubmitting(false);
     }
@@ -96,10 +193,14 @@ export default function ChatForm({
     message,
     sendMessage,
     userId,
-    parentMsgId,
+    selectedMsg,
     setSelectedMsg,
     clearFiles,
     clearErrors,
+    channelId,
+    onOptimistic,
+    onUploadComplete,
+    onUploadFailed,
   ]);
 
   const handleKeyDown = useCallback(
@@ -112,47 +213,13 @@ export default function ChatForm({
     [handleSubmit],
   );
 
-  const handleDragOver = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(true);
-  }, []);
-
-  const handleDragLeave = useCallback((e: React.DragEvent) => {
-    if (!e.currentTarget.contains(e.relatedTarget as Node)) {
-      setIsDragging(false);
-    }
-  }, []);
-
-  const handleDrop = useCallback(
-    (e: React.DragEvent) => {
-      e.preventDefault();
-      setIsDragging(false);
-      if (e.dataTransfer.files.length > 0) {
-        addFiles(Array.from(e.dataTransfer.files));
-      }
-    },
-    [addFiles],
-  );
-
-  const handlePaste = useCallback(
-    (e: React.ClipboardEvent) => {
-      const files = Array.from(e.clipboardData.items)
-        .filter((item) => item.kind === "file")
-        .map((item) => item.getAsFile())
-        .filter(Boolean) as File[];
-      if (files.length > 0) addFiles(files);
-    },
-    [addFiles],
-  );
-
   return (
     <div
       className="px-4 pb-6 pt-2 shrink-0"
-      onDragOver={handleDragOver}
-      onDragLeave={handleDragLeave}
-      onDrop={handleDrop}
+      onDragOver={onDragOver}
+      onDragLeave={onDragLeave}
+      onDrop={onDrop}
     >
-      {isSubmitting && <p className="text-sm text-white">Submitting...</p>}
       <input
         ref={fileInputRef}
         type="file"
@@ -179,8 +246,9 @@ export default function ChatForm({
       )}
 
       <div
-        className={`flex flex-col  bg-surface-chat rounded-xl transition-colors ${isDragging ? "ring-2 ring-discord-brand bg-discord-brand/10" : ""
-          }`}
+        className={`flex flex-col bg-surface-chat rounded-xl transition-colors ${
+          isDragging ? "ring-2 ring-discord-brand bg-discord-brand/10" : ""
+        }`}
       >
         {isDragging && (
           <div className="flex flex-col items-center justify-center py-8 gap-2">
@@ -223,7 +291,7 @@ export default function ChatForm({
             onInput={handleInput}
             maxLength={500}
             onKeyDown={handleKeyDown}
-            onPaste={handlePaste}
+            onPaste={onPaste}
             placeholder={
               attachedFiles.length > 0
                 ? "Add a comment (optional)"

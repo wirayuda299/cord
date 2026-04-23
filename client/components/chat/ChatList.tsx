@@ -4,16 +4,12 @@ import type { Channel } from "@/lib/types/channel"
 import type { Message, ResponseMessage } from "@/lib/types/chat"
 import { useAppStore } from "@/stores/store"
 import { Hash } from "lucide-react"
-import { useCallback, useRef, useState } from "react"
+import { useCallback, useEffect, useRef, useState } from "react"
 import { useShallow } from "zustand/react/shallow"
-import { cn } from "@/lib/utils"
-import { ScrollArea } from "@/components/ui/scroll-area"
 import ChatItem from "./ChatItem"
 import ChatForm from "./ChatForm"
 import MemberList from "@/components/members/MemberList"
 import ReplyBar from "./ReplyBar"
-
-const HEADER_HEIGHT = 140
 
 type Props = {
   channel: Channel
@@ -23,7 +19,7 @@ type Props = {
 
 function ChannelHeader({ channel }: { channel: Channel }) {
   return (
-    <div className="mb-10 p-5 space-y-2" style={{ height: HEADER_HEIGHT }}>
+    <div className="p-5 space-y-2">
       <div className="size-20 bg-sidebar-secondary flex items-center justify-center rounded-full">
         <Hash size={50} className="text-gray-400" />
       </div>
@@ -42,51 +38,79 @@ export default function ChatList({
   channel,
   historyMessages = [],
 }: Props) {
-  const [messages, setMessages] = useState<Message[]>(historyMessages ?? [])
-
-  const formRef = useRef<HTMLDivElement>(null)
+  const [messages, setMessages] = useState<Message[]>(historyMessages)
+  const pendingTempId = useRef<string | null>(null)
+  const bottomRef = useRef<HTMLDivElement>(null)
 
   const { selectedMsg, setSelectedMsg, isOpen } = useAppStore(
-    useShallow((state) => ({
-      selectedMsg: state.selectedMsg,
-      setSelectedMsg: state.setSelectedMsg,
-      isOpen: state.isMemberOpen,
+    useShallow((s) => ({
+      selectedMsg: s.selectedMsg,
+      setSelectedMsg: s.setSelectedMsg,
+      isOpen: s.isMemberOpen,
     })),
   )
 
+  // Scroll to bottom when messages update
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: "smooth" })
+  }, [messages])
+
+  const addOptimistic = useCallback((msg: Message) => {
+    pendingTempId.current = msg.id
+    setMessages((prev) => [...prev, msg])
+  }, [])
+
+  const handleUploadComplete = useCallback((tempId: string) => {
+    setMessages((prev) =>
+      prev.map((m) => (m.id === tempId ? { ...m, _status: undefined } : m))
+    )
+  }, [])
+
+  const handleUploadFailed = useCallback((tempId: string) => {
+    setMessages((prev) =>
+      prev.map((m) => (m.id === tempId ? { ...m, _status: "failed" as const } : m))
+    )
+    pendingTempId.current = null
+  }, [])
+
   const handleMessages = useCallback((msg: ResponseMessage) => {
-    setMessages((prev) => [...(prev ?? []), ...msg.messages])
+    setMessages((prev) => {
+      const tempId = pendingTempId.current
+      if (tempId) {
+        const temp = prev.find((m) => m.id === tempId)
+        if (temp?.image_url.startsWith("blob:")) {
+          URL.revokeObjectURL(temp.image_url)
+        }
+        pendingTempId.current = null
+        return [...prev.filter((m) => m.id !== tempId), ...msg.messages]
+      }
+      return [...prev, ...msg.messages]
+    })
   }, [])
 
   const handleDelete = useCallback((id: string) => {
-    setMessages((prev) => (prev ?? []).filter((m) => m.id !== id))
+    setMessages((prev) => prev.filter((m) => m.id !== id))
   }, [])
 
   return (
-    <div className="flex h-screen">
-      <div className={cn("flex-1 ", messages.length > 0 ? "overflow-y-auto" : "overflow-hidden")} >
-        <ChannelHeader channel={channel} />
-
-        <ScrollArea>
-          <div className="flex flex-col gap-5 min-h-screen pb-20">
-            {(messages?.length ?? 0) > 0 &&
-              messages.map((m) => (
-                <ChatItem
-                  message={m}
-                  serverId={serverId}
-                  handleDelete={handleDelete}
-                  key={m.id}
-                />
-              ))}
+    <div className="flex flex-1 min-h-0">
+      <div className="flex flex-col flex-1 min-w-0 min-h-0">
+        <div className="flex-1 overflow-y-auto min-h-0">
+          <ChannelHeader channel={channel} />
+          <div className="flex flex-col gap-5 pb-4">
+            {messages.map((m) => (
+              <ChatItem
+                key={m.id}
+                message={m}
+                serverId={serverId}
+                handleDelete={handleDelete}
+              />
+            ))}
           </div>
-        </ScrollArea>
-        <div
-          ref={formRef}
-          className={cn(
-            "w-full ",
-            messages ? "sticky bottom-18" : " mt-auto",
-          )}
-        >
+          <div ref={bottomRef} />
+        </div>
+
+        <div className="shrink-0">
           {selectedMsg && (
             <ReplyBar
               message={selectedMsg}
@@ -94,13 +118,15 @@ export default function ChatList({
             />
           )}
           <ChatForm
+            userId="usr_001"
             channelName={channel.name}
             channelId={channel.id}
             serverId={serverId}
             handleMessages={handleMessages}
             handleDelete={handleDelete}
-            parentMsgId={selectedMsg?.id ?? null}
-            setSelectedMsg={setSelectedMsg}
+            onOptimistic={addOptimistic}
+            onUploadComplete={handleUploadComplete}
+            onUploadFailed={handleUploadFailed}
           />
         </div>
       </div>

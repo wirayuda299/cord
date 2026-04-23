@@ -6,18 +6,10 @@ type AttachedFile = {
   preview: string;
 };
 
-interface UseAttachedFilesReturn {
-  attachedFiles: AttachedFile[];
-  errors: string[];
-  addFiles: (files: File[]) => void;
-  removeFile: (index: number) => void;
-  clearFiles: () => void;
-  clearErrors: () => void;
-}
-
-export function useAttachedFiles(): UseAttachedFilesReturn {
+export function useAttachedFiles() {
   const [attachedFiles, setAttachedFiles] = useState<AttachedFile[]>([]);
   const [errors, setErrors] = useState<string[]>([]);
+  const [isDragging, setIsDragging] = useState(false);
 
   const attachedFilesRef = useRef(attachedFiles);
   attachedFilesRef.current = attachedFiles;
@@ -31,7 +23,7 @@ export function useAttachedFiles(): UseAttachedFilesReturn {
   const addFiles = useCallback((files: File[]) => {
     const { valid, errors: validationErrors } = validateFiles(
       files,
-      attachedFiles.length
+      attachedFilesRef.current.length
     );
 
     if (validationErrors.length > 0) {
@@ -47,7 +39,7 @@ export function useAttachedFiles(): UseAttachedFilesReturn {
     }));
 
     setAttachedFiles((prev) => [...prev, ...newFiles].slice(0, MAX_FILES));
-  }, [attachedFiles.length]);
+  }, []);
 
   const removeFile = useCallback((index: number) => {
     setAttachedFiles((prev) => {
@@ -67,5 +59,44 @@ export function useAttachedFiles(): UseAttachedFilesReturn {
 
   const clearErrors = useCallback(() => setErrors([]), []);
 
-  return { attachedFiles, errors, addFiles, removeFile, clearFiles, clearErrors };
+  const onDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(true);
+  }, []);
+
+  const onDragLeave = useCallback((e: React.DragEvent) => {
+    if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+      setIsDragging(false);
+    }
+  }, []);
+
+  const onDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+    if (e.dataTransfer.files.length > 0) {
+      addFiles(Array.from(e.dataTransfer.files));
+    }
+  }, [addFiles]);
+
+  const onPaste = useCallback((e: React.ClipboardEvent) => {
+    const files = Array.from(e.clipboardData.items)
+      .filter((item) => item.kind === "file")
+      .map((item) => item.getAsFile())
+      .filter(Boolean) as File[];
+    if (files.length > 0) addFiles(files);
+  }, [addFiles]);
+
+  return {
+    attachedFiles,
+    errors,
+    isDragging,
+    addFiles,
+    removeFile,
+    clearFiles,
+    clearErrors,
+    onDragOver,
+    onDragLeave,
+    onDrop,
+    onPaste,
+  };
 }

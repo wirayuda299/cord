@@ -12,6 +12,8 @@ export type Message = {
   parent_msg_id: string | null;
   parent_content: string | null;
   parent_username: string | null;
+  /** Client-only: present only on optimistic messages, never from server */
+  _status?: "uploading" | "failed";
 };
 
 export type ResponseMessage = {

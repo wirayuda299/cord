@@ -1,6 +1,7 @@
 import { Channel } from "./channel"
 
 export type CategoryType = "text" | "voice" | "announcement"
+
 export type Category = {
   id: string  // changed from id
   name: string

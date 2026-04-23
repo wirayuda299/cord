@@ -40,8 +40,8 @@ export default async function ChannelDetail({
 
 
   return (
-    <div className="w-full bg-surface-content h-screen overflow-hidden">
-      <header className="h-14 px-2.5 shadow gap-4 border-b border-gray-600/50 flex items-center">
+    <div className="w-full bg-surface-content h-screen overflow-hidden flex flex-col">
+      <header className="h-14 shrink-0 px-2.5 shadow gap-4 border-b border-gray-600/50 flex items-center">
         <div className="flex items-center gap-2   w-full">
           <Hash size={18} className="text-gray-400" />
           <h1
