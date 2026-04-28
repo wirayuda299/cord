@@ -1,6 +1,5 @@
 import {
   ChevronDown,
-  Copy,
   UserPlus,
 } from "lucide-react"
 import {
@@ -15,6 +14,9 @@ import CreateCategoryDialog from "@/components/server/CreateCategoryDialog"
 import EditPerServerProfileDialog from "@/components/server/EditPerServerProfileDialog"
 import ChannelList from "./ChannelList"
 import { getAllChannel } from "@/lib/server/data/channels"
+import CopyServerIDButton from "@/components/server/CopyServerIDButton"
+import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog"
+import Invites from "@/components/server/Invites"
 
 export default async function ServerSidebar({ serverId }: { serverId: string }) {
   const channels = await getAllChannel(serverId)
@@ -38,18 +40,20 @@ export default async function ServerSidebar({ serverId }: { serverId: string }) 
               <InviteFriendDialog />
               <CreateChannel serverID={serverId} />
               <ServerSettingDialog serverId={serverId} serverOwner={serverOwner} />
-              <CreateCategoryDialog serverId={serverId} userId={serverOwner} />
+              <CreateCategoryDialog serverId={serverId} />
               <EditPerServerProfileDialog serverId={serverId} userId={serverOwner} />
-              <button className="w-full p-1.5 text-sm rounded flex justify-between items-center hover:bg-sidebar-primary/15">
-                <p>Copy server ID</p>
-                <Copy size={20} />
-              </button>
+              <CopyServerIDButton serverID={serverId} />
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
-        <button>
-          <UserPlus size={20} className="text-white fill-white" />
-        </button>
+        <Dialog>
+          <DialogTrigger>
+            <UserPlus size={20} className="text-white fill-white" />
+          </DialogTrigger>
+          <DialogContent className="min-w-full mx-auto bg-sidebar-primary">
+            <Invites serverID={serverId} />
+          </DialogContent>
+        </Dialog>
       </header>
 
       <div className="flex flex-col overflow-y-auto h-full">

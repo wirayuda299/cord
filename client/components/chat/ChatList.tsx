@@ -50,8 +50,9 @@ export default function ChatList({
     })),
   )
 
-  // Scroll to bottom when messages update
   useEffect(() => {
+    if (!bottomRef) return
+
     bottomRef.current?.scrollIntoView({ behavior: "smooth" })
   }, [messages])
 

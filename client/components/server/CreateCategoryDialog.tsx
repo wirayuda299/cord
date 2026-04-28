@@ -6,9 +6,9 @@ import { Controller, useForm } from "react-hook-form"
 import { createCategory } from "@/lib/server/actions/categories"
 import type { CreateCategoryPayload } from "@/lib/types/category"
 
-export default function CreateCategoryDialog({ serverId, userId }: { serverId: string; userId: string }) {
+export default function CreateCategoryDialog({ serverId }: { serverId: string }) {
   const { handleSubmit, reset, control, formState: { isSubmitting } } = useForm<CreateCategoryPayload>({
-    defaultValues: { name: "", server_id: serverId, created_by: userId },
+    defaultValues: { name: "", server_id: serverId, created_by: "usr_001" },
   })
 
   const onSubmit = async (data: CreateCategoryPayload) => {

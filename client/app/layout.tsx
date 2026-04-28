@@ -3,7 +3,6 @@ import { Noto_Sans } from "next/font/google"
 import type { Metadata } from "next"
 
 import Sidebar from "@/components/sidebar/MainSidebar"
-import ServerHeader from "@/components/server/ServerHeader"
 import Script from "next/script"
 
 const notoSans = Noto_Sans({
@@ -29,7 +28,6 @@ export default function RootLayout({
       className={`${notoSans.variable} h-full antialiased`}
     >
       <body className="min-h-screen  max-h-svh bg-overlay overflow-hidden">
-        <ServerHeader />
         <div className="flex">
           <Sidebar />
           <div className=" flex min-h-screen bg-sidebar-secondary p-0 max-h-screen w-full border rounded-2xl border-sidebar-secondary/10">

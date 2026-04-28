@@ -5,8 +5,7 @@ import type { CreateCategoryPayload } from "@/lib/types/category"
 import { updateTag } from "next/cache"
 
 export async function createCategory(payload: CreateCategoryPayload) {
-  const base = getPublicApiUrl()
-  const res = await fetch(`${base}/categories`, {
+  const res = await fetch(`${getPublicApiUrl()}/categories`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),

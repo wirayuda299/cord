@@ -47,7 +47,7 @@ export default function ChannelList({ channels }: { channels: GroupedChannels })
               {cat.channels.map((c) => (
                 <li key={c.id} className="pl-5 first:pt-2 text-sm">
                   <Link
-                    href={`/${param.id}/${c.id}?name=${channels.server.name}`}
+                    href={`/${param.id}/${c.id}`}
                     className="flex items-center gap-2 text-gray-400 hover:text-white"
                   >
                     {c.channel_type === 'text' ? <Hash size={15} /> : <Volume2 size={15} />}

@@ -1,3 +1,4 @@
+'use client'
 
 import { useState } from "react"
 import { Copy, Check, Trash2, Plus, Link, Users, Clock } from "lucide-react"
@@ -222,7 +223,7 @@ export default function Invites({ serverID }: { serverID: string }) {
             <div>
               <h2 className="font-semibold text-xl">Invites</h2>
               <p className="text-sm text-white/40 mt-0.5">
-                {data?.length} invite{data?.length !== 1 ? "s" : ""}               </p>
+                {data?.length} invite{data?.length !== 1 ? "s" : ""} </p>
             </div>
             <button
               type="button"

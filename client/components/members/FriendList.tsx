@@ -34,6 +34,7 @@ export default function FriendList() {
   };
 
   return (
+
     <div className="w-full max-w-md bg-surface-raised text-white rounded-2xl shadow-xl p-4">
       <h2 className="text-lg font-semibold mb-3">Invite Friends</h2>
 

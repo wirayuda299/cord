@@ -39,7 +39,9 @@ func (s *Server) Run() {
 	mrh := handlers.NewMemberHandler(s.db)
 	ih := handlers.NewInvitationHandler(s.db)
 	uh := handlers.NewUserHandler(s.db)
+	fh := handlers.NewFriendHandler(s.db)
 
+	routes.RegisterFriendRoutes(r, fh)
 	routes.RegisterUserRoutes(r, uh)
 	routes.RegisterMemberRoutes(r, mrh)
 	routes.RegisterInvitationRoutes(r, ih)
@@ -64,4 +66,5 @@ func (s *Server) Run() {
 	if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 		log.Fatal("server failed to start:", err)
 	}
+
 }
