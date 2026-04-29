@@ -19,7 +19,7 @@ type ChannelResponse struct {
 func GetChannelById(ctx context.Context, db *databases.Container, channelId string) (*ChannelResponse, *httputil.ErrorResponse) {
 	if channelId == "" {
 		return nil, &httputil.ErrorResponse{
-			Err:  errors.New("Channel ID is missing"),
+			Err:  errors.New("channel ID is missing"),
 			Code: http.StatusBadRequest,
 		}
 	}

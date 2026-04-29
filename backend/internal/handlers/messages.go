@@ -80,11 +80,11 @@ func (mh *MessageHandler) DeleteMessage(w http.ResponseWriter, r *http.Request) 
 func (mh *MessageHandler) FindAllMessages(w http.ResponseWriter, r *http.Request) {
 	channelID := r.URL.Query().Get("channelId")
 
-	messages, err := messages.GetAllMessages(r.Context(), mh.db, channelID)
+	allMessages, err := messages.GetAllMessages(r.Context(), mh.db, channelID)
 	if err != nil {
 		httputil.WriteErrorResponse(w, err.Err.Error(), err.Code)
 		return
 	}
 
-	httputil.EncodeResponse(w, "All messages fetched successfully", http.StatusOK, messages)
+	httputil.EncodeResponse(w, "All messages fetched successfully", http.StatusOK, allMessages)
 }

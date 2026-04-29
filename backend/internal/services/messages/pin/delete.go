@@ -12,7 +12,7 @@ import (
 func DeletePinMessage(ctx context.Context, db *databases.Container, id string) *httputil.ErrorResponse {
 	if id == "" {
 		return &httputil.ErrorResponse{
-			Err:  errors.New("Message ID is missing"),
+			Err:  errors.New("message ID is missing"),
 			Code: http.StatusBadRequest,
 		}
 	}
@@ -25,7 +25,7 @@ func DeletePinMessage(ctx context.Context, db *databases.Container, id string) *
 	}
 	if !exists {
 		return &httputil.ErrorResponse{
-			Err:  errors.New("Message doesn't exists"),
+			Err:  errors.New("message doesn't exists"),
 			Code: http.StatusNotFound,
 		}
 	}

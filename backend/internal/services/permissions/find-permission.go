@@ -18,9 +18,9 @@ type Permission struct {
 	UpdatedAt   time.Time `json:"updated_at"`
 }
 
-func FindPermissionByRoleId(ctx context.Context, db *databases.Container, roleID string) ([]Permission, *httputil.ErrorResponse) {
+func FindPermissionByRoleID(ctx context.Context, db *databases.Container, roleID string) ([]Permission, *httputil.ErrorResponse) {
 	if roleID == "" {
-		return nil, &httputil.ErrorResponse{Err: errors.New("Role ID is missing"), Code: http.StatusBadRequest}
+		return nil, &httputil.ErrorResponse{Err: errors.New(`role ID is missing`), Code: http.StatusBadRequest}
 	}
 	var permissions []Permission
 

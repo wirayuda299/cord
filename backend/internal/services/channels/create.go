@@ -23,15 +23,15 @@ func CreateChannel(ctx context.Context, db *databases.Container, p *CreateChanne
 	}
 
 	if p.Type == "" {
-		return &httputil.ErrorResponse{Err: errors.New("Channel type is required"), Code: http.StatusBadRequest}
+		return &httputil.ErrorResponse{Err: errors.New("channel type is required"), Code: http.StatusBadRequest}
 	}
 
 	if p.CreatedBy == "" {
-		return &httputil.ErrorResponse{Err: errors.New("User ID is required"), Code: http.StatusBadRequest}
+		return &httputil.ErrorResponse{Err: errors.New("user ID is required"), Code: http.StatusBadRequest}
 	}
 
 	if p.ServerID == "" {
-		return &httputil.ErrorResponse{Err: errors.New("Server ID is required"), Code: http.StatusBadRequest}
+		return &httputil.ErrorResponse{Err: errors.New("server ID is required"), Code: http.StatusBadRequest}
 	}
 	if _, err := db.Postgres.Exec(ctx, "INSERT INTO channels(name,channel_type,created_by,category_id,server_id) values($1,$2,$3,$4,$5)", p.Name, p.Type, p.CreatedBy, p.CategoryID, p.ServerID); err != nil {
 		return &httputil.ErrorResponse{

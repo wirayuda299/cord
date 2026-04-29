@@ -29,6 +29,7 @@ func (rh *RoleHandler) FindAllMemberInRole(w http.ResponseWriter, r *http.Reques
 }
 
 func (rh *RoleHandler) AssignRole(w http.ResponseWriter, r *http.Request) {
+
 	var p roles.AssignRolePayload
 	if err := json.NewDecoder(r.Body).Decode(&p); err != nil {
 		httputil.WriteErrorResponse(w, err.Error(), http.StatusBadRequest)
@@ -76,13 +77,13 @@ func (rh *RoleHandler) CreateRole(w http.ResponseWriter, r *http.Request) {
 }
 
 func (rh *RoleHandler) GetAllRole(w http.ResponseWriter, r *http.Request) {
-	roles, err := roles.GetAllRoles(r.Context(), rh.db, r.URL.Query().Get("serverID"))
+	allRoles, err := roles.GetAllRoles(r.Context(), rh.db, r.URL.Query().Get("serverID"))
 	if err != nil {
 		httputil.WriteErrorResponse(w, err.Err.Error(), err.Code)
 		return
 	}
 
-	httputil.EncodeResponse(w, "Roles found", http.StatusOK, roles)
+	httputil.EncodeResponse(w, "Roles found", http.StatusOK, allRoles)
 }
 
 func (rh *RoleHandler) UnassignRole(w http.ResponseWriter, r *http.Request) {

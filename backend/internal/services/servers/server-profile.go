@@ -20,17 +20,17 @@ type User struct {
 
 func CreateDefaultServerProfile(ctx context.Context, db *databases.Container, p *queue.CreateDefaultServerProfilePayload) *httputil.ErrorResponse {
 	if p.ServerID == "" {
-		return &httputil.ErrorResponse{Err: errors.New("Server ID is missing"), Code: http.StatusBadRequest}
+		return &httputil.ErrorResponse{Err: errors.New("server ID is missing"), Code: http.StatusBadRequest}
 	}
 	if p.UserID == "" {
-		return &httputil.ErrorResponse{Err: errors.New("User ID is missing"), Code: http.StatusBadRequest}
+		return &httputil.ErrorResponse{Err: errors.New("user ID is missing"), Code: http.StatusBadRequest}
 	}
 
 	var u User
 	err := db.Postgres.QueryRow(ctx, "SELECT username,avatar_url,avatar_id, bio from users where id = $1", p.UserID).Scan(&u.Username, &u.Avatar, &u.AvatarID, &u.Bio)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return &httputil.ErrorResponse{Err: errors.New("User not found"), Code: http.StatusNotFound}
+			return &httputil.ErrorResponse{Err: errors.New("user not found"), Code: http.StatusNotFound}
 		}
 		return &httputil.ErrorResponse{Err: err, Code: http.StatusInternalServerError}
 	}

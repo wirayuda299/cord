@@ -30,7 +30,7 @@ func AssignRole(ctx context.Context, db *databases.Container, p *AssignRolePaylo
 	}
 
 	if p.MemberUserID == "" {
-		return &httputil.ErrorResponse{Err: errors.New("Member user ID is missing"), Code: http.StatusBadRequest}
+		return &httputil.ErrorResponse{Err: errors.New("member user ID is missing"), Code: http.StatusBadRequest}
 	}
 
 	_, err := db.Postgres.Exec(ctx, "INSERT INTO user_roles(user_id,server_id,role_id,assigned_by) values($1,$2,$3,$4)", p.MemberUserID, p.ServerID, p.RoleId, p.AssignedBy)

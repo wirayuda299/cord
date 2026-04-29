@@ -21,7 +21,7 @@ type Role struct {
 
 func GetAllRoles(ctx context.Context, db *databases.Container, serverID string) ([]Role, *httputil.ErrorResponse) {
 	if serverID == "" {
-		return nil, &httputil.ErrorResponse{Err: errors.New("Server ID is missing"), Code: http.StatusBadRequest}
+		return nil, &httputil.ErrorResponse{Err: errors.New("server ID is missing"), Code: http.StatusBadRequest}
 	}
 
 	var roles []Role

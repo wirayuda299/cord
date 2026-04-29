@@ -19,11 +19,11 @@ type CreateUserPayload struct {
 
 func CreateUser(ctx context.Context, db *databases.Container, p *CreateUserPayload) *httputil.ErrorResponse {
 	if p.ID == "" {
-		return &httputil.ErrorResponse{Err: errors.New("User ID is missing"), Code: http.StatusBadRequest}
+		return &httputil.ErrorResponse{Err: errors.New("user ID is missing"), Code: http.StatusBadRequest}
 	}
 
 	if p.Username == "" {
-		return &httputil.ErrorResponse{Err: errors.New("Username is missing"), Code: http.StatusBadRequest}
+		return &httputil.ErrorResponse{Err: errors.New("username is missing"), Code: http.StatusBadRequest}
 	}
 
 	_, err := db.Postgres.Exec(ctx, "INSERT INTO users(id,username,avatar_url,avatar_id,bio) values($1,$2,$3,$4,$5)", p.ID, p.Username, p.AvatarURL, p.AvatarID, p.Bio)

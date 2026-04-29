@@ -65,7 +65,7 @@ func Send(ctx context.Context, m Message, db *databases.Container, channelID str
 	if parentMsgID != nil {
 		err = db.Postgres.QueryRow(ctx, "SELECT m.content, u.username from messages as m left join users as u on m.user_id = u.id where m.id=$1", parentMsgID).Scan(&row.ParentContent, &row.ParentUsername)
 		if err != nil {
-			return nil, fmt.Errorf("Failed to get parent message %w", err)
+			return nil, fmt.Errorf("failed to get parent message %w", err)
 		}
 	}
 	return &row, nil

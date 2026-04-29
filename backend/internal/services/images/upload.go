@@ -71,7 +71,16 @@ func HandleUpload(p *UploadImagePayload) (*UploadResponse, *httputil.ErrorRespon
 		}
 	}
 
-	defer file.Close()
+	defer func(file multipart.File) *httputil.ErrorResponse {
+		err := file.Close()
+		if err != nil {
+			return &httputil.ErrorResponse{
+				Err:  err,
+				Code: http.StatusInternalServerError,
+			}
+		}
+		return nil
+	}(file)
 
 	res, uploadErr := cld.Upload.Upload(p.Ctx, file, uploader.UploadParams{
 		Folder:         "discord",

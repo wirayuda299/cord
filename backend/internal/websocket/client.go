@@ -49,7 +49,11 @@ func (c *Client) ReadIncomingMessage(db *databases.Container) {
 	defer func() {
 		defer c.cancel()
 		c.hub.unregister <- c
-		c.Conn.Close()
+		err := c.Conn.Close()
+		if err != nil {
+
+			return
+		}
 	}()
 
 	c.Conn.SetReadLimit(maxMessageSize)

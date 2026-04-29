@@ -11,11 +11,11 @@ import (
 
 func IsUserJoinedServer(ctx context.Context, db *databases.Container, user_id string, server_id string) (bool, *httputil.ErrorResponse) {
 	if user_id == "" {
-		return false, &httputil.ErrorResponse{Err: errors.New("User ID is missing"), Code: http.StatusBadRequest}
+		return false, &httputil.ErrorResponse{Err: errors.New("user ID is missing"), Code: http.StatusBadRequest}
 	}
 
 	if server_id == "" {
-		return false, &httputil.ErrorResponse{Err: errors.New("Server ID is missing"), Code: http.StatusBadRequest}
+		return false, &httputil.ErrorResponse{Err: errors.New("server ID is missing"), Code: http.StatusBadRequest}
 	}
 
 	var joined bool

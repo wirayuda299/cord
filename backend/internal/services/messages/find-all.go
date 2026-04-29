@@ -12,7 +12,7 @@ import (
 
 func GetAllMessages(ctx context.Context, db *databases.Container, channelId string) ([]services.MessageRow, *httputil.ErrorResponse) {
 	if channelId == "" {
-		return nil, &httputil.ErrorResponse{Err: errors.New("Channel ID is missing"), Code: http.StatusBadRequest}
+		return nil, &httputil.ErrorResponse{Err: errors.New("channel ID is missing"), Code: http.StatusBadRequest}
 	}
 
 	var messages []services.MessageRow

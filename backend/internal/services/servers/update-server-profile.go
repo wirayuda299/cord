@@ -29,8 +29,8 @@ func UpdateServerProfile(ctx context.Context, db *databases.Container, p *Update
 		return &httputil.ErrorResponse{Err: errors.New("user_id is required"), Code: http.StatusBadRequest}
 	}
 
-	setClauses := []string{}
-	args := []any{}
+	var setClauses []string
+	var args []any
 	idx := 1
 
 	if p.Username != nil {

@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
+	"io"
 	"log"
 	"net/http"
 
@@ -54,7 +55,14 @@ func (sh *ServerHandler) CreateServer(w http.ResponseWriter, r *http.Request) {
 		httputil.WriteErrorResponse(w, "Invalid request payload", http.StatusBadRequest)
 		return
 	}
-	defer r.Body.Close()
+	defer func(Body io.ReadCloser) {
+		err := Body.Close()
+		if err != nil {
+			httputil.WriteErrorResponse(w, err.Error(), http.StatusInternalServerError)
+			return
+
+		}
+	}(r.Body)
 
 	if err := servers.CreateServer(r.Context(), sh.db, &server); err != nil {
 		httputil.WriteErrorResponse(w, err.Err.Error(), err.Code)
@@ -71,7 +79,13 @@ func (sh *ServerHandler) UpdateServer(w http.ResponseWriter, r *http.Request) {
 		httputil.WriteErrorResponse(w, "Invalid request payload", http.StatusBadRequest)
 		return
 	}
-	defer r.Body.Close()
+	defer func(Body io.ReadCloser) {
+		err := Body.Close()
+		if err != nil {
+			httputil.WriteErrorResponse(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+	}(r.Body)
 
 	if err := servers.UpdateServer(r.Context(), sh.db, &p); err != nil {
 		httputil.WriteErrorResponse(w, err.Err.Error(), err.Code)
@@ -121,7 +135,13 @@ func (sh *ServerHandler) UpdateServerProfile(w http.ResponseWriter, r *http.Requ
 		httputil.WriteErrorResponse(w, "Invalid request payload", http.StatusBadRequest)
 		return
 	}
-	defer r.Body.Close()
+	defer func(Body io.ReadCloser) {
+		err := Body.Close()
+		if err != nil {
+			httputil.WriteErrorResponse(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+	}(r.Body)
 
 	if err := servers.UpdateServerProfile(r.Context(), sh.db, &p); err != nil {
 		httputil.WriteErrorResponse(w, err.Err.Error(), err.Code)

@@ -101,7 +101,7 @@ func handleJob(ctx context.Context, db *databases.Container, job queue.Job) erro
 
 		err := permissions.UpdatePermission(ctx, db, &p)
 		if err != nil {
-			return fmt.Errorf("Error update permission :%s", err.Err.Error())
+			return fmt.Errorf("error update permission :%s", err.Err.Error())
 		}
 		return nil
 	case queue.CreateChannel:

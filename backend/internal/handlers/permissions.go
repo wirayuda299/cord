@@ -17,7 +17,7 @@ func NewPermissionHandler(db *databases.Container) *PermissionHandler {
 }
 
 func (ph *PermissionHandler) FindPermissionByID(w http.ResponseWriter, r *http.Request) {
-	permissions, err := permissionService.FindPermissionByRoleId(r.Context(), ph.db, r.URL.Query().Get("role_id"))
+	permissions, err := permissionService.FindPermissionByRoleID(r.Context(), ph.db, r.URL.Query().Get("role_id"))
 	if err != nil {
 		httputil.WriteErrorResponse(w, err.Err.Error(), err.Code)
 		return

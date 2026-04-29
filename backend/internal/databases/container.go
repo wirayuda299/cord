@@ -2,6 +2,7 @@ package databases
 
 import (
 	"context"
+	"fmt"
 	"log"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -36,5 +37,9 @@ func NewContainer(ctx context.Context) (*Container, error) {
 
 func (c *Container) Close() {
 	c.Postgres.Close()
-	c.Redis.Close()
+	err := c.Redis.Close()
+	if err != nil {
+		fmt.Println("REDIS ERROR -> ", err.Error())
+		return
+	}
 }

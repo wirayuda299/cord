@@ -44,9 +44,9 @@ func JoinServerWithInvitationCode(ctx context.Context, db *databases.Container, 
 		SELECT id, server_id FROM inserted;
 	`, code, userId).Scan(&memberID, &serverID)
 	if err != nil {
-		if err == pgx.ErrNoRows {
+		if errors.Is(err, pgx.ErrNoRows) {
 			return &httputil.ErrorResponse{
-				Err:  errors.New("Invalid code, invite full, or already joined"),
+				Err:  errors.New("invalid code, invite full, or already joined"),
 				Code: http.StatusForbidden,
 			}
 		}

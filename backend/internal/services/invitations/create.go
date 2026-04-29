@@ -44,7 +44,7 @@ func CreateInvitationCode(ctx context.Context, db *databases.Container, p Create
 	if err := db.Postgres.QueryRow(ctx, "SELECT EXISTS(select 1 from servers where id = $1)", p.ServerId).Scan(&isExist); err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return "", &httputil.ErrorResponse{
-				Err:  errors.New("Server doesn't exists"),
+				Err:  errors.New("server doesn't exists"),
 				Code: http.StatusNotFound,
 			}
 		} else {

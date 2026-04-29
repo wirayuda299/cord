@@ -29,7 +29,7 @@ func UpdateRole(ctx context.Context, db *databases.Container, p UpdatePayload) *
 	}
 
 	setClauses := []string{}
-	args := []any{}
+	var args []any
 	idx := 1
 
 	if p.Name != nil {

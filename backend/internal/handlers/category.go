@@ -20,13 +20,13 @@ func NewCategoryHandler(db *databases.Container) *CategoryHandler {
 func (ch *CategoryHandler) FindAllCategories(w http.ResponseWriter, r *http.Request) {
 	serverID := r.URL.Query().Get("serverID")
 
-	categories, err := categories.FindAllCategories(r.Context(), ch.db, serverID)
+	allCategories, err := categories.FindAllCategories(r.Context(), ch.db, serverID)
 	if err != nil {
 		httputil.WriteErrorResponse(w, err.Err.Error(), err.Code)
 		return
 	}
 
-	httputil.EncodeResponse(w, "Categories fetched successfully", http.StatusOK, categories)
+	httputil.EncodeResponse(w, "Categories fetched successfully", http.StatusOK, allCategories)
 }
 
 func (ch *CategoryHandler) CreateCategory(w http.ResponseWriter, r *http.Request) {

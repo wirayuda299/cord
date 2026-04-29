@@ -21,7 +21,7 @@ type InvitationResponse struct {
 
 func FindInvitationByCode(ctx context.Context, db *databases.Container, code string) (*InvitationResponse, *httputil.ErrorResponse) {
 	if code == "" {
-		return nil, &httputil.ErrorResponse{Err: errors.New("Invitation code is missing"), Code: http.StatusBadRequest}
+		return nil, &httputil.ErrorResponse{Err: errors.New("invitation code is missing"), Code: http.StatusBadRequest}
 	}
 	var i InvitationResponse
 	err := db.Postgres.QueryRow(ctx, `

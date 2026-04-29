@@ -10,7 +10,7 @@ import (
 	"github.com/wirayuda299/backend/internal/httputil"
 )
 
-type PendingInvitation struct {
+type Friend struct {
 	ID                 string    `json:"id"`
 	Status             string    `json:"status"`
 	RequesterUserID    string    `json:"requester_user_id"`
@@ -22,7 +22,7 @@ type PendingInvitation struct {
 	CreatedAt          time.Time `json:"created_at"`
 }
 
-func GetAllPendingInvitations(ctx context.Context, db *databases.Container, userID string) ([]PendingInvitation, *httputil.ErrorResponse) {
+func GetAllPendingInvitations(ctx context.Context, db *databases.Container, userID string) ([]Friend, *httputil.ErrorResponse) {
 
 	if userID == "" {
 		return nil, &httputil.ErrorResponse{Err: errors.New("user id is missing"), Code: http.StatusBadRequest}
@@ -50,10 +50,10 @@ func GetAllPendingInvitations(ctx context.Context, db *databases.Container, user
 	}
 	defer rows.Close()
 
-	var invitations []PendingInvitation
+	var invitations []Friend
 
 	for rows.Next() {
-		var i PendingInvitation
+		var i Friend
 		if err = rows.Scan(&i.ID, &i.Status, &i.RequesterUserID, &i.RequesterUsername, &i.RequesterAvatarURL, &i.AddresseeUserID, &i.AddresseeUsername, &i.AddresseeAvatarURL, &i.CreatedAt); err != nil {
 			return nil, &httputil.ErrorResponse{Err: err, Code: http.StatusInternalServerError}
 		}

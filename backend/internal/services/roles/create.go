@@ -24,14 +24,14 @@ type CreateRolePayload struct {
 
 func CreateRole(ctx context.Context, db *databases.Container, p *CreateRolePayload) *httputil.ErrorResponse {
 	if p.Name == "" {
-		return &httputil.ErrorResponse{Err: errors.New("Role name is required"), Code: http.StatusBadRequest}
+		return &httputil.ErrorResponse{Err: errors.New("role name is required"), Code: http.StatusBadRequest}
 	}
 
 	if p.ServerID == "" {
-		return &httputil.ErrorResponse{Err: errors.New("Server ID is required"), Code: http.StatusBadRequest}
+		return &httputil.ErrorResponse{Err: errors.New("server ID is required"), Code: http.StatusBadRequest}
 	}
 	if p.Color == "" {
-		return &httputil.ErrorResponse{Err: errors.New("Color is required"), Code: http.StatusBadRequest}
+		return &httputil.ErrorResponse{Err: errors.New("color is required"), Code: http.StatusBadRequest}
 	}
 
 	if p.CreatedBy == "" {

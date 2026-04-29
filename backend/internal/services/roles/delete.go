@@ -42,7 +42,7 @@ func DeleteRole(ctx context.Context, db *databases.Container, p *DeleteRolePaylo
 	}
 
 	if p.UserId != r.UserID {
-		return &httputil.ErrorResponse{Err: errors.New("Unauthorized"), Code: http.StatusUnauthorized}
+		return &httputil.ErrorResponse{Err: errors.New("unauthorized"), Code: http.StatusUnauthorized}
 	}
 	_, err = tx.Exec(ctx, "DELETE FROM roles where id = $1", p.RoleId)
 	if err != nil {

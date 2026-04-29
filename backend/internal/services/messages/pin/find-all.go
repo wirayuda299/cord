@@ -20,7 +20,7 @@ func GetAllPinnedMessage(ctx context.Context, db *databases.Container, channelId
 	var pinnedMessages []PinnedMessageResponse
 	if channelId == "" {
 		return nil, &httputil.ErrorResponse{
-			Err:  errors.New("Channel ID is missing"),
+			Err:  errors.New("channel ID is missing"),
 			Code: http.StatusBadRequest,
 		}
 	}

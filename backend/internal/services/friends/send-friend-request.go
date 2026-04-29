@@ -17,7 +17,7 @@ type SendFriendRequestPayload struct {
 
 func SendFriendRequest(ctx context.Context, db *databases.Container, p *SendFriendRequestPayload) *httputil.ErrorResponse {
 	if p.AddresseeID == "" {
-		return &httputil.ErrorResponse{Err: errors.New("Addresse ID is missing"), Code: http.StatusBadRequest}
+		return &httputil.ErrorResponse{Err: errors.New("addresse ID is missing"), Code: http.StatusBadRequest}
 	}
 
 	if p.RequesterID == "" {

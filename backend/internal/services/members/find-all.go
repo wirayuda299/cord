@@ -12,7 +12,7 @@ import (
 
 type Member struct {
 	ID        string    `json:"id"`
-	UserId    string    `json:"user_id"`
+	UserID    string    `json:"user_id"`
 	Username  string    `json:"username"`
 	AvatarURL string    `json:"avatar_url"`
 	AvatarID  string    `json:"avatar_id"`
@@ -23,19 +23,19 @@ type Member struct {
 	ServerID  string    `json:"server_id"`
 }
 
-func FindAllMemberInServer(ctx context.Context, db *databases.Container, server_id string) ([]Member, *httputil.ErrorResponse) {
-	if server_id == "" {
-		return nil, &httputil.ErrorResponse{Err: errors.New("Server ID is missing"), Code: http.StatusBadRequest}
+func FindAllMemberInServer(ctx context.Context, db *databases.Container, serverID string) ([]Member, *httputil.ErrorResponse) {
+	if serverID == "" {
+		return nil, &httputil.ErrorResponse{Err: errors.New("server ID is missing"), Code: http.StatusBadRequest}
 	}
 
-	var serverExist bool
-	err := db.Postgres.QueryRow(ctx, "SELECT EXISTS(SELECT 1 FROM servers where id = $1)", server_id).Scan(&serverExist)
+	var isServerExists bool
+	err := db.Postgres.QueryRow(ctx, "SELECT EXISTS(SELECT 1 FROM servers where id = $1)", serverID).Scan(&isServerExists)
 	if err != nil {
 		return nil, &httputil.ErrorResponse{Err: err, Code: http.StatusInternalServerError}
 	}
 
-	if !serverExist {
-		return nil, &httputil.ErrorResponse{Err: errors.New("Server not found"), Code: http.StatusNotFound}
+	if !isServerExists {
+		return nil, &httputil.ErrorResponse{Err: errors.New("server not found"), Code: http.StatusNotFound}
 	}
 
 	var members []Member
@@ -57,7 +57,7 @@ func FindAllMemberInServer(ctx context.Context, db *databases.Container, server_
 			left join user_roles as ur on ur.user_id = m.user_id
 			left join roles as r on r.id = ur.role_id
 			where m.server_id = $1
-		`, server_id)
+		`, serverID)
 	if err != nil {
 		return nil, &httputil.ErrorResponse{Err: err, Code: http.StatusInternalServerError}
 	}
@@ -66,7 +66,7 @@ func FindAllMemberInServer(ctx context.Context, db *databases.Container, server_
 	for rows.Next() {
 		var m Member
 
-		if err := rows.Scan(&m.ID, &m.UserId, &m.ServerID, &m.Username, &m.AvatarURL, &m.AvatarID, &m.Role, &m.RoleID, &m.RoleColor, &m.JoinedAt); err != nil {
+		if err := rows.Scan(&m.ID, &m.UserID, &m.ServerID, &m.Username, &m.AvatarURL, &m.AvatarID, &m.Role, &m.RoleID, &m.RoleColor, &m.JoinedAt); err != nil {
 			return nil, &httputil.ErrorResponse{Err: err, Code: http.StatusInternalServerError}
 		}
 
