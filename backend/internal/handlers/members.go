@@ -17,7 +17,7 @@ func NewMemberHandler(db *databases.Container) *MemberHandler {
 }
 
 func (mh *MemberHandler) FindAllMemberInServer(w http.ResponseWriter, r *http.Request) {
-	memberInServer, err := members.FindAllMemberInServer(r.Context(), mh.db, r.URL.Query().Get("serverID"))
+	memberInServer, err := members.FindMembersInServer(r.Context(), mh.db, r.URL.Query().Get("serverID"))
 	if err != nil {
 		httputil.WriteErrorResponse(w, err.Err.Error(), err.Code)
 		return

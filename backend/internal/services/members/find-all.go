@@ -23,7 +23,7 @@ type Member struct {
 	ServerID  string    `json:"server_id"`
 }
 
-func FindAllMemberInServer(ctx context.Context, db *databases.Container, serverID string) ([]Member, *httputil.ErrorResponse) {
+func FindMembersInServer(ctx context.Context, db *databases.Container, serverID string) ([]Member, *httputil.ErrorResponse) {
 	if serverID == "" {
 		return nil, &httputil.ErrorResponse{Err: errors.New("server ID is missing"), Code: http.StatusBadRequest}
 	}
@@ -35,10 +35,10 @@ func FindAllMemberInServer(ctx context.Context, db *databases.Container, serverI
 	}
 
 	if !isServerExists {
-		return nil, &httputil.ErrorResponse{Err: errors.New("server not found"), Code: http.StatusNotFound}
+		return nil, &httputil.ErrorResponse{Err: errors.New("Server not found"), Code: http.StatusNotFound}
 	}
 
-	var members []Member
+	members := make([]Member, 0)
 
 	rows, err := db.Postgres.Query(ctx, `
 			select

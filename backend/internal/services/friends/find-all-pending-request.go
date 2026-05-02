@@ -42,7 +42,7 @@ func GetAllPendingInvitations(ctx context.Context, db *databases.Container, user
 		from friends as f
 		left join users as ru on ru.id =requester_id
 		left join users as au on au.id = addressee_id
-		where requester_id = $1 or addressee_id = $1`, userID)
+		where (requester_id = $1 or addressee_id = $1) and status = 'pending'`, userID)
 
 	if err != nil {
 		return nil, &httputil.ErrorResponse{Err: err, Code: http.StatusInternalServerError}
@@ -50,7 +50,7 @@ func GetAllPendingInvitations(ctx context.Context, db *databases.Container, user
 	}
 	defer rows.Close()
 
-	var invitations []Friend
+	invitations := make([]Friend, 0)
 
 	for rows.Next() {
 		var i Friend

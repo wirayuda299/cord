@@ -23,7 +23,6 @@ func GetAllServersByUserId(ctx context.Context, db *databases.Container, userId 
 			Code: http.StatusBadRequest,
 		}
 	}
-	var servers []ServerResponse
 
 	rows, err := db.Postgres.Query(ctx, `select id, name, COALESCE(logo, '') as logo from servers where created_by = $1`, userId)
 	if err != nil {
@@ -34,6 +33,7 @@ func GetAllServersByUserId(ctx context.Context, db *databases.Container, userId 
 	}
 
 	defer rows.Close()
+	servers := make([]ServerResponse, 0)
 
 	for rows.Next() {
 		var server ServerResponse

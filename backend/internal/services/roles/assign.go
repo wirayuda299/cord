@@ -22,7 +22,7 @@ func AssignRole(ctx context.Context, db *databases.Container, p *AssignRolePaylo
 	}
 
 	if p.ServerID == "" {
-		return &httputil.ErrorResponse{Err: errors.New("Server ID is missing"), Code: http.StatusBadRequest}
+		return &httputil.ErrorResponse{Err: errors.New("server ID is missing"), Code: http.StatusBadRequest}
 	}
 
 	if p.RoleId == "" {
@@ -37,5 +37,6 @@ func AssignRole(ctx context.Context, db *databases.Container, p *AssignRolePaylo
 	if err != nil {
 		return &httputil.ErrorResponse{Err: err, Code: http.StatusInternalServerError}
 	}
+
 	return nil
 }

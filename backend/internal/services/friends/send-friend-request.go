@@ -21,7 +21,7 @@ func SendFriendRequest(ctx context.Context, db *databases.Container, p *SendFrie
 	}
 
 	if p.RequesterID == "" {
-		return &httputil.ErrorResponse{Err: errors.New("Requester ID is missing"), Code: http.StatusBadRequest}
+		return &httputil.ErrorResponse{Err: errors.New("requester ID is missing"), Code: http.StatusBadRequest}
 	}
 
 	var requesterUserExist bool

@@ -24,14 +24,13 @@ func GetAllRoles(ctx context.Context, db *databases.Container, serverID string) 
 		return nil, &httputil.ErrorResponse{Err: errors.New("server ID is missing"), Code: http.StatusBadRequest}
 	}
 
-	var roles []Role
-
 	rows, err := db.Postgres.Query(ctx, "select id,name,server_id,color,icon,hoist,mentionable from roles where server_id = $1", serverID)
 	if err != nil {
 		return nil, &httputil.ErrorResponse{Err: err, Code: http.StatusInternalServerError}
 	}
 
 	defer rows.Close()
+	roles := make([]Role, 0)
 
 	for rows.Next() {
 		var r Role

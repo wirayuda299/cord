@@ -35,7 +35,7 @@ func CreateRole(ctx context.Context, db *databases.Container, p *CreateRolePaylo
 	}
 
 	if p.CreatedBy == "" {
-		return &httputil.ErrorResponse{Err: errors.New("User ID is missing"), Code: http.StatusBadRequest}
+		return &httputil.ErrorResponse{Err: errors.New("user ID is missing"), Code: http.StatusBadRequest}
 	}
 
 	var id string

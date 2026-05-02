@@ -22,7 +22,7 @@ func FindAllCategories(ctx context.Context, db *databases.Container, serverId st
 	if serverId == "" {
 		return nil, &httputil.ErrorResponse{Err: errors.New("Server ID is missing"), Code: http.StatusBadRequest}
 	}
-	var categories []Category
+	categories := make([]Category, 0)
 
 	rows, err := db.Postgres.Query(ctx, `
 	SELECT c.id, c.name, c.server_id, c.created_by, s.name
@@ -47,7 +47,6 @@ func FindAllCategories(ctx context.Context, db *databases.Container, serverId st
 	if err := rows.Err(); err != nil {
 		return nil, &httputil.ErrorResponse{Err: err, Code: http.StatusInternalServerError}
 	}
-	log.Println(categories)
 
 	return categories, nil
 }

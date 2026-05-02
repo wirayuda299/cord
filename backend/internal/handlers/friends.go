@@ -22,6 +22,17 @@ type PendingRequestPayload struct {
 	CurrentUserID string `json:"current_user_id"`
 }
 
+func (fh *FriendsHandler) FindAllFriends(w http.ResponseWriter, r *http.Request) {
+	friends, err := friends.FindAllFriends(r.Context(), fh.db, r.URL.Query().Get("user_id"))
+
+	if err != nil {
+		httputil.WriteErrorResponse(w, err.Err.Error(), err.Code)
+		return
+	}
+
+	httputil.EncodeResponse(w, "All friends", http.StatusOK, friends)
+}
+
 func (fh *FriendsHandler) CancelFriendRequest(w http.ResponseWriter, r *http.Request) {
 
 	var p PendingRequestPayload

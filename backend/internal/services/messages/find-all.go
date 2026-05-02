@@ -15,7 +15,6 @@ func GetAllMessages(ctx context.Context, db *databases.Container, channelId stri
 		return nil, &httputil.ErrorResponse{Err: errors.New("channel ID is missing"), Code: http.StatusBadRequest}
 	}
 
-	var messages []services.MessageRow
 	rows, err := db.Postgres.Query(ctx, `SELECT
     m.id,
     m.content,
@@ -44,6 +43,9 @@ func GetAllMessages(ctx context.Context, db *databases.Container, channelId stri
 	}
 
 	defer rows.Close()
+
+	messages := make([]services.MessageRow, 0)
+
 	for rows.Next() {
 		var m services.MessageRow
 		err = rows.Scan(

@@ -26,7 +26,7 @@ func (ch *CategoryHandler) FindAllCategories(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	httputil.EncodeResponse(w, "Categories fetched successfully", http.StatusOK, allCategories)
+	httputil.EncodeResponse(w, "categories fetched successfully", http.StatusOK, allCategories)
 }
 
 func (ch *CategoryHandler) CreateCategory(w http.ResponseWriter, r *http.Request) {

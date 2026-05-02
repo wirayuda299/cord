@@ -24,7 +24,7 @@ func GetAllInvitationCode(ctx context.Context, db *databases.Container, serverID
 	if serverID == "" {
 		return nil, &httputil.ErrorResponse{Err: errors.New("Server ID is missing"), Code: http.StatusBadRequest}
 	}
-	var invitations []Invitation
+	invitations := make([]Invitation, 0)
 
 	rows, err := db.Postgres.Query(ctx, "SELECT id,code,server_id,created_by,max_users,created_at,uses from invitations where server_id = $1", serverID)
 	if err != nil {

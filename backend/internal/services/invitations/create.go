@@ -34,7 +34,7 @@ func CreateInvitationCode(ctx context.Context, db *databases.Container, p Create
 	fmt.Println("Payload -> ", p)
 	if p.ServerId == "" {
 		return "", &httputil.ErrorResponse{
-			Err:  errors.New("Server ID is missing"),
+			Err:  errors.New("server ID is missing"),
 			Code: http.StatusBadRequest,
 		}
 	}
