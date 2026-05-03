@@ -1,0 +1,12 @@
+{
+  "languages": {
+    "Go": {
+      "inlay_hints": {
+        "edit_debounce_ms": 680
+      }
+    }
+  },
+  "completions": {
+    "lsp_fetch_timeout_ms": 5
+  }
+}
