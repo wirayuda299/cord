@@ -20,6 +20,7 @@ func NewConversationHandler(db *databases.Container) *ConversationHandler {
 func (ch *ConversationHandler) CreateConversation(w http.ResponseWriter, r *http.Request) {
 
 	var p conversations.CreateConversationPayload
+
 	if err := json.NewDecoder(r.Body).Decode(&p); err != nil {
 		httputil.WriteErrorResponse(w, err.Error(), http.StatusBadRequest)
 		return
