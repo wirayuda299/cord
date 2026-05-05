@@ -1,97 +1,146 @@
 "use client";
 
-import { X } from "lucide-react";
-import { memo } from "react";
+import { X, Send } from "lucide-react";
+import { FormEvent, memo, useEffect, useRef, useState } from "react";
 import type { Message } from "@/lib/types/chat";
 import ChatItem from "../ChatItem";
 
 type ThreadPanelProps = {
-  parentMessage: Message | null;
-  threadMessages: Message[];
-  isOpen: boolean;
-  onClose: () => void;
-  onDeleteMessage?: (id: string) => void;
-  serverId: string;
+   parentMessage: Message | null;
+   threadMessages: Message[];
+   isOpen: boolean;
+   isLoading?: boolean;
+   isSending?: boolean;
+   onClose: () => void;
+   onSendReply: (content: string) => Promise<void> | void;
+   onDeleteMessage?: (id: string) => void;
+   serverId: string;
 };
 
 function ThreadPanel({
-  parentMessage,
-  threadMessages,
-  isOpen,
-  onClose,
-  onDeleteMessage,
-  serverId,
+   parentMessage,
+   threadMessages,
+   isOpen,
+   isLoading = false,
+   isSending = false,
+   onClose,
+   onSendReply,
+   onDeleteMessage,
+   serverId,
 }: ThreadPanelProps) {
-  if (!isOpen || !parentMessage) return null;
+   const [content, setContent] = useState("");
+   const bottomRef = useRef<HTMLDivElement | null>(null);
 
-  return (
-    <div className="flex flex-col w-80 bg-sidebar-secondary border-l border-white/5 overflow-hidden">
-      {/* Header */}
-      <div className="flex items-center justify-between px-4 h-12 border-b border-white/5 shrink-0">
-        <div className="flex items-center gap-2">
-          <span className="text-sm font-semibold text-zinc-200">Thread</span>
-          <span className="text-xs text-zinc-500">
-            {threadMessages.length + 1} messages
-          </span>
-        </div>
-        <button
-          onClick={onClose}
-          className="p-1 rounded hover:bg-white/10 transition-colors text-zinc-400 hover:text-zinc-200"
-        >
-          <X size={18} />
-        </button>
-      </div>
+   useEffect(() => {
+      if (!isOpen) return;
 
-      {/* Thread Messages */}
-      <div className="flex-1 overflow-y-auto flex flex-col">
-        {/* Parent Message */}
-        <div className="px-2 py-4 border-b border-white/10 bg-white/5">
-          <div className="px-2 py-2 rounded bg-white/5 border border-white/10">
-            <ChatItem
-              message={parentMessage}
-              serverId={serverId}
-              handleDelete={onDeleteMessage}
-            />
-          </div>
-        </div>
+      bottomRef.current?.scrollIntoView({
+         behavior: "smooth",
+         block: "end",
+      });
+   }, [isOpen, threadMessages.length]);
 
-        {/* Thread Replies */}
-        <div className="flex-1">
-          {threadMessages.length === 0 ? (
-            <div className="flex items-center justify-center h-32 text-zinc-500 text-sm">
-              No replies yet
+   if (!isOpen || !parentMessage) return null;
+
+   const totalMessages = threadMessages.length + 1;
+
+   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
+      e.preventDefault();
+
+      const trimmed = content.trim();
+
+      if (!trimmed || isSending) return;
+
+      await onSendReply(trimmed);
+      setContent("");
+   }
+
+   return (
+      <aside className="flex h-full w-96 shrink-0 flex-col bg-sidebar-secondary border-l border-white/5 overflow-hidden">
+         <header className="flex h-12 shrink-0 items-center justify-between border-b border-white/5 px-4">
+            <div className="min-w-0">
+               <div className="text-sm font-semibold text-zinc-200">Thread</div>
+               <div className="text-xs text-zinc-500">
+                  {totalMessages} {totalMessages === 1 ? "message" : "messages"}
+               </div>
             </div>
-          ) : (
-            <div className="divide-y divide-white/5">
-              {threadMessages.map((msg) => (
-                <div key={msg.id} className="px-2 py-3 hover:bg-white/5 transition-colors">
-                  <ChatItem
-                    message={msg}
-                    serverId={serverId}
-                    handleDelete={onDeleteMessage}
-                  />
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
 
-        {/* Reply Input */}
-        <div className="px-3 py-3 border-t border-white/10 shrink-0">
-          <div className="flex items-center gap-2 px-3 py-2.5 rounded-md bg-white/5 border border-white/10 focus-within:border-discord-brand transition-colors">
-            <input
-              type="text"
-              placeholder="Reply in thread..."
-              className="flex-1 bg-transparent outline-none text-sm text-zinc-200 placeholder:text-zinc-600"
-            />
-            <button className="p-1 rounded hover:bg-white/10 transition-colors text-discord-brand">
-              →
+            <button
+               type="button"
+               onClick={onClose}
+               aria-label="Close thread"
+               className="rounded p-1 text-zinc-400 transition-colors hover:bg-white/10 hover:text-zinc-200"
+            >
+               <X size={18} />
             </button>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
+         </header>
+
+         <div className="flex-1 overflow-y-auto">
+            <div className="border-b border-white/10 bg-white/5 px-2 py-4">
+               <div className="rounded border border-white/10 bg-white/5 px-2 py-2">
+                  <ChatItem
+                     message={parentMessage}
+                     serverId={serverId}
+                     handleDelete={onDeleteMessage}
+                  />
+               </div>
+            </div>
+
+            {isLoading ? (
+               <div className="flex h-32 items-center justify-center text-sm text-zinc-500">
+                  Loading thread...
+               </div>
+            ) : threadMessages.length === 0 ? (
+               <div className="flex h-32 items-center justify-center text-sm text-zinc-500">
+                  No replies yet
+               </div>
+            ) : (
+               <div className="divide-y divide-white/5">
+                  {threadMessages.map((msg) => (
+                     <div
+                        key={msg.id}
+                        className="px-2 py-3 transition-colors hover:bg-white/5"
+                     >
+                        <ChatItem
+                           message={msg}
+                           serverId={serverId}
+                           handleDelete={onDeleteMessage}
+                           variant="thread-reply"
+                        />
+                     </div>
+                  ))}
+               </div>
+            )}
+
+            <div ref={bottomRef} />
+         </div>
+
+         <form
+            onSubmit={handleSubmit}
+            className="shrink-0 border-t border-white/10 px-3 py-3"
+         >
+            <div className="flex items-center gap-2 rounded-md border border-white/10 bg-white/5 px-3 py-2.5 transition-colors focus-within:border-discord-brand">
+               <input
+                  type="text"
+                  value={content}
+                  onChange={(e) => setContent(e.target.value)}
+                  placeholder="Reply in thread..."
+                  disabled={isSending}
+                  className="flex-1 bg-transparent text-sm text-zinc-200 outline-none placeholder:text-zinc-600 disabled:cursor-not-allowed disabled:opacity-60"
+               />
+
+               <button
+                  type="submit"
+                  disabled={!content.trim() || isSending}
+                  aria-label="Send reply"
+                  className="rounded p-1 text-discord-brand transition-colors hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-40"
+               >
+                  <Send size={16} />
+               </button>
+            </div>
+         </form>
+      </aside>
+   );
 }
 
 export default memo(ThreadPanel);

@@ -43,7 +43,7 @@ export default function ChatList({
    const bottomRef = useRef<HTMLDivElement>(null);
    const { threadState, openThread, closeThread } = useThread();
 
-   const { selectedMsg, setSelectedMsg, isOpen } = useAppStore(
+   const { selectedMsg, setSelectedMsg, isMemberOpen } = useAppStore(
       useShallow((s) => ({
          selectedMsg: s.selectedMsg,
          setSelectedMsg: s.setSelectedMsg,
@@ -111,6 +111,7 @@ export default function ChatList({
                <div className="flex flex-col gap-5 pb-4">
                   {messages.map((m) => (
                      <ChatItem
+                        variant="channel"
                         key={m.id}
                         message={m}
                         serverId={serverId}
@@ -143,8 +144,11 @@ export default function ChatList({
             </div>
          </div>
 
-         <MemberList isOpen={isOpen} />
+         <MemberList isOpen={isMemberOpen} />
          <ThreadPanel
+            onSendReply={(e) => {
+               console.log("Message -> ", e);
+            }}
             parentMessage={threadState.parentMessage}
             threadMessages={threadState.threadMessages}
             isOpen={threadState.isOpen}

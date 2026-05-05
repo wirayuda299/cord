@@ -68,7 +68,9 @@ func (s *Server) Run() {
 	ih := handlers.NewInvitationHandler(s.db)
 	uh := handlers.NewUserHandler(s.db)
 	fh := handlers.NewFriendHandler(s.db)
+	crh := handlers.NewConversationHandler(s.db)
 
+	routes.RegisterConversationRoute(r, crh)
 	routes.RegisterFriendRoutes(r, fh)
 	routes.RegisterUserRoutes(r, uh)
 	routes.RegisterMemberRoutes(r, mrh)
