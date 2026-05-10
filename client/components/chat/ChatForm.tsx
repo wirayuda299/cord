@@ -24,6 +24,7 @@ type ChatFormProps = {
   onUploadComplete?: (tempId: string) => void;
   onUploadFailed?: (tempId: string) => void;
   userId?: string;
+  placeholder?: string;
 };
 
 export default function ChatForm({
@@ -36,6 +37,7 @@ export default function ChatForm({
   onUploadComplete,
   onUploadFailed,
   userId = "usr_001",
+  placeholder,
 }: ChatFormProps) {
   const selectedMsg = useAppStore((s) => s.selectedMsg);
   const setSelectedMsg = useAppStore((s) => s.setSelectedMsg);
@@ -47,12 +49,13 @@ export default function ChatForm({
   const uploadResultRef = useRef<UploadResult | null>(null);
   const uploadStateRef = useRef<UploadState>("idle");
 
-  const { sendMessage } = useWebSocket(serverId, channelId, {
+  const { sendMessage, status } = useWebSocket(serverId, channelId, {
     onMessage: handleMessages,
     onDelete: handleDelete,
     onClose: () => console.log("disconnected"),
     onError: (e) => console.error("ws error", e),
   });
+  const isConnected = status === "connected";
 
   const {
     attachedFiles,
@@ -121,6 +124,8 @@ export default function ChatForm({
   }, []);
 
   const handleSubmit = useCallback(async () => {
+    if (isSubmitting) return;
+    if (!isConnected) return;
     if (attachedFiles.length <= 0 && !message.trim()) return;
 
     const blobPreview = attachedFiles[0]?.preview ?? "";
@@ -173,7 +178,7 @@ export default function ChatForm({
         attachmentId = result.public_id;
       }
 
-      sendMessage({
+      const sent = sendMessage({
         channel_id: channelId,
         message: trimmed,
         user_id: userId,
@@ -181,6 +186,8 @@ export default function ChatForm({
         attachment_id: attachmentId,
         ...(selectedMsg && { parent_message_id: selectedMsg.id }),
       });
+      if (!sent) throw new Error("websocket is not connected");
+
       // Upload done + WS send queued — clear spinner immediately
       if (blobPreview) onUploadComplete?.(tempId);
     } catch {
@@ -190,6 +197,8 @@ export default function ChatForm({
     }
   }, [
     attachedFiles,
+    isConnected,
+    isSubmitting,
     message,
     sendMessage,
     userId,
@@ -278,6 +287,7 @@ export default function ChatForm({
           <button
             name="upload image"
             title="upload image"
+            disabled={isSubmitting}
             onClick={() => fileInputRef.current?.click()}
             className="text-gray-400 hover:text-gray-200 transition-colors shrink-0 mb-0.5 cursor-pointer"
           >
@@ -290,12 +300,15 @@ export default function ChatForm({
             onChange={(e) => setMessage(e.target.value)}
             onInput={handleInput}
             maxLength={500}
+            disabled={isSubmitting}
             onKeyDown={handleKeyDown}
             onPaste={onPaste}
             placeholder={
               attachedFiles.length > 0
                 ? "Add a comment (optional)"
-                : `Message #${channelName}`
+                : !isConnected
+                  ? "Connecting..."
+                : placeholder ?? `Message #${channelName}`
             }
             className="flex-1 bg-transparent text-sm text-gray-200 placeholder-gray-400 resize-none outline-none max-h-50 leading-5"
           />

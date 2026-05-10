@@ -17,6 +17,48 @@ func NewConversationHandler(db *databases.Container) *ConversationHandler {
 	return &ConversationHandler{db: db}
 }
 
+func (ch *ConversationHandler) FindAllConversations(w http.ResponseWriter, r *http.Request) {
+	userID := r.URL.Query().Get("user_id")
+
+	res, err := conversations.FindAllConversations(r.Context(), ch.db, userID)
+	if err != nil {
+		httputil.WriteErrorResponse(w, err.Err.Error(), err.Code)
+		return
+	}
+
+	httputil.EncodeResponse(w, "Conversations found", http.StatusOK, res)
+}
+
+func (ch *ConversationHandler) FindConversationByID(w http.ResponseWriter, r *http.Request) {
+	channelID := r.URL.Query().Get("channelId")
+	userID := r.URL.Query().Get("user_id")
+
+	res, err := conversations.FindConversationByID(r.Context(), ch.db, channelID, userID)
+	if err != nil {
+		httputil.WriteErrorResponse(w, err.Err.Error(), err.Code)
+		return
+	}
+
+	httputil.EncodeResponse(w, "Conversation found", http.StatusOK, res)
+}
+
+func (ch *ConversationHandler) DeleteConversation(w http.ResponseWriter, r *http.Request) {
+
+	var p conversations.DeleteConversationPayload
+	if err := json.NewDecoder(r.Body).Decode(&p); err != nil {
+		httputil.WriteErrorResponse(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	err := conversations.DeleteConversation(r.Context(), ch.db, p)
+	if err != nil {
+		httputil.WriteErrorResponse(w, err.Err.Error(), err.Code)
+		return
+	}
+
+	httputil.EncodeResponse(w, "Conversation deleted", http.StatusOK, nil)
+
+}
+
 func (ch *ConversationHandler) CreateConversation(w http.ResponseWriter, r *http.Request) {
 
 	var p conversations.CreateConversationPayload
@@ -25,10 +67,10 @@ func (ch *ConversationHandler) CreateConversation(w http.ResponseWriter, r *http
 		httputil.WriteErrorResponse(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	err := conversations.CreateConversation(r.Context(), ch.db, p)
+	res, err := conversations.CreateConversation(r.Context(), ch.db, p)
 	if err != nil {
 		httputil.WriteErrorResponse(w, err.Err.Error(), err.Code)
 		return
 	}
-	httputil.EncodeResponse(w, "Conversation created", http.StatusOK, nil)
+	httputil.EncodeResponse(w, "Conversation created", http.StatusOK, res)
 }

@@ -15,6 +15,7 @@ func main() {
 	}
 
 	ctx := context.Background()
+
 	container, err := databases.NewContainer(ctx)
 	if err != nil {
 		log.Println("Failed to init databases", err.Error())
@@ -24,5 +25,6 @@ func main() {
 	defer container.Close()
 
 	srv := internal.NewServer(container)
+
 	srv.Run()
 }

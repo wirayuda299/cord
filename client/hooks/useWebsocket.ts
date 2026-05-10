@@ -25,9 +25,13 @@ export function useWebSocket(
   const optionsRef = useRef(options);
   const [status, setStatus] = useState<ConnectionStatus>("connecting");
 
-  optionsRef.current = options;
+  useEffect(() => {
+    optionsRef.current = options;
+  }, [options]);
 
   useEffect(() => {
+    let active = true;
+
     function connect() {
       setStatus("connecting");
 
@@ -43,12 +47,16 @@ export function useWebSocket(
       const ws = new WebSocket(
         `${getPublicWsUrl()}/ws?serverId=${serverId}&channelId=${channelId}`
       );
+      wsRef.current = ws;
 
       ws.onopen = () => {
+        if (!active || wsRef.current !== ws) return;
         setStatus("connected");
       };
 
       ws.onmessage = (e) => {
+        if (!active || wsRef.current !== ws) return;
+
         try {
           const data = JSON.parse(e.data);
           if (data.type === "message_deleted") {
@@ -62,6 +70,8 @@ export function useWebSocket(
       };
 
       ws.onclose = (e) => {
+        if (!active || wsRef.current !== ws) return;
+
         setStatus("disconnected");
         optionsRef.current.onClose?.();
         if (e.code !== 1000 && e.code !== 1001) {
@@ -70,21 +80,23 @@ export function useWebSocket(
       };
 
       ws.onerror = () => {
+        if (!active || wsRef.current !== ws) return;
+
         setStatus("error");
         ws.close();
       };
-
-      wsRef.current = ws;
     }
 
     connect();
 
     return () => {
+      active = false;
       if (reconnectTimeout.current) {
         clearTimeout(reconnectTimeout.current);
       }
-      wsRef.current?.close(1000, "cleanup");
+      const ws = wsRef.current;
       wsRef.current = null;
+      ws?.close(1000, "cleanup");
     };
   }, [serverId, channelId]);
 

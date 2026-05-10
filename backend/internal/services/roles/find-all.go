@@ -36,11 +36,13 @@ func GetAllRoles(ctx context.Context, db *databases.Container, serverID string) 
 		var r Role
 		err := rows.Scan(&r.ID, &r.Name, &r.ServerID, &r.Color, &r.Icon, &r.Hoist, &r.Mentionable)
 		if err != nil {
-			return nil, &httputil.ErrorResponse{Err: err, Code: http.StatusInternalServerError}
+			return nil, &httputil.ErrorResponse{
+				Err:  err,
+				Code: http.StatusInternalServerError,
+			}
 		}
 
 		roles = append(roles, r)
-
 	}
 
 	if err := rows.Err(); err != nil {

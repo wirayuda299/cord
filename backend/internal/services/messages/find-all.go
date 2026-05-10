@@ -10,8 +10,8 @@ import (
 	"github.com/wirayuda299/backend/internal/services"
 )
 
-func GetAllMessages(ctx context.Context, db *databases.Container, channelId string) ([]services.MessageRow, *httputil.ErrorResponse) {
-	if channelId == "" {
+func GetAllMessages(ctx context.Context, db *databases.Container, channelID string) ([]services.MessageRow, *httputil.ErrorResponse) {
+	if channelID == "" {
 		return nil, &httputil.ErrorResponse{Err: errors.New("channel ID is missing"), Code: http.StatusBadRequest}
 	}
 
@@ -19,8 +19,8 @@ func GetAllMessages(ctx context.Context, db *databases.Container, channelId stri
     m.id,
     m.content,
     u.username,
-    m.image_url,
-    m.image_asset_id,
+    COALESCE(m.image_url, '') AS image_url,
+    COALESCE(m.image_asset_id, '') AS image_asset_id,
     m.user_id,
     m.channel_id,
     m.created_at,
@@ -28,13 +28,13 @@ func GetAllMessages(ctx context.Context, db *databases.Container, channelId stri
     m.parent_msg_id,
     pm.content AS parent_content,
     pu.username AS parent_username,
-    u.avatar_url as avatar
+    COALESCE(u.avatar_url, '') as avatar
     FROM messages as m
     JOIN users as u ON m.user_id = u.id
     LEFT JOIN messages as pm ON m.parent_msg_id = pm.id
     LEFT JOIN users as pu ON pm.user_id = pu.id
     WHERE m.channel_id = $1
-    ORDER BY m.created_at ASC;`, channelId)
+    ORDER BY m.created_at ASC;`, channelID)
 	if err != nil {
 		return nil, &httputil.ErrorResponse{
 			Err:  err,
@@ -43,7 +43,6 @@ func GetAllMessages(ctx context.Context, db *databases.Container, channelId stri
 	}
 
 	defer rows.Close()
-
 	messages := make([]services.MessageRow, 0)
 
 	for rows.Next() {
@@ -75,5 +74,6 @@ func GetAllMessages(ctx context.Context, db *databases.Container, channelId stri
 	if err := rows.Err(); err != nil {
 		return nil, &httputil.ErrorResponse{Err: err, Code: http.StatusInternalServerError}
 	}
+
 	return messages, nil
 }

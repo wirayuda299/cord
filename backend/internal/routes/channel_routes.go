@@ -10,7 +10,7 @@ import (
 func RegisterChannelRoutes(r *mux.Router, ch *handlers.ChannelHandler) {
 	s := r.PathPrefix("/channel").Subrouter()
 
-	s.HandleFunc("", ch.GetChannelById).Methods(http.MethodGet)
+	s.HandleFunc("", ch.GetChannelByID).Methods(http.MethodGet)
 	s.HandleFunc("/create", ch.CreateChannel).Methods(http.MethodPost)
 	s.HandleFunc("/find-all", ch.FindAllChannelsInAServer).Methods(http.MethodGet)
 }

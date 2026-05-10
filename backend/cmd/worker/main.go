@@ -19,6 +19,7 @@ func main() {
 	}
 
 	var ctx, cancel = context.WithCancel(context.Background())
+
 	defer cancel()
 
 	db, err := databases.NewContainer(ctx)
@@ -28,7 +29,6 @@ func main() {
 	}
 
 	defer db.Close()
-
 	var wg sync.WaitGroup
 
 	for range 5 {

@@ -22,7 +22,7 @@ type Invitation struct {
 
 func GetAllInvitationCode(ctx context.Context, db *databases.Container, serverID string) ([]Invitation, *httputil.ErrorResponse) {
 	if serverID == "" {
-		return nil, &httputil.ErrorResponse{Err: errors.New("Server ID is missing"), Code: http.StatusBadRequest}
+		return nil, &httputil.ErrorResponse{Err: errors.New("server ID is missing"), Code: http.StatusBadRequest}
 	}
 	invitations := make([]Invitation, 0)
 

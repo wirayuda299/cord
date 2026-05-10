@@ -129,11 +129,15 @@ function useMenuActions(
             label: "Reply",
             onClick: () => selectMessage(message),
          },
-         {
-            icon: <MessageCircle size={15} />,
-            label: "Create Thread",
-            onClick: onCreateThread,
-         },
+         ...(onCreateThread
+            ? [
+                 {
+                    icon: <MessageCircle size={15} />,
+                    label: "Create Thread",
+                    onClick: onCreateThread,
+                 },
+              ]
+            : []),
          ...(userId === message.user_id && onEdit
             ? [
                  {
@@ -214,6 +218,7 @@ function useMenuActions(
          onMore,
          selectMessage,
          pathname,
+         serverId,
       ],
    );
 }

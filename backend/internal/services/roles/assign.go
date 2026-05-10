@@ -12,7 +12,7 @@ import (
 type AssignRolePayload struct {
 	MemberUserID string `json:"member_user_id"`
 	ServerID     string `json:"server_id"`
-	RoleId       string `json:"role_id"`
+	RoleID       string `json:"role_id"`
 	AssignedBy   string `json:"assigned_by"`
 }
 
@@ -25,7 +25,7 @@ func AssignRole(ctx context.Context, db *databases.Container, p *AssignRolePaylo
 		return &httputil.ErrorResponse{Err: errors.New("server ID is missing"), Code: http.StatusBadRequest}
 	}
 
-	if p.RoleId == "" {
+	if p.RoleID == "" {
 		return &httputil.ErrorResponse{Err: errors.New("Role ID is missing"), Code: http.StatusBadRequest}
 	}
 
@@ -33,7 +33,7 @@ func AssignRole(ctx context.Context, db *databases.Container, p *AssignRolePaylo
 		return &httputil.ErrorResponse{Err: errors.New("member user ID is missing"), Code: http.StatusBadRequest}
 	}
 
-	_, err := db.Postgres.Exec(ctx, "INSERT INTO user_roles(user_id,server_id,role_id,assigned_by) values($1,$2,$3,$4)", p.MemberUserID, p.ServerID, p.RoleId, p.AssignedBy)
+	_, err := db.Postgres.Exec(ctx, "INSERT INTO user_roles(user_id,server_id,role_id,assigned_by) values($1,$2,$3,$4)", p.MemberUserID, p.ServerID, p.RoleID, p.AssignedBy)
 	if err != nil {
 		return &httputil.ErrorResponse{Err: err, Code: http.StatusInternalServerError}
 	}

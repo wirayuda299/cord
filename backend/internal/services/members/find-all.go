@@ -35,7 +35,7 @@ func FindMembersInServer(ctx context.Context, db *databases.Container, serverID 
 	}
 
 	if !isServerExists {
-		return nil, &httputil.ErrorResponse{Err: errors.New("Server not found"), Code: http.StatusNotFound}
+		return nil, &httputil.ErrorResponse{Err: errors.New("server not found"), Code: http.StatusNotFound}
 	}
 
 	members := make([]Member, 0)

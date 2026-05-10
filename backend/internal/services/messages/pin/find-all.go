@@ -16,14 +16,14 @@ type PinnedMessageResponse struct {
 	UserID   string `json:"user_id"`
 }
 
-func GetAllPinnedMessage(ctx context.Context, db *databases.Container, channelId string) ([]PinnedMessageResponse, *httputil.ErrorResponse) {
-	if channelId == "" {
+func GetAllPinnedMessage(ctx context.Context, channelID string, db *databases.Container) ([]PinnedMessageResponse, *httputil.ErrorResponse) {
+	if channelID == "" {
 		return nil, &httputil.ErrorResponse{
 			Err:  errors.New("channel ID is missing"),
 			Code: http.StatusBadRequest,
 		}
 	}
-	rows, err := db.Postgres.Query(ctx, "SELECT m.id,m.content,u.username,u.id from pinned_messages as cpm left join messages as m on m.id = cpm.message_id left join users as u on m.user_id = u.id where cpm.channel_id = $1", channelId)
+	rows, err := db.Postgres.Query(ctx, "SELECT m.id,m.content,u.username,u.id from pinned_messages as cpm left join messages as m on m.id = cpm.message_id left join users as u on m.user_id = u.id where cpm.channel_id = $1", channelID)
 	if err != nil {
 		return nil, &httputil.ErrorResponse{
 			Err:  err,

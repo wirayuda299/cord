@@ -31,7 +31,6 @@ func FindAllCategories(ctx context.Context, db *databases.Container, serverId st
 	WHERE c.server_id = $1
 `, serverId)
 	if err != nil {
-		log.Println(err.Error())
 		return nil, &httputil.ErrorResponse{Err: err, Code: http.StatusInternalServerError}
 	}
 	defer rows.Close()

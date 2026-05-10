@@ -14,13 +14,12 @@ type Message struct {
 	AttachmentURL   string  `json:"attachment_url"`
 	AttachmentID    string  `json:"attachment_id"`
 	UserID          string  `json:"user_id"`
-	ParentMessageId *string `json:"parent_message_id"`
+	ParentMessageID *string `json:"parent_message_id"`
 }
 
 func Send(ctx context.Context, m Message, db *databases.Container, channelID string) (*services.MessageRow, error) {
 	var row services.MessageRow
 
-	log.Println("Payload -> ", row)
 	var parentMsgID *string
 	err := db.Postgres.QueryRow(ctx, `
         INSERT INTO messages (content, user_id, image_url, image_asset_id, channel_id, parent_msg_id)
@@ -41,7 +40,7 @@ func Send(ctx context.Context, m Message, db *databases.Container, channelID str
 		m.AttachmentURL,
 		m.AttachmentID,
 		channelID,
-		m.ParentMessageId,
+		m.ParentMessageID,
 	).Scan(
 		&row.ID,
 		&row.Content,
@@ -58,7 +57,7 @@ func Send(ctx context.Context, m Message, db *databases.Container, channelID str
 		return nil, fmt.Errorf("error inserting message: %w", err)
 	}
 	row.ParentMsgID = parentMsgID
-	err = db.Postgres.QueryRow(ctx, "SELECT username, avatar_url FROM users WHERE id = $1", m.UserID).Scan(&row.Username, &row.Avatar)
+	err = db.Postgres.QueryRow(ctx, "SELECT username, COALESCE(avatar_url, '') FROM users WHERE id = $1", m.UserID).Scan(&row.Username, &row.Avatar)
 	if err != nil {
 		return nil, fmt.Errorf("error fetching user: %w", err)
 	}

@@ -59,7 +59,7 @@ type DeleteMessageParams = {
    channel_id: string;
    server_id: string;
    path: string;
-   thread_id: string | null
+   thread_id?: string | null
 };
 
 export async function deleteMessage({

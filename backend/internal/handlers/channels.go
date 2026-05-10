@@ -47,13 +47,13 @@ func (ch *ChannelHandler) FindAllChannelsInAServer(w http.ResponseWriter, r *htt
 	httputil.EncodeResponse(w, "Channels found", http.StatusOK, grouped)
 }
 
-func (ch *ChannelHandler) GetChannelById(w http.ResponseWriter, r *http.Request) {
-	channelId := r.URL.Query().Get("channelId")
-	if channelId == "" {
+func (ch *ChannelHandler) GetChannelByID(w http.ResponseWriter, r *http.Request) {
+	channelID := r.URL.Query().Get("channelId")
+	if channelID == "" {
 		httputil.WriteErrorResponse(w, "Channel ID is required", http.StatusBadRequest)
 		return
 	}
-	channel, err := channels.GetChannelById(r.Context(), ch.db, channelId)
+	channel, err := channels.GetChannelById(r.Context(), ch.db, channelID)
 	if err != nil {
 		httputil.WriteErrorResponse(w, err.Err.Error(), err.Code)
 		return

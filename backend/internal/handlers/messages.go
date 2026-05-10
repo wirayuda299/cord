@@ -6,23 +6,26 @@ import (
 
 	"github.com/wirayuda299/backend/internal/databases"
 	"github.com/wirayuda299/backend/internal/httputil"
+	"github.com/wirayuda299/backend/internal/queue"
 	"github.com/wirayuda299/backend/internal/services/messages"
 	"github.com/wirayuda299/backend/internal/services/messages/pin"
 )
 
 type MessageHandler struct {
-	db *databases.Container
+	db  *databases.Container
+	hub messages.BroadcastDeleter
 }
 
-func NewMessageHandler(db *databases.Container) *MessageHandler {
+func NewMessageHandler(db *databases.Container, hub messages.BroadcastDeleter) *MessageHandler {
 	return &MessageHandler{
-		db: db,
+		db:  db,
+		hub: hub,
 	}
 }
 
 func (mh *MessageHandler) FindAllPinnedMessages(w http.ResponseWriter, r *http.Request) {
 	channelId := r.URL.Query().Get("channelID")
-	res, err := pin.GetAllPinnedMessage(r.Context(), mh.db, channelId)
+	res, err := pin.GetAllPinnedMessage(r.Context(), channelId, mh.db)
 	if err != nil {
 		httputil.WriteErrorResponse(w, err.Err.Error(), err.Code)
 		return
@@ -64,12 +67,17 @@ func (mh *MessageHandler) PinMessage(w http.ResponseWriter, r *http.Request) {
 }
 
 func (mh *MessageHandler) DeleteMessage(w http.ResponseWriter, r *http.Request) {
-	var p messages.DeleteMessagePayload
+	var p queue.DeleteImagePayload
 	if err := json.NewDecoder(r.Body).Decode(&p); err != nil {
 		httputil.WriteErrorResponse(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	if err := messages.DeleteMessage(&p); err != nil {
+	if err := messages.DeleteMessage(&messages.DeleteMessagePayload{
+		Ctx:              r.Context(),
+		Hub:              mh.hub,
+		DB:               mh.db,
+		DeleteImgPayload: p,
+	}); err != nil {
 		httputil.WriteErrorResponse(w, err.Err.Error(), err.Code)
 		return
 	}

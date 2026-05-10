@@ -2,57 +2,138 @@ package conversations
 
 import (
 	"context"
+	"errors"
 	"net/http"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/wirayuda299/backend/internal/databases"
 	"github.com/wirayuda299/backend/internal/httputil"
 )
 
 type CreateConversationPayload struct {
-	UserA string `json:"user_a"`
-	UserB string `json:"user_b"`
+	TargetedUserID string `json:"targeted_user_id"`
+	CurrentUserID  string `json:"current_user_id"`
+}
+
+type CreateConversationResult struct {
+	ChannelID string `json:"channel_id"`
 }
 
 func makeDMKey(userA, userB string) string {
 	if userA < userB {
 		return userA + ":" + userB
 	}
+
 	return userB + ":" + userA
 }
 
-func CreateConversation(ctx context.Context, db *databases.Container, p CreateConversationPayload) *httputil.ErrorResponse {
-
-	dmKey := makeDMKey(p.UserA, p.UserB)
-	_, err := db.Postgres.Exec(ctx, `WITH dm_channel AS (
-			  INSERT INTO channels (
-			    name,
-			    channel_type,
-			    server_id,
-			    dm_key,
-			    created_by
-			  )
-			  VALUES (
-			    NULL,
-			    'dm',
-			    NULL,
-			    $3,
-			    $1
-			  )
-			  ON CONFLICT (dm_key) WHERE channel_type = 'dm'
-			  DO UPDATE SET dm_key = EXCLUDED.dm_key
-			  RETURNING id
-			),
-			members_insert AS (
-			  INSERT INTO channel_members (channel_id, user_id)
-			  SELECT id, $1 FROM dm_channel
-			  UNION
-			  SELECT id, $2 FROM dm_channel
-			  ON CONFLICT DO NOTHING
-			)
-			SELECT id FROM dm_channel;`, p.UserA, p.UserB, dmKey)
-	if err != nil {
-		return &httputil.ErrorResponse{Err: err, Code: http.StatusInternalServerError}
+func CreateConversation(
+	ctx context.Context,
+	db *databases.Container,
+	p CreateConversationPayload,
+) (*CreateConversationResult, *httputil.ErrorResponse) {
+	if p.CurrentUserID == "" {
+		return nil, &httputil.ErrorResponse{
+			Err:  errors.New("current user id is required"),
+			Code: http.StatusUnauthorized,
+		}
 	}
 
-	return nil
+	if p.TargetedUserID == "" {
+		return nil, &httputil.ErrorResponse{
+			Err:  errors.New("targeted user id is required"),
+			Code: http.StatusBadRequest,
+		}
+	}
+
+	if p.CurrentUserID == p.TargetedUserID {
+		return nil, &httputil.ErrorResponse{
+			Err:  errors.New("cannot create DM with yourself"),
+			Code: http.StatusBadRequest,
+		}
+	}
+
+	dmKey := makeDMKey(p.CurrentUserID, p.TargetedUserID)
+
+	tx, beginErr := db.Postgres.Begin(ctx)
+	if beginErr != nil {
+		return nil, &httputil.ErrorResponse{
+			Err:  beginErr,
+			Code: http.StatusInternalServerError,
+		}
+	}
+	defer tx.Rollback(ctx)
+
+	if _, err := tx.Exec(ctx, "SELECT pg_advisory_xact_lock(hashtext($1))", dmKey); err != nil {
+		return nil, &httputil.ErrorResponse{
+			Err:  err,
+			Code: http.StatusInternalServerError,
+		}
+	}
+
+	var channelID string
+
+	err := tx.QueryRow(ctx, `
+		SELECT id::text
+		FROM channels
+		WHERE server_id IS NULL
+			AND channel_type = 'dm'
+			AND dm_key = $1
+		ORDER BY created_at ASC
+		LIMIT 1
+	`, dmKey).Scan(&channelID)
+	if err != nil && !errors.Is(err, pgx.ErrNoRows) {
+		return nil, &httputil.ErrorResponse{
+			Err:  err,
+			Code: http.StatusInternalServerError,
+		}
+	}
+
+	if errors.Is(err, pgx.ErrNoRows) {
+		err = tx.QueryRow(ctx, `
+			INSERT INTO channels (
+				name,
+				channel_type,
+				server_id,
+				dm_key,
+				created_by
+			)
+			VALUES (
+				NULL,
+				'dm',
+				NULL,
+				$2,
+				$1
+			)
+			RETURNING id
+		`, p.CurrentUserID, dmKey).Scan(&channelID)
+		if err != nil {
+			return nil, &httputil.ErrorResponse{
+				Err:  err,
+				Code: http.StatusInternalServerError,
+			}
+		}
+	}
+
+	if _, err := tx.Exec(ctx, `
+		INSERT INTO channel_members (channel_id, user_id)
+		VALUES ($1, $2), ($1, $3)
+		ON CONFLICT (channel_id, user_id) DO NOTHING
+	`, channelID, p.CurrentUserID, p.TargetedUserID); err != nil {
+		return nil, &httputil.ErrorResponse{
+			Err:  err,
+			Code: http.StatusInternalServerError,
+		}
+	}
+
+	if err := tx.Commit(ctx); err != nil {
+		return nil, &httputil.ErrorResponse{
+			Err:  err,
+			Code: http.StatusInternalServerError,
+		}
+	}
+
+	return &CreateConversationResult{
+		ChannelID: channelID,
+	}, nil
 }

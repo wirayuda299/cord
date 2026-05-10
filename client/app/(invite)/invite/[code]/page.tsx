@@ -1,6 +1,6 @@
 import { isUserJoin } from "@/lib/server/data/members"
-import InviteCard, { type InviteInfo } from "./_components/InviteCard"
-import { InviteExpired, InviteInvalid } from "./_components/InviteStates"
+import InviteCard from "./_components/InviteCard"
+import { InviteInvalid } from "./_components/InviteStates"
 import { redirect } from "next/navigation"
 import { findInvitationByCode } from "@/lib/server/data/invitations"
 
@@ -21,9 +21,10 @@ export default async function InvitePage({ params, searchParams }: { params: Pro
   const joined = await isUserJoin(server_id, userId)
 
   if (joined) {
+    console.log("Joined")
     redirect("/")
   }
-  console.log(params)
+
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-surface-base">

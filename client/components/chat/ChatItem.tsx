@@ -228,7 +228,7 @@ function ChatItem({
           <MessageMenu
             message={message}
             serverId={serverId}
-            onDelete={() => { }}
+            onDelete={handleDelete ?? (() => {})}
             onCreateThread={
               canCreateThread ? () => onCreateThread?.(message) : undefined
             }

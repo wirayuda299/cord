@@ -1,4 +1,14 @@
 
+class App {
+  private appId: string = ""
+  constructor(id: string) {
+    this.setAppId = id
+  }
+
+  set setAppId(appId: string) {
+    this.appId = appId
+  }
+}
 export default async function ServerDetail() {
   return (
     <div className=" flex min-h-screen bg-sidebar-secondary p-0 max-h-screen w-full border rounded-2xl border-sidebar-secondary/10">

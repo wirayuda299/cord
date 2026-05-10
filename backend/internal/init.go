@@ -25,7 +25,7 @@ func NewServer(db *databases.Container) *Server {
 	return &Server{db: db}
 }
 
-func gracefulShutdown(apiServer *http.Server, done chan bool) {
+func gracefulShutdown(srv *http.Server, done chan bool) {
 	// Create context that listens for the interrupt signal from the OS.
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
@@ -40,7 +40,7 @@ func gracefulShutdown(apiServer *http.Server, done chan bool) {
 	// the request it is currently handling
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-	if err := apiServer.Shutdown(ctx); err != nil {
+	if err := srv.Shutdown(ctx); err != nil {
 		log.Printf("Server forced to shutdown with error: %v", err)
 	}
 
@@ -61,7 +61,7 @@ func (s *Server) Run() {
 	ch := handlers.NewChannelHandler(s.db)
 	categoryHandler := handlers.NewCategoryHandler(s.db)
 	sh := handlers.NewServerHandler(s.db)
-	mh := handlers.NewMessageHandler(s.db)
+	mh := handlers.NewMessageHandler(s.db, hub)
 	rh := handlers.NewRoleHandler(s.db)
 	ph := handlers.NewPermissionHandler(s.db)
 	mrh := handlers.NewMemberHandler(s.db)
