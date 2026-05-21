@@ -27,7 +27,7 @@ func CreateCategory(ctx context.Context, db *databases.Container, payload *Creat
 	}
 
 	_, err := db.Postgres.Exec(ctx,
-		"INSERT INTO category(name, server_id, created_by) VALUES($1, $2, $3)",
+		"INSERT INTO categories(name, server_id, created_by) VALUES($1, $2, $3)",
 		payload.Name, payload.ServerID, payload.CreatedBy,
 	)
 	if err != nil {

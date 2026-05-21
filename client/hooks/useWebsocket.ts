@@ -64,7 +64,8 @@ export function useWebSocket(
           } else {
             optionsRef.current.onMessage(data);
           }
-        } catch {
+        } catch (e) {
+          console.log(e)
           // Failed to parse WebSocket message
         }
       };

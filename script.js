@@ -1,9 +1,9 @@
 
 async function joinServerDirect() {
-  for (let i = 2; i < 20; i++) {
+  for (let i = 8; i < 100; i++) {
     const payload = {
-      user_id: "usr_00" + i,
-      server_id: "03ff2547-da15-4e07-ad0a-5f8f4dceff0d"
+      id: "usr_00" + i,
+      username: "usrname_00" + i
     }
 
     let attempts = 0
@@ -11,7 +11,7 @@ async function joinServerDirect() {
 
     while (attempts < maxRetries) {
       try {
-        const res = await fetch("http://localhost:8080/server/join", {
+        const res = await fetch("http://localhost:8080/users/create", {
           method: "POST",
           headers: {
             "Content-Type": "application/json"

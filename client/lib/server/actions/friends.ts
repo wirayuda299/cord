@@ -9,10 +9,11 @@ export async function sendFriendRequest(addressee_id: string) {
       error: "Targeted user id is missing"
     }
   }
-  const res = await fetch(`${getPublicApiUrl()}/friends/send-friend-request`, {
+  const res = await fetch(`${getPublicApiUrl()}/friends/send-request`, {
     method: "POST",
     headers: {
-      "Content-Type": "application/json"
+      "Content-Type": "application/json",
+      "Accept": "application/json"
     },
     body: JSON.stringify({
       requester_id: "usr_001",
@@ -20,9 +21,11 @@ export async function sendFriendRequest(addressee_id: string) {
     })
   })
 
+  console.log(res)
+
   if (!res.ok) {
     return {
-      error: await res.json().catch(e => e)
+      error: await res.json().catch(() => null)
     }
   }
 }

@@ -55,7 +55,7 @@ func FindAllChannelInServer(ctx context.Context, db *databases.Container, server
 	}
 
 	catRows, err := db.Postgres.Query(ctx, `
-        SELECT id::text, name FROM category WHERE server_id = $1 ORDER BY name
+        SELECT id::text, name FROM categories WHERE server_id = $1 ORDER BY name
     `, serverID)
 	if err != nil {
 		return nil, &httputil.ErrorResponse{Err: err, Code: http.StatusInternalServerError}

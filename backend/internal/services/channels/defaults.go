@@ -22,7 +22,7 @@ func CreateDefaultChannel(ctx context.Context, db *databases.Container, payload 
 	}
 	for _, c := range categories {
 		var id string
-		err := db.Postgres.QueryRow(ctx, "INSERT INTO category (name,server_id,created_by) values($1,$2,$3) returning id;", c.name, payload.ServerId, payload.CreatedBy).Scan(&id)
+		err := db.Postgres.QueryRow(ctx, "INSERT INTO categories (name,server_id,created_by) values($1,$2,$3) returning id;", c.name, payload.ServerId, payload.CreatedBy).Scan(&id)
 		if err != nil {
 			return err
 		}

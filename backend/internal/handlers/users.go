@@ -17,6 +17,16 @@ func NewUserHandler(db *databases.Container) *UserHandler {
 	return &UserHandler{db: db}
 }
 
+func (uh *UserHandler) FindUsersByName(w http.ResponseWriter, r *http.Request) {
+	result, err := users.FindUsersByName(r.Context(), uh.db, r.URL.Query().Get("username"))
+	if err != nil {
+		httputil.WriteErrorResponse(w, err.Err.Error(), err.Code)
+		return
+	}
+
+	httputil.EncodeResponse(w, "users found", http.StatusOK, result)
+}
+
 func (uh *UserHandler) CreateUser(w http.ResponseWriter, r *http.Request) {
 	var p users.CreateUserPayload
 

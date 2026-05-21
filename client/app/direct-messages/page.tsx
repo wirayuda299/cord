@@ -4,6 +4,7 @@ import { Users, UserCheck, Clock, UserPlus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import AllFriends from "@/components/friends/AllFriends";
 import { Suspense } from "react";
+import AddFriendPanel from "@/components/friends/AddFriendPanel";
 
 type Tab = "online" | "all" | "pending" | "add";
 
@@ -14,30 +15,6 @@ const tabs: { id: Tab; label: string; icon: React.ReactNode }[] = [
   { id: "add", label: "Add Friend", icon: <UserPlus size={16} /> },
 ];
 
-;
-
-function AddFriendPanel() {
-  return (
-    <div className="flex flex-col gap-4 max-w-xl">
-      <div>
-        <h3 className="text-base font-semibold text-text-bright">Add Friend</h3>
-        <p className="text-sm text-zinc-500 mt-0.5">
-          You can add friends with their username.
-        </p>
-      </div>
-      <div className="flex items-center gap-2 px-3 py-2.5 rounded-lg bg-bg-input border border-white/5 focus-within:border-discord-brand transition-colors">
-        <input
-          type="text"
-          placeholder="Enter a username#0000"
-          className="flex-1 bg-transparent outline-none text-sm text-zinc-200 placeholder:text-zinc-600"
-        />
-        <button className="px-3 py-1.5 rounded-md bg-discord-brand hover:bg-accent-blue text-white text-xs font-semibold transition-colors">
-          Send Friend Request
-        </button>
-      </div>
-    </div>
-  );
-}
 
 export default function DirectMessagesPage() {
   return (

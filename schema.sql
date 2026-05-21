@@ -1,379 +1,457 @@
---create table users(
---id varchar(100) primary key not null,
---username varchar(50) not null,
---avatar_url text,
---avatar_id varchar(100),
---created_at timestamp default now(),
---updated_at timestamp default now()
---);
---alter table users
---add column bio text;
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
---alter table servers
---drop column server_id;
---create table servers(
---id uuid primary key default uuid_generate_v4(),
---name varchar(25) not null,
---logo text,
---logo_id varchar(100),
---created_by varchar(100) references users(id) on delete cascade,
---created_at timestamp default now(),
---updated_at timestamp default now()
---);
---
---create index concurrently idx_server_name on servers(name);
---alter table servers
---add column banner_colors varchar(20)[],
---add column description text,
---add column private boolean default false;
---ALTER TABLE servers
---ALTER COLUMN banner_colors set DEFAULT '{"#FFFFFF", "#000000"}';
-alter table servers
-add column banner text default '',
-add column banner_id varchar(100) default '';
---
---ALTER TABLE servers
---ALTER COLUMN logo set default '',
---alter column logo_id set default '';
+-- =========================================================
+-- updated_at helper
+-- =========================================================
 
---create table category(
---id uuid primary key default uuid_generate_v4(),
---name varchar(25) not null,
---server_id uuid not null,
---created_by varchar(100) not null,
---created_at timestamp default now(),
---updated_at timestamp default now()
---);
---
---create index concurrently idx_category_server_id on category(server_id);
-
---create type channel_types as enum('text', 'audio', 'forum');
---
---create table channels(
---id uuid primary key default uuid_generate_v4(),
---name varchar(25) not null,
---channel_type channel_types not null default 'text',
---category_id uuid references category(id) on delete cascade,
---server_id uuid not null references servers(id) on delete cascade,
---created_at timestamp default now(),
---updated_at timestamp default now()
---
---);
---alter table channels
---add column created_by varchar(100) not null references users(id) on delete cascade;
---alter table channels
---add column topic text;
---alter table channels
---alter column topic set default '';
---ALTER TABLE servers ADD COLUMN server_id UUID NOT NULL REFERENCES servers(id) on delete cascade;
---create table members (
---id uuid primary key default uuid_generate_v4(),
---user_id varchar(100) not null references users(id) on delete cascade,
---server_id uuid not null references servers(id) on delete cascade,
---joined_at timestamp default now()
---);
---create index concurrently idx_members_server_id on members(server_id);
+CREATE OR REPLACE FUNCTION set_updated_at()
+RETURNS TRIGGER AS $$
+BEGIN
+  NEW.updated_at = NOW();
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
 
 
---create table messages(
---id uuid primary key default uuid_generate_v4(),
---content text,
---user_id varchar(100) not null references users(id) on delete cascade,
---image_url text,
---image_asset_id varchar(100),
---channel_id uuid not null references channels(id) on delete cascade,
---parent_msg_id uuid,
---created_at timestamp default now(),
---updated_at timestamp default now()
---);
+-- =========================================================
+-- enums
+-- =========================================================
 
---create index concurrently idx_messages_context on messages(content);
---create index concurrently idx_messages_parent_id on messages(parent_msg_id);
-
---create table pinned_messages(
---id uuid primary key default uuid_generate_v4(),
---message_id uuid not null references messages(id) on delete cascade,
---channel_id uuid not null references channels(id) on delete cascade,
---pinned_by varchar(100) not null references users(id) on delete cascade,
---created_at timestamp default now(),
---updated_at timestamp default now()
---);
-
---create index concurrently idx_pin_msg_channel_id on pinned_messages(channel_id);
---create index concurrently idx_pin_msg_pinned_by on pinned_messages(pinned_by);
-
---create table roles(
---id uuid primary key default uuid_generate_v4(),
---name varchar(25) not null,
---server_id uuid not null references servers(id) on delete cascade,
---color varchar(25) not null,
---created_by varchar(100) not null references users(id) on delete cascade,
---icon text,
---icon_id varchar(100),
---hoist boolean default false,
---mentionable boolean default false,
---created_at timestamp default now(),
---updated_at timestamp default now()
---);
-
---create table permissions(
---id uuid primary key default uuid_generate_v4(),
---role_id uuid not null references roles(id) on delete cascade,
---list varchar(50)[],
---created_at timestamp default now(),
---updated_at timestamp default now()
---);
-
---CREATE TABLE "server_profile" (
---id uuid primary key default uuid_generate_v4(),
---	"server_id" uuid not null references servers(id) on delete cascade,
---	"user_id" varchar(100) not null references users(id) on delete cascade,
---	"username" varchar(100) NOT NULL,
---	"avatar" text DEFAULT '' NOT NULL,
---	"avatar_asset_id" varchar(100),
---	"bio" text,
---	created_at timestamp default now(),
---updated_at timestamp default now()
---);
-
---create table invitations(
---id uuid primary key default uuid_generate_v4(),
---code varchar(25) not null,
---"server_id" uuid not null references servers(id) on delete cascade,
---max_users int default 0,
---created_by varchar(100) not null references users(id) on delete cascade,
---uses int default 0,
---created_at timestamp default now(),
---updated_at timestamp default now()
---);
-
---create index concurrently idx_invitations_code on invitations(code);
---create index concurrently idx_invitations_server_id on invitations(server_id);
-
---  ALTER TABLE server_profile ADD COLUMN member_id uuid;
---
---  UPDATE server_profile sp
---  SET member_id = m.id::uuid
---  FROM members m
---  WHERE m.server_id::uuid = sp.server_id AND m.user_id = sp.user_id;
---
---  ALTER TABLE server_profile
---    ALTER COLUMN member_id SET NOT NULL,
---    ADD CONSTRAINT server_profile_member_id_fkey
---      FOREIGN KEY (member_id) REFERENCES members(id) ON DELETE CASCADE;
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'channel_types') THEN
+    CREATE TYPE channel_types AS ENUM ('text', 'audio', 'forum', 'dm', 'group_dm');
+  END IF;
+END $$;
 
 
--- ALTER TABLE category
---  ADD CONSTRAINT category_server_id_fkey
---  FOREIGN KEY (server_id) REFERENCES servers(id) ON DELETE CASCADE;
+-- =========================================================
+-- users
+-- =========================================================
 
---create table user_roles(
---id uuid primary key default uuid_generate_v4(),
---"user_id" varchar(100) not null references users(id) on delete cascade,
---server_id uuid not null references servers(id) on delete cascade,
---role_id uuid not null references roles(id) on delete cascade,
---assigned_by varchar(100) not null references users(id) on delete cascade,
---created_at timestamp default now(),
---updated_at timestamp default now()
---);
+CREATE TABLE users (
+  id varchar(100) PRIMARY KEY,
+  username varchar(50) NOT NULL,
+  avatar_url text NOT NULL DEFAULT '',
+  avatar_id varchar(100) NOT NULL DEFAULT '',
+  bio text NOT NULL DEFAULT '',
+  created_at timestamptz NOT NULL DEFAULT NOW(),
+  updated_at timestamptz NOT NULL DEFAULT NOW()
+);
 
+CREATE INDEX idx_users_username ON users(username);
+create extension if not exists pg_trgm;
+CREATE EXTENSION
+create index username_trgm_idx on users using gin (username gin_trgm_ops);
+ set pg_trgm.similarity_threshold = 0.2;
 
---create table friends(
---id uuid primary key default uuid_generate_v4(),
---requester_id varchar(100) not null references users(id) on delete cascade,
---addressee_id  varchar(100) not null references users(id) on delete cascade,
---status        VARCHAR(10) NOT NULL DEFAULT 'pending'
---                CHECK (status IN ('pending', 'accepted', 'blocked')),
--- created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
--- updated_at    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
--- CONSTRAINT no_self_friend CHECK (requester_id <> addressee_id),
--- CONSTRAINT unique_pair UNIQUE (requester_id, addressee_id)
---);
---
---CREATE INDEX idx_friends_requester ON friends(requester_id, status);
---CREATE INDEX idx_friends_addressee ON friends(addressee_id, status);
-
---create table threads (
---   id uuid primary key default uuid_generate_v4(),
---
---   -- the channel where the thread was created
---   channel_id uuid not null references channels(id) on delete cascade,
---
---   name varchar(255),
---   created_by varchar(100) not null references users(id) on delete cascade,
---
---   is_archived boolean not null default false,
---   is_locked boolean not null default false,
---
---   created_at timestamp not null default now(),
---   updated_at timestamp not null default now()
---);
---
---alter table messages
---add column thread_id uuid references threads(id) on delete cascade;
---
---alter table messages
---add constraint message_location_check check (
---      (channel_id is not null and thread_id is null)
---      or
---      (channel_id is null and thread_id is not null)
---   );
-
---
---ALTER TYPE channel_types ADD VALUE IF NOT EXISTS 'dm';
---ALTER TYPE channel_types ADD VALUE IF NOT EXISTS 'group_dm';
+CREATE TRIGGER trg_users_updated_at
+BEFORE UPDATE ON users
+FOR EACH ROW EXECUTE FUNCTION set_updated_at();
 
 
---BEGIN;
---
----- 1. Allow channels to exist without a server.
-----    server_id NULL = DM / group DM
-----    server_id NOT NULL = normal server channel
---ALTER TABLE channels
---  ALTER COLUMN server_id DROP NOT NULL;
---
----- 2. Allow DM channels to have no name.
-----    1:1 DMs usually do not need a channel name.
---ALTER TABLE channels
---  ALTER COLUMN name DROP NOT NULL;
---
----- 3. Add a stable unique key for 1:1 DM conversations.
-----    Example dm_key: userA:userB with IDs sorted alphabetically.
---ALTER TABLE channels
---  ADD COLUMN IF NOT EXISTS dm_key text;
---
----- 4. Make sure created_by exists.
-----    Your pasted schema shows you already added this column,
-----    but this keeps the migration safer if run on another database.
---ALTER TABLE channels
---  ADD COLUMN IF NOT EXISTS created_by varchar(100);
---
---DO $$
---BEGIN
---  IF NOT EXISTS (
---    SELECT 1
---    FROM information_schema.table_constraints
---    WHERE constraint_name = 'channels_created_by_fkey'
---      AND table_name = 'channels'
---  ) THEN
---    ALTER TABLE channels
---      ADD CONSTRAINT channels_created_by_fkey
---      FOREIGN KEY (created_by)
---      REFERENCES users(id)
---      ON DELETE CASCADE;
---  END IF;
---END $$;
---
----- 5. Remove old scope constraint if you tried one before.
---ALTER TABLE channels
---  DROP CONSTRAINT IF EXISTS channels_scope_check;
---
----- 6. Enforce valid channel shapes.
-----
----- Valid server channels:
-----   server_id IS NOT NULL
-----   channel_type IN ('text', 'audio', 'forum')
-----   dm_key IS NULL
-----
----- Valid 1:1 DM:
-----   server_id IS NULL
-----   channel_type = 'dm'
-----   dm_key IS NOT NULL
-----
----- Valid group DM:
-----   server_id IS NULL
-----   channel_type = 'group_dm'
---ALTER TABLE channels
---  ADD CONSTRAINT channels_scope_check CHECK (
---    (
---      server_id IS NOT NULL
---      AND channel_type IN ('text', 'audio', 'forum')
---      AND dm_key IS NULL
---    )
---    OR
---    (
---      server_id IS NULL
---      AND channel_type = 'dm'
---      AND dm_key IS NOT NULL
---    )
---    OR
---    (
---      server_id IS NULL
---      AND channel_type = 'group_dm'
---    )
---  );
---
----- 7. One unique channel per 1:1 DM pair.
---CREATE UNIQUE INDEX IF NOT EXISTS channels_dm_key_unique
---ON channels(dm_key)
---WHERE channel_type = 'dm' AND dm_key IS NOT NULL;
---
----- 8. Members of DM / group DM channels.
-----    Do not use this for normal server channels.
-----    Server channel access still comes from your existing members table.
---CREATE TABLE IF NOT EXISTS channel_members (
---  channel_id uuid NOT NULL REFERENCES channels(id) ON DELETE CASCADE,
---  user_id varchar(100) NOT NULL REFERENCES users(id) ON DELETE CASCADE,
---  joined_at timestamp DEFAULT now(),
---
---  PRIMARY KEY (channel_id, user_id)
---);
---
---CREATE INDEX IF NOT EXISTS idx_channel_members_user_id
---ON channel_members(user_id);
---
---CREATE INDEX IF NOT EXISTS idx_channel_members_channel_id
---ON channel_members(channel_id);
---
----- 9. Helpful index for message loading.
---CREATE INDEX IF NOT EXISTS idx_messages_channel_created_at
---ON messages(channel_id, created_at);
---
----- 10. Optional but recommended:
-----     Your parent_msg_id exists, but in the pasted schema it does not reference messages(id).
---DO $$
---BEGIN
---  IF NOT EXISTS (
---    SELECT 1
---    FROM information_schema.table_constraints
---    WHERE constraint_name = 'messages_parent_msg_id_fkey'
---      AND table_name = 'messages'
---  ) THEN
---    ALTER TABLE messages
---      ADD CONSTRAINT messages_parent_msg_id_fkey
---      FOREIGN KEY (parent_msg_id)
---      REFERENCES messages(id)
---      ON DELETE SET NULL;
---  END IF;
---END $$;
---
---COMMIT;
+-- =========================================================
+-- servers
+-- =========================================================
+
+CREATE TABLE servers (
+  id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+  name varchar(25) NOT NULL,
+  logo text NOT NULL DEFAULT '',
+  logo_id varchar(100) NOT NULL DEFAULT '',
+  banner text NOT NULL DEFAULT '',
+  banner_id varchar(100) NOT NULL DEFAULT '',
+  banner_colors varchar(20)[] NOT NULL DEFAULT ARRAY['#FFFFFF', '#000000'],
+  description text NOT NULL DEFAULT '',
+  private boolean NOT NULL DEFAULT false,
+  created_by varchar(100) NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  created_at timestamptz NOT NULL DEFAULT NOW(),
+  updated_at timestamptz NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX idx_servers_name ON servers(name);
+CREATE INDEX idx_servers_created_by ON servers(created_by);
+
+CREATE TRIGGER trg_servers_updated_at
+BEFORE UPDATE ON servers
+FOR EACH ROW EXECUTE FUNCTION set_updated_at();
 
 
---WITH dm_channel AS (
---  INSERT INTO channels (
---    name,
---    channel_type,
---    server_id,
---    dm_key,
---    created_by
---  )
---  VALUES (
---    NULL,
---    'dm',
---    NULL,
---    $3,
---    $1
---  )
---  ON CONFLICT (dm_key) WHERE channel_type = 'dm'
---  DO UPDATE SET dm_key = EXCLUDED.dm_key
---  RETURNING id
---),
---members_insert AS (
---  INSERT INTO channel_members (channel_id, user_id)
---  SELECT id, $1 FROM dm_channel
---  UNION
---  SELECT id, $2 FROM dm_channel
---  ON CONFLICT DO NOTHING
---)
---SELECT id FROM dm_channel;
+-- =========================================================
+-- server members
+-- =========================================================
+
+CREATE TABLE members (
+  id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+  user_id varchar(100) NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  server_id uuid NOT NULL REFERENCES servers(id) ON DELETE CASCADE,
+  joined_at timestamptz NOT NULL DEFAULT NOW(),
+
+  CONSTRAINT unique_server_member UNIQUE (user_id, server_id)
+);
+
+CREATE INDEX idx_members_server_id ON members(server_id);
+CREATE INDEX idx_members_user_id ON members(user_id);
+
+
+-- =========================================================
+-- server profile
+-- =========================================================
+
+CREATE TABLE server_profile (
+  id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+  server_id uuid NOT NULL REFERENCES servers(id) ON DELETE CASCADE,
+  user_id varchar(100) NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  member_id uuid NOT NULL REFERENCES members(id) ON DELETE CASCADE,
+  username varchar(100) NOT NULL,
+  avatar text NOT NULL DEFAULT '',
+  avatar_asset_id varchar(100) NOT NULL DEFAULT '',
+  bio text NOT NULL DEFAULT '',
+  created_at timestamptz NOT NULL DEFAULT NOW(),
+  updated_at timestamptz NOT NULL DEFAULT NOW(),
+
+  CONSTRAINT unique_server_profile_user UNIQUE (server_id, user_id),
+  CONSTRAINT unique_server_profile_member UNIQUE (member_id)
+);
+
+CREATE INDEX idx_server_profile_server_id ON server_profile(server_id);
+CREATE INDEX idx_server_profile_user_id ON server_profile(user_id);
+
+CREATE TRIGGER trg_server_profile_updated_at
+BEFORE UPDATE ON server_profile
+FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+
+
+-- =========================================================
+-- categories
+-- =========================================================
+
+CREATE TABLE categories (
+  id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+  name varchar(25) NOT NULL,
+  server_id uuid NOT NULL REFERENCES servers(id) ON DELETE CASCADE,
+  created_by varchar(100) NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  created_at timestamptz NOT NULL DEFAULT NOW(),
+  updated_at timestamptz NOT NULL DEFAULT NOW(),
+
+  CONSTRAINT unique_category_name_per_server UNIQUE (server_id, name)
+);
+
+CREATE INDEX idx_categories_server_id ON categories(server_id);
+
+CREATE TRIGGER trg_categories_updated_at
+BEFORE UPDATE ON categories
+FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+
+
+-- =========================================================
+-- channels
+-- =========================================================
+
+CREATE TABLE channels (
+  id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+
+  -- server channel:
+  --   server_id not null
+  -- DM/group DM:
+  --   server_id null
+  server_id uuid REFERENCES servers(id) ON DELETE CASCADE,
+
+  category_id uuid REFERENCES categories(id) ON DELETE SET NULL,
+
+  name varchar(25),
+  topic text NOT NULL DEFAULT '',
+  channel_type channel_types NOT NULL DEFAULT 'text',
+
+  -- stable unique key for 1:1 DM
+  -- example: userA:userB, sorted alphabetically in app layer
+  dm_key text,
+
+  created_by varchar(100) REFERENCES users(id) ON DELETE CASCADE,
+
+  created_at timestamptz NOT NULL DEFAULT NOW(),
+  updated_at timestamptz NOT NULL DEFAULT NOW(),
+
+  CONSTRAINT channels_scope_check CHECK (
+    (
+      server_id IS NOT NULL
+      AND channel_type IN ('text', 'audio', 'forum')
+      AND name IS NOT NULL
+      AND dm_key IS NULL
+    )
+    OR
+    (
+      server_id IS NULL
+      AND channel_type = 'dm'
+      AND name IS NULL
+      AND dm_key IS NOT NULL
+    )
+    OR
+    (
+      server_id IS NULL
+      AND channel_type = 'group_dm'
+      AND dm_key IS NULL
+    )
+  )
+);
+
+CREATE INDEX idx_channels_server_id ON channels(server_id);
+CREATE INDEX idx_channels_category_id ON channels(category_id);
+CREATE INDEX idx_channels_created_by ON channels(created_by);
+CREATE INDEX idx_channels_type ON channels(channel_type);
+
+CREATE UNIQUE INDEX channels_dm_key_unique
+ON channels(dm_key)
+WHERE channel_type = 'dm' AND dm_key IS NOT NULL;
+
+CREATE TRIGGER trg_channels_updated_at
+BEFORE UPDATE ON channels
+FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+
+
+-- =========================================================
+-- channel members for DM / group DM
+-- =========================================================
+
+CREATE TABLE channel_members (
+  channel_id uuid NOT NULL REFERENCES channels(id) ON DELETE CASCADE,
+  user_id varchar(100) NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  joined_at timestamptz NOT NULL DEFAULT NOW(),
+
+  PRIMARY KEY (channel_id, user_id)
+);
+
+CREATE INDEX idx_channel_members_user_id ON channel_members(user_id);
+CREATE INDEX idx_channel_members_channel_id ON channel_members(channel_id);
+
+
+-- =========================================================
+-- threads
+-- =========================================================
+
+CREATE TABLE threads (
+  id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+  channel_id uuid NOT NULL REFERENCES channels(id) ON DELETE CASCADE,
+  name varchar(255),
+  created_by varchar(100) NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  is_archived boolean NOT NULL DEFAULT false,
+  is_locked boolean NOT NULL DEFAULT false,
+  created_at timestamptz NOT NULL DEFAULT NOW(),
+  updated_at timestamptz NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX idx_threads_channel_id ON threads(channel_id);
+CREATE INDEX idx_threads_created_by ON threads(created_by);
+
+CREATE TRIGGER trg_threads_updated_at
+BEFORE UPDATE ON threads
+FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+
+
+-- =========================================================
+-- messages
+-- =========================================================
+
+CREATE TABLE messages (
+  id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+
+  content text NOT NULL DEFAULT '',
+
+  user_id varchar(100) NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+
+  image_url text NOT NULL DEFAULT '',
+  image_asset_id varchar(100) NOT NULL DEFAULT '',
+
+  -- normal channel message
+  channel_id uuid REFERENCES channels(id) ON DELETE CASCADE,
+
+  -- thread message
+  thread_id uuid REFERENCES threads(id) ON DELETE CASCADE,
+
+  -- reply to another message
+  parent_msg_id uuid REFERENCES messages(id) ON DELETE SET NULL,
+
+  created_at timestamptz NOT NULL DEFAULT NOW(),
+  updated_at timestamptz NOT NULL DEFAULT NOW(),
+
+  CONSTRAINT message_location_check CHECK (
+    (
+      channel_id IS NOT NULL
+      AND thread_id IS NULL
+    )
+    OR
+    (
+      channel_id IS NULL
+      AND thread_id IS NOT NULL
+    )
+  ),
+
+  CONSTRAINT message_has_content_or_image CHECK (
+    content <> ''
+    OR image_url <> ''
+  )
+);
+
+CREATE INDEX idx_messages_user_id ON messages(user_id);
+CREATE INDEX idx_messages_channel_created_at ON messages(channel_id, created_at DESC);
+CREATE INDEX idx_messages_thread_created_at ON messages(thread_id, created_at DESC);
+CREATE INDEX idx_messages_parent_msg_id ON messages(parent_msg_id);
+
+-- optional full-text search
+CREATE INDEX idx_messages_content_search
+ON messages
+USING gin (to_tsvector('simple', content));
+
+CREATE TRIGGER trg_messages_updated_at
+BEFORE UPDATE ON messages
+FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+
+
+-- =========================================================
+-- pinned messages
+-- =========================================================
+
+CREATE TABLE pinned_messages (
+  id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+  message_id uuid NOT NULL REFERENCES messages(id) ON DELETE CASCADE,
+  channel_id uuid NOT NULL REFERENCES channels(id) ON DELETE CASCADE,
+  pinned_by varchar(100) NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  created_at timestamptz NOT NULL DEFAULT NOW(),
+  updated_at timestamptz NOT NULL DEFAULT NOW(),
+
+  CONSTRAINT unique_pinned_message_per_channel UNIQUE (message_id, channel_id)
+);
+
+CREATE INDEX idx_pinned_messages_channel_id ON pinned_messages(channel_id);
+CREATE INDEX idx_pinned_messages_pinned_by ON pinned_messages(pinned_by);
+
+CREATE TRIGGER trg_pinned_messages_updated_at
+BEFORE UPDATE ON pinned_messages
+FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+
+
+-- =========================================================
+-- roles
+-- =========================================================
+
+CREATE TABLE roles (
+  id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+  name varchar(25) NOT NULL,
+  server_id uuid NOT NULL REFERENCES servers(id) ON DELETE CASCADE,
+  color varchar(25) NOT NULL DEFAULT '#FFFFFF',
+  created_by varchar(100) NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  icon text NOT NULL DEFAULT '',
+  icon_id varchar(100) NOT NULL DEFAULT '',
+  hoist boolean NOT NULL DEFAULT false,
+  mentionable boolean NOT NULL DEFAULT false,
+  created_at timestamptz NOT NULL DEFAULT NOW(),
+  updated_at timestamptz NOT NULL DEFAULT NOW(),
+
+  CONSTRAINT unique_role_name_per_server UNIQUE (server_id, name)
+);
+
+CREATE INDEX idx_roles_server_id ON roles(server_id);
+
+CREATE TRIGGER trg_roles_updated_at
+BEFORE UPDATE ON roles
+FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+
+
+-- =========================================================
+-- permissions
+-- =========================================================
+
+CREATE TABLE permissions (
+  id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+  role_id uuid NOT NULL REFERENCES roles(id) ON DELETE CASCADE,
+  list varchar(50)[] NOT NULL DEFAULT ARRAY[]::varchar[],
+  created_at timestamptz NOT NULL DEFAULT NOW(),
+  updated_at timestamptz NOT NULL DEFAULT NOW(),
+
+  CONSTRAINT unique_permissions_role UNIQUE (role_id)
+);
+
+CREATE TRIGGER trg_permissions_updated_at
+BEFORE UPDATE ON permissions
+FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+
+
+-- =========================================================
+-- user roles
+-- =========================================================
+
+CREATE TABLE user_roles (
+  id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+  user_id varchar(100) NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  server_id uuid NOT NULL REFERENCES servers(id) ON DELETE CASCADE,
+  role_id uuid NOT NULL REFERENCES roles(id) ON DELETE CASCADE,
+  assigned_by varchar(100) NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  created_at timestamptz NOT NULL DEFAULT NOW(),
+  updated_at timestamptz NOT NULL DEFAULT NOW(),
+
+  CONSTRAINT unique_user_role_per_server UNIQUE (user_id, server_id, role_id)
+);
+
+CREATE INDEX idx_user_roles_user_id ON user_roles(user_id);
+CREATE INDEX idx_user_roles_server_id ON user_roles(server_id);
+CREATE INDEX idx_user_roles_role_id ON user_roles(role_id);
+
+CREATE TRIGGER trg_user_roles_updated_at
+BEFORE UPDATE ON user_roles
+FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+
+
+-- =========================================================
+-- invitations
+-- =========================================================
+
+CREATE TABLE invitations (
+  id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+  code varchar(25) NOT NULL,
+  server_id uuid NOT NULL REFERENCES servers(id) ON DELETE CASCADE,
+  max_users int NOT NULL DEFAULT 0,
+  uses int NOT NULL DEFAULT 0,
+  created_by varchar(100) NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  created_at timestamptz NOT NULL DEFAULT NOW(),
+  updated_at timestamptz NOT NULL DEFAULT NOW(),
+
+  CONSTRAINT unique_invitation_code UNIQUE (code),
+  CONSTRAINT invitation_uses_check CHECK (uses >= 0),
+  CONSTRAINT invitation_max_users_check CHECK (max_users >= 0)
+);
+
+CREATE INDEX idx_invitations_server_id ON invitations(server_id);
+CREATE INDEX idx_invitations_created_by ON invitations(created_by);
+
+CREATE TRIGGER trg_invitations_updated_at
+BEFORE UPDATE ON invitations
+FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+
+
+-- =========================================================
+-- friends
+-- =========================================================
+
+CREATE TABLE friends (
+  id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+
+  requester_id varchar(100) NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  addressee_id varchar(100) NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+
+  status varchar(10) NOT NULL DEFAULT 'pending'
+    CHECK (status IN ('pending', 'accepted', 'blocked')),
+
+  created_at timestamptz NOT NULL DEFAULT NOW(),
+  updated_at timestamptz NOT NULL DEFAULT NOW(),
+
+  CONSTRAINT no_self_friend CHECK (requester_id <> addressee_id),
+  CONSTRAINT unique_friend_pair UNIQUE (requester_id, addressee_id)
+);
+
+CREATE INDEX idx_friends_requester_status ON friends(requester_id, status);
+CREATE INDEX idx_friends_addressee_status ON friends(addressee_id, status);
+
+CREATE TRIGGER trg_friends_updated_at
+BEFORE UPDATE ON friends
+FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+

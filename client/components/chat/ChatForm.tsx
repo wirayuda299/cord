@@ -3,7 +3,7 @@
 import { Plus, Smile, Gift, Sticker, X, ImageIcon } from "lucide-react";
 import { useRef, useState, useCallback, useEffect } from "react";
 import { useWebSocket } from "@/hooks/useWebsocket";
-import type { Message, ResponseMessage } from "@/lib/types/chat";
+import type { ResponseMessage } from "@/lib/types/chat";
 import { deleteImage, uploadImage } from "@/lib/server/actions/images";
 import { getPublicApiUrl } from "@/lib/env";
 import { ALLOWED_FILE_EXTENSIONS } from "@/lib/shared/file-validation";
@@ -20,9 +20,6 @@ type ChatFormProps = {
   channelId: string;
   handleMessages: (msg: ResponseMessage) => void;
   handleDelete?: (id: string) => void;
-  onOptimistic?: (msg: Message) => void;
-  onUploadComplete?: (tempId: string) => void;
-  onUploadFailed?: (tempId: string) => void;
   userId?: string;
   placeholder?: string;
 };
@@ -33,9 +30,6 @@ export default function ChatForm({
   channelId,
   handleMessages,
   handleDelete,
-  onOptimistic,
-  onUploadComplete,
-  onUploadFailed,
   userId = "usr_001",
   placeholder,
 }: ChatFormProps) {
@@ -76,7 +70,7 @@ export default function ChatForm({
     if (attachedFiles.length === 0) {
       // File removed: if upload completed and was never consumed, delete the asset
       if (uploadResultRef.current && uploadStateRef.current !== "consumed") {
-        deleteImage(uploadResultRef.current.public_id).catch(() => {});
+        deleteImage(uploadResultRef.current.public_id).catch(() => { });
       }
       uploadPromiseRef.current = null;
       uploadResultRef.current = null;
@@ -93,7 +87,7 @@ export default function ChatForm({
         uploadResultRef.current = r;
         // If file was removed while upload was in-flight (state reset to "idle"), delete now
         if (uploadStateRef.current === "idle") {
-          deleteImage(r.public_id).catch(() => {});
+          deleteImage(r.public_id).catch(() => { });
           uploadResultRef.current = null;
         }
       })
@@ -136,28 +130,6 @@ export default function ChatForm({
     const cachedResult = uploadResultRef.current;
     const cachedPromise = uploadPromiseRef.current;
 
-    const tempId = `temp_${Date.now()}`;
-
-    // Optimistic update: show message immediately with uploading status
-    if (onOptimistic) {
-      onOptimistic({
-        id: tempId,
-        content: trimmed,
-        user_id: userId,
-        username: "You",
-        avatar: "",
-        image_url: blobPreview,
-        image_asset_id: "",
-        channel_id: channelId,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-        parent_msg_id: selectedMsg?.id ?? null,
-        parent_content: selectedMsg?.content ?? null,
-        parent_username: selectedMsg?.username ?? null,
-        _status: blobPreview ? "uploading" : undefined,
-      });
-    }
-
     setMessage("");
     uploadStateRef.current = "consumed"; // prevent cleanup from deleting the asset we're about to use
     clearFiles();
@@ -187,11 +159,8 @@ export default function ChatForm({
         ...(selectedMsg && { parent_message_id: selectedMsg.id }),
       });
       if (!sent) throw new Error("websocket is not connected");
-
-      // Upload done + WS send queued — clear spinner immediately
-      if (blobPreview) onUploadComplete?.(tempId);
     } catch {
-      onUploadFailed?.(tempId);
+      // message send failed — could show toast here
     } finally {
       setIsSubmitting(false);
     }
@@ -207,9 +176,6 @@ export default function ChatForm({
     clearFiles,
     clearErrors,
     channelId,
-    onOptimistic,
-    onUploadComplete,
-    onUploadFailed,
   ]);
 
   const handleKeyDown = useCallback(
@@ -255,9 +221,8 @@ export default function ChatForm({
       )}
 
       <div
-        className={`flex flex-col bg-surface-chat rounded-xl transition-colors ${
-          isDragging ? "ring-2 ring-discord-brand bg-discord-brand/10" : ""
-        }`}
+        className={`flex flex-col bg-surface-chat rounded-xl transition-colors ${isDragging ? "ring-2 ring-discord-brand bg-discord-brand/10" : ""
+          }`}
       >
         {isDragging && (
           <div className="flex flex-col items-center justify-center py-8 gap-2">
@@ -308,7 +273,7 @@ export default function ChatForm({
                 ? "Add a comment (optional)"
                 : !isConnected
                   ? "Connecting..."
-                : placeholder ?? `Message #${channelName}`
+                  : placeholder ?? `Message #${channelName}`
             }
             className="flex-1 bg-transparent text-sm text-gray-200 placeholder-gray-400 resize-none outline-none max-h-50 leading-5"
           />
