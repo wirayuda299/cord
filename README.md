@@ -27,24 +27,24 @@ go run main.go
 - Server creation, joining by invite code
 - Channel & category creation
 - Real-time messaging via WebSocket
-- Message deletion, pinning, replies
+- Message deletion, pinning, replies, editing (within 5 min)
 - File/image attachments (Cloudinary)
 - Role & permission management
 - Invite code generation and deletion
 - Member list with online/offline status
 - Server settings (name, icon)
+- Direct messages (DM) with conversation list
+- Friend requests (send, cancel, accept, decline)
+- Emoji reactions on messages
 
 ### Not Yet Implemented
 - Authentication (sign-in / sign-up)
-- Direct messages
-- Message editing
-- Emoji reactions
 - Member moderation (ban, kick, timeout)
 - Audit logs
 - Search
 - Voice / video channels
-- Threads
-- Friend list
+- Threads (UI ready, reply sending not wired)
+- Message search (DB index ready)
 
 
 - TODO:
