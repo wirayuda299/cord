@@ -2,6 +2,7 @@ package messages
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"net/http"
 
@@ -28,7 +29,12 @@ func GetAllMessages(ctx context.Context, db *databases.Container, channelID stri
     m.parent_msg_id,
     pm.content AS parent_content,
     pu.username AS parent_username,
-    COALESCE(u.avatar_url, '') as avatar
+    COALESCE(u.avatar_url, '') as avatar,
+    COALESCE(
+        (SELECT json_agg(json_build_object('user_id', r.user_id, 'emoji', r.emoji))
+         FROM reactions r WHERE r.message_id = m.id),
+        '[]'::json
+    ) as reactions
     FROM messages as m
     JOIN users as u ON m.user_id = u.id
     LEFT JOIN messages as pm ON m.parent_msg_id = pm.id
@@ -47,6 +53,7 @@ func GetAllMessages(ctx context.Context, db *databases.Container, channelID stri
 
 	for rows.Next() {
 		var m services.MessageRow
+		var reactionsJSON []byte
 		err = rows.Scan(
 			&m.ID,
 			&m.Content,
@@ -61,12 +68,16 @@ func GetAllMessages(ctx context.Context, db *databases.Container, channelID stri
 			&m.ParentContent,
 			&m.ParentUsername,
 			&m.Avatar,
+			&reactionsJSON,
 		)
 		if err != nil {
 			return nil, &httputil.ErrorResponse{
 				Err:  err,
 				Code: http.StatusInternalServerError,
 			}
+		}
+		if len(reactionsJSON) > 0 {
+			json.Unmarshal(reactionsJSON, &m.Reactions)
 		}
 		messages = append(messages, m)
 	}

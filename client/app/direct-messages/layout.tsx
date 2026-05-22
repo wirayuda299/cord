@@ -4,8 +4,9 @@ import Link from "next/link"
 import { ReactNode } from "react"
 
 import { getAllConversations } from "@/lib/server/data/conversations"
+import { TEMP_USR } from "@/lib/utils"
 
-const CURRENT_USER_ID = "usr_001"
+const CURRENT_USER_ID = TEMP_USR
 
 export default async function DirectMessagesLayout({ children }: { children: ReactNode }) {
   const conversations = await getAllConversations(CURRENT_USER_ID)

@@ -1,6 +1,7 @@
 "use server"
 
 import { getPublicApiUrl } from "@/lib/env"
+import { TEMP_USR } from "@/lib/utils"
 
 export async function createInvitationCode(server_id: string, max_users: number = 10) {
 
@@ -16,7 +17,7 @@ export async function createInvitationCode(server_id: string, max_users: number 
     body: JSON.stringify({
       server_id,
       max_users,
-      created_by: "usr_001"
+      created_by: TEMP_USR
     })
   })
 

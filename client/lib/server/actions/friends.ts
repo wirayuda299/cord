@@ -1,6 +1,7 @@
 'use server'
 
 import { getPublicApiUrl } from "@/lib/env"
+import { TEMP_USR } from "@/lib/utils"
 
 export async function sendFriendRequest(addressee_id: string) {
 
@@ -16,7 +17,7 @@ export async function sendFriendRequest(addressee_id: string) {
       "Accept": "application/json"
     },
     body: JSON.stringify({
-      requester_id: "usr_001",
+      requester_id: TEMP_USR,
       addressee_id
     })
   })

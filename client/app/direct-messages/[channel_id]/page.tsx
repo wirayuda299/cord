@@ -4,8 +4,9 @@ import { UserRound } from "lucide-react";
 import ChatList from "@/components/chat/ChatList";
 import { getConversationById } from "@/lib/server/data/conversations";
 import { getAllMessagesByChannelId } from "@/lib/server/data/messages";
+import { TEMP_USR } from "@/lib/utils";
 
-const CURRENT_USER_ID = "usr_001";
+const CURRENT_USER_ID = TEMP_USR;
 const DM_SCOPE_ID = "dm";
 
 function isApiError(value: unknown): value is { error: string } {

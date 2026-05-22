@@ -7,6 +7,7 @@ import { copyText } from "@/lib/client/clipboard"
 import useSWR from "swr"
 import { createInvitationCode } from "@/lib/server/actions/invitations"
 import { Invitation } from "@/lib/types/invitation"
+import { TEMP_USR } from "@/lib/utils"
 import { deleteInvitationCode, getAllInvitation } from "@/lib/client/api/invitation"
 
 
@@ -191,7 +192,7 @@ export default function Invites({ serverID }: { serverID: string }) {
   const handleDelete = async (code: string) => {
     try {
 
-      return await deleteInvitationCode(code, "usr_001").then(r => alert("Code deleted"))
+      return await deleteInvitationCode(code, TEMP_USR).then(r => alert("Code deleted"))
     } catch (e) {
       alert(e)
     }

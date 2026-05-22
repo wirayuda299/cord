@@ -1,4 +1,5 @@
 import { assignRole, unassignRole } from "@/lib/client/api/roles"
+import { TEMP_USR } from "@/lib/utils"
 import { useState } from "react"
 
 type Props = {
@@ -27,11 +28,10 @@ export default function useToggleRoleMember({ serverID, member, onMutate, server
         if (member.role_id) {
           await unassignRole(member.user_id, serverID, member.role_id)
         }
-        await assignRole(member.user_id, serverID, roleID, "usr_001")
+        await assignRole(member.user_id, serverID, roleID, TEMP_USR)
       }
       onMutate()
     } catch (err) {
-      console.log(err)
       setError(err instanceof Error ? err.message : "Failed")
     } finally {
       setPendingRoleId(null)

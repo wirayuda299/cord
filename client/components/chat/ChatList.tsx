@@ -9,6 +9,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useShallow } from "zustand/react/shallow";
 import ChatItem from "./ChatItem";
 import ChatForm from "./ChatForm";
+import { TEMP_USR } from "@/lib/utils";
 import MemberList from "@/components/members/MemberList";
 import ReplyBar from "./ReplyBar";
 import ThreadPanel from "./threads/ThreadPanel";
@@ -132,6 +133,36 @@ export default function ChatList({
     setMessages((prev) => prev.filter((m) => m.id !== id));
   }, []);
 
+  const handleEdit = useCallback((id: string, content: string) => {
+    setMessages((prev) =>
+      prev.map((m) => (m.id === id ? { ...m, content, updated_at: new Date().toISOString() } : m)),
+    );
+  }, []);
+
+  const handleToggleReaction = useCallback((id: string, emoji: string) => {
+    setMessages((prev) =>
+      prev.map((m) => {
+        if (m.id !== id) return m;
+        const reactions = m.reactions ?? [];
+        const hasReacted = reactions.some(
+          (r) => r.user_id === TEMP_USR && r.emoji === emoji,
+        );
+        if (hasReacted) {
+          return {
+            ...m,
+            reactions: reactions.filter(
+              (r) => !(r.user_id === TEMP_USR && r.emoji === emoji),
+            ),
+          };
+        }
+        return {
+          ...m,
+          reactions: [...reactions, { user_id: TEMP_USR, emoji }],
+        };
+      }),
+    );
+  }, []);
+
   const handleCreateThread = useCallback(
     (message: Message) => {
       openThread(message);
@@ -156,6 +187,8 @@ export default function ChatList({
                 message={m}
                 serverId={serverId}
                 handleDelete={handleDelete}
+                onEdit={handleEdit}
+                onToggleReaction={handleToggleReaction}
                 onCreateThread={
                   isDirectMessage ? undefined : handleCreateThread
                 }
@@ -173,7 +206,7 @@ export default function ChatList({
             />
           )}
           <ChatForm
-            userId="usr_001"
+            userId={TEMP_USR}
             channelName={displayName}
             channelId={channel.id}
             serverId={serverId}

@@ -5,6 +5,7 @@ import {
   createChannelSchema,
   type CreateChannelServer,
 } from "@/lib/validation/channel"
+import { TEMP_USR } from "@/lib/utils"
 import { updateTag } from "next/cache"
 import { ZodError } from "zod"
 
@@ -27,7 +28,7 @@ export async function createChannel(data: CreateChannelServer) {
       body: JSON.stringify({
         name: parsed.data.name,
         type: parsed.data.type,
-        created_by: "usr_001",
+        created_by: TEMP_USR,
         category_id: data.categoryID,
         server_id: data.serverID
       }),

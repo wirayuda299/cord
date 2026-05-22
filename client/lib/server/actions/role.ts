@@ -1,6 +1,7 @@
 'use server'
 
 import { getPublicApiUrl } from "@/lib/env"
+import { TEMP_USR } from "@/lib/utils"
 
 type CreateRolePayload = {
   name: string
@@ -45,7 +46,7 @@ export async function createRole(
       hoist,
       mentionable,
       permission_ids,
-      created_by: "usr_001"
+      created_by: TEMP_USR
     })
   })
 

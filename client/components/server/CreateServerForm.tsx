@@ -17,6 +17,7 @@ import { Field, FieldLabel } from "@/components/ui/field"
 import { createServer } from "@/lib/server/actions/servers"
 import { Controller, useForm } from "react-hook-form"
 import { createServerSchema, type CreateServerSchemaType } from "@/lib/validation/server"
+import { TEMP_USR } from "@/lib/utils"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useAttachedFiles } from "@/hooks/useAttachedFiles"
 import { ALLOWED_FILE_EXTENSIONS } from "@/lib/shared/file-validation"
@@ -33,7 +34,7 @@ export default function CreateServerForm() {
   const handleSubmit = async (data: CreateServerSchemaType) => {
     if (!data.name.trim()) return
     try {
-      const res = await createServer(data.name, "usr_001")
+      const res = await createServer(data.name, TEMP_USR)
       if (res.error) {
         alert(res.error)
         return

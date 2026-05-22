@@ -66,6 +66,54 @@ func (mh *MessageHandler) PinMessage(w http.ResponseWriter, r *http.Request) {
 	httputil.EncodeResponse(w, "Message pinned", http.StatusCreated, nil)
 }
 
+func (mh *MessageHandler) EditMessage(w http.ResponseWriter, r *http.Request) {
+	var p messages.EditMessagePayload
+	if err := json.NewDecoder(r.Body).Decode(&p); err != nil {
+		httputil.WriteErrorResponse(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	res := messages.EditMessage(r.Context(), mh.db, &p)
+	if res != nil {
+		httputil.WriteErrorResponse(w, res.Err.Error(), res.Code)
+		return
+	}
+
+	httputil.EncodeResponse(w, "Message edited", http.StatusOK, nil)
+}
+
+func (mh *MessageHandler) AddReaction(w http.ResponseWriter, r *http.Request) {
+	var p messages.ReactionPayload
+	if err := json.NewDecoder(r.Body).Decode(&p); err != nil {
+		httputil.WriteErrorResponse(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	res := messages.AddReaction(r.Context(), mh.db, &p)
+	if res != nil {
+		httputil.WriteErrorResponse(w, res.Err.Error(), res.Code)
+		return
+	}
+
+	httputil.EncodeResponse(w, "Reaction added", http.StatusOK, nil)
+}
+
+func (mh *MessageHandler) RemoveReaction(w http.ResponseWriter, r *http.Request) {
+	var p messages.ReactionPayload
+	if err := json.NewDecoder(r.Body).Decode(&p); err != nil {
+		httputil.WriteErrorResponse(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	res := messages.RemoveReaction(r.Context(), mh.db, &p)
+	if res != nil {
+		httputil.WriteErrorResponse(w, res.Err.Error(), res.Code)
+		return
+	}
+
+	httputil.EncodeResponse(w, "Reaction removed", http.StatusOK, nil)
+}
+
 func (mh *MessageHandler) DeleteMessage(w http.ResponseWriter, r *http.Request) {
 	var p queue.DeleteImagePayload
 	if err := json.NewDecoder(r.Body).Decode(&p); err != nil {

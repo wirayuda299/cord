@@ -4,12 +4,12 @@ import dynamic from "next/dynamic"
 import { Compass } from "lucide-react"
 
 import { getAllServers } from "@/lib/server/data/servers"
-import { cn } from "@/lib/utils"
+import { cn, TEMP_USR } from "@/lib/utils"
 
 const CreateServerForm = dynamic(() => import("@/components/server/CreateServerForm"))
 
 export default async function MainSidebar() {
-  const userId = "usr_001"
+  const userId = TEMP_USR
 
   const servers = await getAllServers(userId)
 

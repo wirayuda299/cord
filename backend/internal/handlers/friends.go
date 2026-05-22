@@ -78,3 +78,37 @@ func (fh *FriendsHandler) SendFriendRequest(w http.ResponseWriter, r *http.Reque
 
 	httputil.EncodeResponse(w, "Friend request sent", http.StatusCreated, nil)
 }
+
+func (fh *FriendsHandler) AcceptFriendRequest(w http.ResponseWriter, r *http.Request) {
+	var p friends.AcceptFriendRequestPayload
+
+	if err := json.NewDecoder(r.Body).Decode(&p); err != nil {
+		httputil.WriteErrorResponse(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	err := friends.AcceptFriendRequest(r.Context(), fh.db, &p)
+	if err != nil {
+		httputil.WriteErrorResponse(w, err.Err.Error(), err.Code)
+		return
+	}
+
+	httputil.EncodeResponse(w, "Friend request accepted", http.StatusOK, nil)
+}
+
+func (fh *FriendsHandler) DeclineFriendRequest(w http.ResponseWriter, r *http.Request) {
+	var p friends.DeclineFriendRequestPayload
+
+	if err := json.NewDecoder(r.Body).Decode(&p); err != nil {
+		httputil.WriteErrorResponse(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	err := friends.DeclineFriendRequest(r.Context(), fh.db, &p)
+	if err != nil {
+		httputil.WriteErrorResponse(w, err.Err.Error(), err.Code)
+		return
+	}
+
+	httputil.EncodeResponse(w, "Friend request declined", http.StatusOK, nil)
+}

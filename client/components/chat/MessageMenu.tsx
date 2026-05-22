@@ -14,11 +14,12 @@ import {
    Trash2,
 } from "lucide-react";
 
-import { topEmojies } from "@/constants/emoji";
+import { topEmojies, emojiList } from "@/constants/emoji";
 import { copyText } from "@/lib/client/clipboard";
 import { deleteMessage, pinMessage } from "@/lib/server/actions/messages";
 import type { Message } from "@/lib/types/chat";
 import { usePathname } from "next/navigation";
+import { TEMP_USR } from "@/lib/utils";
 import { useAppStore } from "@/stores/store";
 
 type MenuAction = {
@@ -34,6 +35,7 @@ type MessageMenuProps = {
    message: Message;
    onEdit?: () => void;
    onReaction?: () => void;
+   onToggleReaction?: (emoji: string) => void;
    onBookmark?: () => void;
    onForward?: () => void;
    onCreateThread?: () => void;
@@ -43,25 +45,86 @@ type MessageMenuProps = {
    userId?: string;
 };
 
-function EmojiRow({ onSelectEmoji }: { onSelectEmoji: (emoji: string) => void }) {
+function EmojiPicker({
+   onSelectEmoji,
+   onClose,
+}: {
+   onSelectEmoji: (emoji: string) => void;
+   onClose: () => void;
+}) {
+   const pickerRef = useRef<HTMLDivElement>(null);
+
+   useEffect(() => {
+      function handleClick(e: MouseEvent) {
+         if (pickerRef.current && !pickerRef.current.contains(e.target as Node)) {
+            onClose();
+         }
+      }
+      document.addEventListener("mousedown", handleClick);
+      return () => document.removeEventListener("mousedown", handleClick);
+   }, [onClose]);
+
    return (
-      <div className="flex items-center gap-1 px-2 pt-2 pb-1.5">
-         {topEmojies.map((e) => (
+      <div
+         ref={pickerRef}
+         className="absolute left-0 right-0 z-20 bg-surface-raised border border-white/10 rounded-md shadow-xl shadow-black/40 p-2 max-h-64 overflow-y-auto"
+      >
+         <div className="grid grid-cols-8 gap-1">
+            {emojiList.map((e) => (
+               <button
+                  key={e.code}
+                  type="button"
+                  onClick={() => onSelectEmoji(e.emoji)}
+                  className="flex items-center justify-center p-1.5 rounded hover:bg-white/10 transition-colors cursor-pointer text-lg"
+                  title={e.code}
+               >
+                  {e.emoji}
+               </button>
+            ))}
+         </div>
+      </div>
+   );
+}
+
+function EmojiRow({
+   onSelectEmoji,
+}: {
+   onSelectEmoji: (emoji: string) => void;
+}) {
+   const [showPicker, setShowPicker] = useState(false);
+
+   const handleSelect = useCallback(
+      (emoji: string) => {
+         onSelectEmoji(emoji);
+         setShowPicker(false);
+      },
+      [onSelectEmoji],
+   );
+
+   return (
+      <div className="relative">
+         <div className="flex items-center gap-1 px-2 pt-2 pb-1.5">
+            {topEmojies.map((e) => (
+               <button
+                  key={e.code}
+                  type="button"
+                  onClick={() => onSelectEmoji(e.emoji)}
+                  className="flex-1 flex items-center justify-center py-1.5 rounded hover:bg-white/10 transition-colors cursor-pointer"
+                  title={e.code}
+               >
+                  <span className="text-base leading-none">{e.emoji}</span>
+               </button>
+            ))}
             <button
-               key={e.code}
-               onClick={() => onSelectEmoji(e.emoji)}
-               className="flex-1 flex items-center justify-center py-1.5 rounded hover:bg-white/10 transition-colors cursor-pointer"
-               title={e.code}
+               type="button"
+               onClick={() => setShowPicker((s) => !s)}
+               className="flex items-center justify-center p-1.5 rounded hover:bg-white/10 transition-colors cursor-pointer text-text-secondary hover:text-white"
+               title="More reactions"
             >
-               <span className="text-base leading-none">{e.emoji}</span>
+               <SmilePlus size={15} />
             </button>
-         ))}
-         <button
-            className="flex items-center justify-center p-1.5 rounded hover:bg-white/10 transition-colors cursor-pointer text-text-secondary hover:text-white"
-            title="More reactions"
-         >
-            <SmilePlus size={15} />
-         </button>
+         </div>
+         {showPicker && <EmojiPicker onSelectEmoji={handleSelect} onClose={() => setShowPicker(false)} />}
       </div>
    );
 }
@@ -118,6 +181,8 @@ function useMenuActions(
    onForward?: () => void,
    onCreateThread?: () => void,
    onMore?: () => void,
+   onToggleReaction?: (emoji: string) => void,
+   toggleEmojiPicker?: () => void,
 ): MenuAction[] {
    const selectMessage = useAppStore((m) => m.setSelectedMsg);
    const pathname = usePathname();
@@ -171,7 +236,7 @@ function useMenuActions(
          {
             icon: <SmilePlus size={15} />,
             label: "Add Reaction",
-            onClick: onReaction,
+            onClick: toggleEmojiPicker,
          },
          { icon: <Bookmark size={15} />, label: "Bookmark", onClick: onBookmark },
          {
@@ -216,6 +281,7 @@ function useMenuActions(
          onReaction,
          onBookmark,
          onMore,
+         toggleEmojiPicker,
          selectMessage,
          pathname,
          serverId,
@@ -228,17 +294,19 @@ function MessageMenu(props: MessageMenuProps) {
       serverId,
       onEdit,
       onReaction,
+      onToggleReaction,
       onBookmark,
       onForward,
       onCreateThread,
       onMore,
       message,
       onDelete,
-      userId = "usr_001",
+      userId = TEMP_USR,
    } = props;
 
    const menuRef = useRef<HTMLDivElement>(null);
    const [flipUp, setFlipUp] = useState(false);
+   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
 
    const actions = useMenuActions(
       message,
@@ -251,6 +319,8 @@ function MessageMenu(props: MessageMenuProps) {
       onForward,
       onCreateThread,
       onMore,
+      onToggleReaction,
+      () => setShowEmojiPicker((s) => !s),
    );
 
    const checkFlip = useCallback(() => {
@@ -286,8 +356,9 @@ function MessageMenu(props: MessageMenuProps) {
    }, [checkFlip]);
 
    const handleEmojiSelect = useCallback((emoji: string) => {
-      console.log("Emoji selected:", emoji);
-   }, []);
+      onToggleReaction?.(emoji);
+      setShowEmojiPicker(false);
+   }, [onToggleReaction]);
 
    return (
       <div
@@ -298,9 +369,12 @@ function MessageMenu(props: MessageMenuProps) {
         ${flipUp ? "bottom-full mb-1" : "top-0"}
       `}
       >
-         <EmojiRow onSelectEmoji={handleEmojiSelect} />
-         <div className="mx-2 my-1 border-t border-white/6" />
-         <div className="flex flex-col px-1.5 pb-1.5 gap-px">
+         {showEmojiPicker && (
+            <div className="relative">
+               <EmojiRow onSelectEmoji={handleEmojiSelect} />
+            </div>
+         )}
+         <div className="flex flex-col px-1.5 py-1.5 gap-px">
             {actions.map((action) => (
                <ActionItem key={action.label} action={action} />
             ))}

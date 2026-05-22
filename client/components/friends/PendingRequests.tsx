@@ -1,8 +1,10 @@
 "use client";
 
-import { cancelFriendRequest, getAllPendingRequest } from "@/lib/client/api/friends";
+import { acceptFriendRequest, cancelFriendRequest, declineFriendRequest, getAllPendingRequest } from "@/lib/client/api/friends";
+import { TEMP_USR } from "@/lib/utils";
 import { Check, X, Clock } from "lucide-react";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import useSWR from "swr";
 
 function Avatar({ name, avatarURL }: { name: string; avatarURL: string }) {
@@ -18,6 +20,7 @@ function Avatar({ name, avatarURL }: { name: string; avatarURL: string }) {
 }
 
 export default function PendingRequests() {
+   const router = useRouter();
    const {
       data: pendingRequests = [],
       isLoading,
@@ -25,9 +28,9 @@ export default function PendingRequests() {
    } = useSWR("/api/friends", getAllPendingRequest);
 
    const incoming =
-      pendingRequests?.filter((r) => r.addressee_user_id === "usr_001") ?? [];
+      pendingRequests?.filter((r) => r.addressee_user_id === TEMP_USR) ?? [];
    const outgoing =
-      pendingRequests?.filter((r) => r.requester_user_id === "usr_001") ?? [];
+      pendingRequests?.filter((r) => r.requester_user_id === TEMP_USR) ?? [];
 
    const cancel = async (id: string) => {
       try {
@@ -39,7 +42,29 @@ export default function PendingRequests() {
          alert(e);
       }
    };
-   const acceptInvitationRequest = (id: string) => {};
+
+   const accept = async (id: string) => {
+      try {
+         await acceptFriendRequest(id).then((r) => {
+            console.log(r);
+            mutate();
+            router.refresh();
+         });
+      } catch (e) {
+         alert(e);
+      }
+   };
+
+   const decline = async (id: string) => {
+      try {
+         await declineFriendRequest(id).then((r) => {
+            console.log(r);
+            mutate();
+         });
+      } catch (e) {
+         alert(e);
+      }
+   };
 
    return (
       <phantom-ui loading={isLoading}>
@@ -71,13 +96,14 @@ export default function PendingRequests() {
                            </div>
                            <div className="flex items-center gap-2 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
                               <button
-                                 onClick={() => acceptInvitationRequest(req.id)}
+                                 onClick={() => accept(req.id)}
                                  title="Accept"
                                  className="w-8 h-8 flex items-center justify-center rounded-full bg-surface-raised hover:bg-green-500/20 text-zinc-400 hover:text-green-400 transition-colors"
                               >
                                  <Check size={16} />
                               </button>
                               <button
+                                 onClick={() => decline(req.id)}
                                  title="Decline"
                                  className="w-8 h-8 flex items-center justify-center rounded-full bg-surface-raised hover:bg-red-500/20 text-zinc-400 hover:text-red-400 transition-colors"
                               >

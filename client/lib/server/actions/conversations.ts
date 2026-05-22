@@ -2,8 +2,9 @@
 
 import { getPublicApiUrl } from "@/lib/env";
 import { redirect } from "next/navigation";
+import { TEMP_USR } from "@/lib/utils";
 
-const CURRENT_USER_ID = "usr_001";
+const CURRENT_USER_ID = TEMP_USR;
 
 export async function startConversation(formData: FormData): Promise<void> {
   const targetedUserId = String(formData.get("targeted_user_id") ?? "");

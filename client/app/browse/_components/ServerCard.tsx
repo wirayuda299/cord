@@ -4,7 +4,7 @@ import { useState, useTransition } from 'react'
 import Image from 'next/image'
 import { Users } from 'lucide-react'
 import { useRouter } from 'next/navigation'
-import { cn } from '@/lib/utils'
+import { cn, TEMP_USR } from '@/lib/utils'
 import { joinServer } from '@/lib/server/actions/servers'
 import type { BrowsableServer } from '@/lib/types/server'
 
@@ -31,7 +31,7 @@ export default function ServerCard({ server }: { server: BrowsableServer }) {
 
   const handleJoin = () => {
     startTransition(async () => {
-      const res = await joinServer(server.id, 'usr_001')
+      const res = await joinServer(server.id, TEMP_USR)
       if (res?.error) {
         alert(res.error)
         return

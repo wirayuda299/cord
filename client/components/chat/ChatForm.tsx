@@ -9,6 +9,8 @@ import { getPublicApiUrl } from "@/lib/env";
 import { ALLOWED_FILE_EXTENSIONS } from "@/lib/shared/file-validation";
 import { useAttachedFiles } from "@/hooks/useAttachedFiles";
 import { useAppStore } from "@/stores/store";
+import { TEMP_USR } from "@/lib/utils";
+import { emojiList } from "@/constants/emoji";
 import { FilePreview } from "./FilePreview";
 
 type UploadResult = { url: string; public_id: string };
@@ -30,13 +32,14 @@ export default function ChatForm({
   channelId,
   handleMessages,
   handleDelete,
-  userId = "usr_001",
+  userId = TEMP_USR,
   placeholder,
 }: ChatFormProps) {
   const selectedMsg = useAppStore((s) => s.selectedMsg);
   const setSelectedMsg = useAppStore((s) => s.setSelectedMsg);
   const [message, setMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const uploadPromiseRef = useRef<Promise<UploadResult> | null>(null);
@@ -188,6 +191,38 @@ export default function ChatForm({
     [handleSubmit],
   );
 
+  const insertEmoji = useCallback((emoji: string) => {
+    const el = textareaRef.current;
+    if (!el) return;
+    const start = el.selectionStart ?? message.length;
+    const end = el.selectionEnd ?? message.length;
+    const before = message.slice(0, start);
+    const after = message.slice(end);
+    const next = before + emoji + after;
+    setMessage(next);
+    requestAnimationFrame(() => {
+      el.focus();
+      const pos = start + emoji.length;
+      el.setSelectionRange(pos, pos);
+    });
+  }, [message]);
+
+  const emojiPickerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!showEmojiPicker) return;
+    function handleClick(e: MouseEvent) {
+      if (
+        emojiPickerRef.current &&
+        !emojiPickerRef.current.contains(e.target as Node)
+      ) {
+        setShowEmojiPicker(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, [showEmojiPicker]);
+
   return (
     <div
       className="px-4 pb-6 pt-2 shrink-0"
@@ -290,12 +325,38 @@ export default function ChatForm({
             >
               <Sticker size={20} />
             </button>
-            <button
-              type="button"
-              className="text-gray-400 hover:text-gray-200 transition-colors"
-            >
-              <Smile size={20} />
-            </button>
+            <div className="relative flex items-center">
+              <button
+                type="button"
+                onClick={() => setShowEmojiPicker((s) => !s)}
+                className="text-gray-400 hover:text-gray-200 transition-colors"
+              >
+                <Smile size={20} />
+              </button>
+              {showEmojiPicker && (
+                <div
+                  ref={emojiPickerRef}
+                  className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 z-50 w-72 bg-surface-raised border border-white/10 rounded-md shadow-xl shadow-black/40 p-2"
+                >
+                  <div className="grid grid-cols-8 gap-1 max-h-64 overflow-y-auto">
+                    {emojiList.map((e) => (
+                      <button
+                        key={e.code}
+                        type="button"
+                        onClick={() => {
+                          insertEmoji(e.emoji);
+                          setShowEmojiPicker(false);
+                        }}
+                        className="flex items-center justify-center p-1.5 rounded hover:bg-white/10 transition-colors cursor-pointer text-lg"
+                        title={e.code}
+                      >
+                        {e.emoji}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>

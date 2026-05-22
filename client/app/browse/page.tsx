@@ -1,9 +1,10 @@
 import { Compass } from 'lucide-react'
 import { browseServers } from '@/lib/server/data/servers'
+import { TEMP_USR } from '@/lib/utils'
 import ServerCard from './_components/ServerCard'
 
 export default async function BrowsePage() {
-  const servers = await browseServers('usr_001')
+  const servers = await browseServers(TEMP_USR)
 
   return (
     <div className="flex flex-col w-full min-h-screen bg-surface-base overflow-y-auto">

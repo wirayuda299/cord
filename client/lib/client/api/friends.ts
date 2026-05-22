@@ -1,4 +1,5 @@
 import { getPublicApiUrl } from "@/lib/env";
+import { TEMP_USR } from "@/lib/utils";
 
 type FriendRequestStatus = "pending" | "accepted" | "rejected";
 
@@ -15,7 +16,7 @@ export type FriendRequest = {
 };
 
 export async function getAllPendingRequest() {
-  const res = await fetch(`${getPublicApiUrl()}/friends/pending?user_id=usr_001`, {
+  const res = await fetch(`${getPublicApiUrl()}/friends/pending?user_id=${TEMP_USR}`, {
     method: "GET",
     headers: {
       "Content-Type": "application/json",
@@ -39,7 +40,7 @@ export async function cancelFriendRequest(id: string) {
     },
     body: JSON.stringify({
       id,
-      current_user_id: "usr_001"
+      current_user_id: TEMP_USR
     })
   })
   if (!res.ok) {
@@ -47,5 +48,42 @@ export async function cancelFriendRequest(id: string) {
   }
 
   return await res.json()
+}
 
+export async function acceptFriendRequest(id: string) {
+  const res = await fetch(`${getPublicApiUrl()}/friends/accept`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Accept": "application/json"
+    },
+    body: JSON.stringify({
+      id,
+      current_user_id: TEMP_USR
+    })
+  })
+  if (!res.ok) {
+    throw new Error("Failed to accept friend request")
+  }
+
+  return await res.json()
+}
+
+export async function declineFriendRequest(id: string) {
+  const res = await fetch(`${getPublicApiUrl()}/friends/decline`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Accept": "application/json"
+    },
+    body: JSON.stringify({
+      id,
+      current_user_id: TEMP_USR
+    })
+  })
+  if (!res.ok) {
+    throw new Error("Failed to decline friend request")
+  }
+
+  return await res.json()
 }

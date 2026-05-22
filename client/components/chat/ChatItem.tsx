@@ -2,11 +2,13 @@
 
 import { format } from "date-fns";
 import Image from "next/image";
-import { memo, useMemo } from "react";
-import { AlertCircle, Loader2, Reply } from "lucide-react";
+import { memo, useMemo, useState, useCallback } from "react";
+import { AlertCircle, Loader2, Reply, Check, X } from "lucide-react";
 
 import MessageMenu from "./MessageMenu";
 import type { Message } from "@/lib/types/chat";
+import { addReaction, editMessage, removeReaction } from "@/lib/client/api/messages";
+import { TEMP_USR } from "@/lib/utils";
 
 type ChatItemVariant = "channel" | "thread-parent" | "thread-reply";
 
@@ -15,6 +17,8 @@ type ChatItemProps = {
   serverId: string;
   handleDelete?: (id: string) => void;
   onCreateThread?: (message: Message) => void;
+  onEdit?: (id: string, content: string) => void;
+  onToggleReaction?: (messageId: string, emoji: string) => void;
   variant?: ChatItemVariant;
 };
 
@@ -150,14 +154,61 @@ function MessageHeader({ username, isBot, created_at }: MessageHeaderProps) {
   );
 }
 
+function ReactionBar({
+  reactions,
+  currentUserId,
+  onToggle,
+}: {
+  reactions: Message["reactions"];
+  currentUserId: string;
+  onToggle: (emoji: string) => void;
+}) {
+  if (!reactions || reactions.length === 0) return null;
+
+  const grouped = reactions.reduce((acc, r) => {
+    if (!acc[r.emoji]) acc[r.emoji] = { count: 0, self: false };
+    acc[r.emoji].count++;
+    if (r.user_id === currentUserId) acc[r.emoji].self = true;
+    return acc;
+  }, {} as Record<string, { count: number; self: boolean }>);
+
+  return (
+    <div className="flex flex-wrap gap-1 mt-1">
+      {Object.entries(grouped).map(([emoji, { count, self }]) => (
+        <button
+          key={emoji}
+          type="button"
+          onClick={() => onToggle(emoji)}
+          className={`
+            flex items-center gap-1 px-1.5 py-0.5 rounded text-xs
+            transition-colors cursor-pointer
+            ${self
+              ? "bg-discord-blue/20 border border-discord-blue/40 text-white"
+              : "bg-white/5 border border-white/10 text-gray-300 hover:bg-white/10"
+            }
+          `}
+        >
+          <span>{emoji}</span>
+          <span className="text-[11px] font-medium">{count}</span>
+        </button>
+      ))}
+    </div>
+  );
+}
+
 function ChatItem({
   message,
   serverId,
   handleDelete,
   onCreateThread,
+  onEdit,
+  onToggleReaction,
   variant = "channel",
 }: ChatItemProps) {
   const isFailed = message._status === "failed";
+  const [isEditing, setIsEditing] = useState(false);
+  const [editContent, setEditContent] = useState(message.content);
+  const [isSaving, setIsSaving] = useState(false);
 
   const canCreateThread =
     variant === "channel" && !isFailed && Boolean(onCreateThread);
@@ -165,7 +216,61 @@ function ChatItem({
   const canDelete =
     !isFailed && Boolean(handleDelete) && variant !== "thread-parent";
 
-  const showMenu = !isFailed && (canCreateThread || canDelete);
+  const isWithinEditWindow = useMemo(() => {
+    const created = new Date(message.created_at);
+    return Date.now() - created.getTime() < 5 * 60 * 1000;
+  }, [message.created_at]);
+
+  const canEdit = !isFailed && onEdit && isWithinEditWindow;
+
+  const showMenu = !isFailed && (canCreateThread || canDelete || canEdit || Boolean(onToggleReaction));
+
+  const handleToggleReaction = useCallback(
+    async (emoji: string) => {
+      if (!onToggleReaction) return;
+      const hasReacted = message.reactions?.some(
+        (r) => r.user_id === TEMP_USR && r.emoji === emoji,
+      );
+      try {
+        if (hasReacted) {
+          await removeReaction({ message_id: message.id, emoji });
+        } else {
+          await addReaction({ message_id: message.id, emoji });
+        }
+        onToggleReaction(message.id, emoji);
+      } catch (e) {
+        console.error(e);
+      }
+    },
+    [message.id, message.reactions, onToggleReaction],
+  );
+
+  const handleSaveEdit = useCallback(async () => {
+    if (!editContent.trim() || editContent.trim() === message.content) {
+      setIsEditing(false);
+      return;
+    }
+    setIsSaving(true);
+    try {
+      await editMessage({
+        id: message.id,
+        content: editContent.trim(),
+        channel_id: message.channel_id,
+      });
+      onEdit?.(message.id, editContent.trim());
+      setIsEditing(false);
+    } catch (e) {
+      console.error(e);
+      alert(e instanceof Error ? e.message : "Failed to edit message");
+    } finally {
+      setIsSaving(false);
+    }
+  }, [editContent, message.id, message.content, message.channel_id, onEdit]);
+
+  const handleCancelEdit = useCallback(() => {
+    setEditContent(message.content);
+    setIsEditing(false);
+  }, [message.content]);
 
   return (
     <div
@@ -206,7 +311,59 @@ function ChatItem({
             created_at={message.created_at}
           />
 
-          <MessageContent message={message} />
+          {isEditing ? (
+            <div className="flex flex-col gap-2">
+              <textarea
+                value={editContent}
+                onChange={(e) => setEditContent(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault();
+                    handleSaveEdit();
+                  }
+                  if (e.key === "Escape") {
+                    handleCancelEdit();
+                  }
+                }}
+                className="w-full min-h-[60px] px-3 py-2 text-sm bg-black/40 text-gray-200 rounded-md border border-white/10 focus:outline-none focus:border-discord-blue resize-none"
+                autoFocus
+              />
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={handleSaveEdit}
+                  disabled={isSaving}
+                  className="flex items-center gap-1 px-2 py-1 text-xs font-medium bg-discord-blue text-white rounded hover:bg-discord-blue/90 disabled:opacity-50"
+                >
+                  {isSaving ? (
+                    <Loader2 size={12} className="animate-spin" />
+                  ) : (
+                    <Check size={12} />
+                  )}
+                  Save
+                </button>
+                <button
+                  type="button"
+                  onClick={handleCancelEdit}
+                  disabled={isSaving}
+                  className="flex items-center gap-1 px-2 py-1 text-xs font-medium bg-surface-raised text-gray-300 rounded hover:bg-surface-hover disabled:opacity-50"
+                >
+                  <X size={12} />
+                  Cancel
+                </button>
+                <span className="text-[10px] text-gray-500">press enter to save, esc to cancel</span>
+              </div>
+            </div>
+          ) : (
+            <>
+              <MessageContent message={message} />
+              <ReactionBar
+                reactions={message.reactions}
+                currentUserId={TEMP_USR}
+                onToggle={handleToggleReaction}
+              />
+            </>
+          )}
 
           {isFailed && (
             <div className="mt-1 flex items-center gap-1.5 text-xs text-red-400">
@@ -229,6 +386,8 @@ function ChatItem({
             message={message}
             serverId={serverId}
             onDelete={handleDelete ?? (() => {})}
+            onEdit={canEdit ? () => setIsEditing(true) : undefined}
+            onToggleReaction={handleToggleReaction}
             onCreateThread={
               canCreateThread ? () => onCreateThread?.(message) : undefined
             }
