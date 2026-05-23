@@ -14,6 +14,8 @@ import MemberList from "@/components/members/MemberList";
 import ReplyBar from "./ReplyBar";
 import ThreadPanel from "./threads/ThreadPanel";
 import { useThread } from "./threads/useThread";
+import { useWebSocket } from "@/hooks/useWebsocket";
+import { getAllThreadMessages } from "@/lib/server/actions/messages";
 
 type Props = {
   channel: Channel;
@@ -80,7 +82,7 @@ function ChannelHeader({
 
 function appendUniqueMessages(
   currentMessages: Message[],
-  incomingMessages: Message[],
+  incomingMessages: Message[]
 ) {
   const seen = new Set(currentMessages.map((message) => message.id));
   const next = [...currentMessages];
@@ -103,7 +105,7 @@ export default function ChatList({
 }: Props) {
   const [messages, setMessages] = useState<Message[]>(historyMessages);
   const bottomRef = useRef<HTMLDivElement>(null);
-  const { threadState, openThread, closeThread } = useThread();
+  const { threadState, openThread, closeThread, addThreadMessage, removeThreadMessage } = useThread();
   const isDirectMessage =
     variant === "dm" ||
     channel.channel_type === "dm" ||
@@ -115,27 +117,37 @@ export default function ChatList({
       selectedMsg: s.selectedMsg,
       setSelectedMsg: s.setSelectedMsg,
       isMemberOpen: s.isMemberOpen,
-    })),
+    }))
   );
 
-  useEffect(() => {
-    if (!bottomRef) return;
+  const handleMessages = useCallback(
+    (msg: ResponseMessage) => {
+      setMessages((prev) => appendUniqueMessages(prev, msg.messages));
 
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
-
-
-  const handleMessages = useCallback((msg: ResponseMessage) => {
-    setMessages((prev) => appendUniqueMessages(prev, msg.messages));
-  }, []);
+      // Route thread replies to thread panel
+      const parentId = threadState.parentMessage?.id;
+      if (parentId) {
+        const threadReplies = msg.messages.filter(
+          (m) => m.parent_msg_id === parentId
+        );
+        if (threadReplies.length > 0) {
+          threadReplies.forEach((reply) => addThreadMessage(reply));
+        }
+      }
+    },
+    [threadState.parentMessage?.id, addThreadMessage]
+  );
 
   const handleDelete = useCallback((id: string) => {
     setMessages((prev) => prev.filter((m) => m.id !== id));
-  }, []);
+    removeThreadMessage(id);
+  }, [removeThreadMessage]);
 
   const handleEdit = useCallback((id: string, content: string) => {
     setMessages((prev) =>
-      prev.map((m) => (m.id === id ? { ...m, content, updated_at: new Date().toISOString() } : m)),
+      prev.map((m) =>
+        m.id === id ? { ...m, content, updated_at: new Date().toISOString() } : m
+      )
     );
   }, []);
 
@@ -145,13 +157,13 @@ export default function ChatList({
         if (m.id !== id) return m;
         const reactions = m.reactions ?? [];
         const hasReacted = reactions.some(
-          (r) => r.user_id === TEMP_USR && r.emoji === emoji,
+          (r) => r.user_id === TEMP_USR && r.emoji === emoji
         );
         if (hasReacted) {
           return {
             ...m,
             reactions: reactions.filter(
-              (r) => !(r.user_id === TEMP_USR && r.emoji === emoji),
+              (r) => !(r.user_id === TEMP_USR && r.emoji === emoji)
             ),
           };
         }
@@ -159,15 +171,43 @@ export default function ChatList({
           ...m,
           reactions: [...reactions, { user_id: TEMP_USR, emoji }],
         };
-      }),
+      })
     );
   }, []);
 
   const handleCreateThread = useCallback(
     (message: Message) => {
-      openThread(message);
+      openThread(message, getAllThreadMessages);
     },
-    [openThread],
+    [openThread]
+  );
+
+  const { sendMessage, status } = useWebSocket(serverId, channel.id, {
+    onMessage: handleMessages,
+    onDelete: handleDelete,
+    onClose: () => console.log("disconnected"),
+    onError: (e) => console.error("ws error", e),
+  });
+
+  useEffect(() => {
+    if (!bottomRef) return;
+
+    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
+
+  const handleSendReply = useCallback(
+    (content: string) => {
+      if (!threadState.parentMessage) return;
+      sendMessage({
+        channel_id: channel.id,
+        message: content,
+        user_id: TEMP_USR,
+        attachment_url: "",
+        attachment_id: "",
+        parent_message_id: threadState.parentMessage.id,
+      });
+    },
+    [sendMessage, channel.id, threadState.parentMessage]
   );
 
   return (
@@ -215,8 +255,8 @@ export default function ChatList({
                 ? `Message @${displayName}`
                 : `Message #${channel.name}`
             }
-            handleMessages={handleMessages}
-            handleDelete={handleDelete}
+            sendMessage={sendMessage}
+            status={status}
           />
         </div>
       </div>
@@ -224,12 +264,11 @@ export default function ChatList({
       {!isDirectMessage && <MemberList isOpen={isMemberOpen} />}
       {!isDirectMessage && (
         <ThreadPanel
-          onSendReply={(e) => {
-            console.log("Message -> ", e);
-          }}
+          onSendReply={handleSendReply}
           parentMessage={threadState.parentMessage}
           threadMessages={threadState.threadMessages}
           isOpen={threadState.isOpen}
+          isLoading={threadState.isLoading}
           onClose={closeThread}
           onDeleteMessage={handleDelete}
           serverId={serverId}

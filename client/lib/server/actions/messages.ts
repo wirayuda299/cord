@@ -2,6 +2,28 @@
 
 import { getPublicApiUrl } from "@/lib/env";
 import { revalidatePath, updateTag } from "next/cache";
+import type { Message } from "@/lib/types/chat";
+
+export async function getAllThreadMessages(parentId: string) {
+  try {
+    const base = getPublicApiUrl();
+    const response = await fetch(`${base}/messages/thread?parentId=${parentId}`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+      cache: "no-store",
+    });
+    if (!response.ok) {
+      return { error: "Failed to get thread messages" };
+    }
+    const { data } = await response.json();
+    return data as Message[];
+  } catch (e) {
+    return { error: e };
+  }
+}
 
 export async function pinMessage(pinned_by: string, msg_id: string, channel_id: string) {
    try {

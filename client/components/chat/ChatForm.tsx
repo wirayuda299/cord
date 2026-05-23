@@ -2,8 +2,7 @@
 
 import { Plus, Smile, Gift, Sticker, X, ImageIcon } from "lucide-react";
 import { useRef, useState, useCallback, useEffect } from "react";
-import { useWebSocket } from "@/hooks/useWebsocket";
-import type { ResponseMessage } from "@/lib/types/chat";
+import type { ConnectionStatus } from "@/hooks/useWebsocket";
 import { deleteImage, uploadImage } from "@/lib/server/actions/images";
 import { getPublicApiUrl } from "@/lib/env";
 import { ALLOWED_FILE_EXTENSIONS } from "@/lib/shared/file-validation";
@@ -20,20 +19,20 @@ type ChatFormProps = {
   channelName: string;
   serverId: string;
   channelId: string;
-  handleMessages: (msg: ResponseMessage) => void;
-  handleDelete?: (id: string) => void;
   userId?: string;
   placeholder?: string;
+  sendMessage: (msg: object) => boolean;
+  status: ConnectionStatus;
 };
 
 export default function ChatForm({
   channelName,
   serverId,
   channelId,
-  handleMessages,
-  handleDelete,
   userId = TEMP_USR,
   placeholder,
+  sendMessage,
+  status,
 }: ChatFormProps) {
   const selectedMsg = useAppStore((s) => s.selectedMsg);
   const setSelectedMsg = useAppStore((s) => s.setSelectedMsg);
@@ -46,12 +45,6 @@ export default function ChatForm({
   const uploadResultRef = useRef<UploadResult | null>(null);
   const uploadStateRef = useRef<UploadState>("idle");
 
-  const { sendMessage, status } = useWebSocket(serverId, channelId, {
-    onMessage: handleMessages,
-    onDelete: handleDelete,
-    onClose: () => console.log("disconnected"),
-    onError: (e) => console.error("ws error", e),
-  });
   const isConnected = status === "connected";
 
   const {

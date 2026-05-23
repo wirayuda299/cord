@@ -144,3 +144,15 @@ func (mh *MessageHandler) FindAllMessages(w http.ResponseWriter, r *http.Request
 
 	httputil.EncodeResponse(w, "All messages fetched successfully", http.StatusOK, allMessages)
 }
+
+func (mh *MessageHandler) FindAllThreadMessages(w http.ResponseWriter, r *http.Request) {
+	parentID := r.URL.Query().Get("parentId")
+
+	threadMessages, err := messages.GetAllThreadMessages(r.Context(), mh.db, parentID)
+	if err != nil {
+		httputil.WriteErrorResponse(w, err.Err.Error(), err.Code)
+		return
+	}
+
+	httputil.EncodeResponse(w, "Thread messages fetched successfully", http.StatusOK, threadMessages)
+}

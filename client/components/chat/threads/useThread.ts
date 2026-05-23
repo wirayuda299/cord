@@ -1,3 +1,5 @@
+"use client";
+
 import { useState, useCallback } from "react";
 import type { Message } from "@/lib/types/chat";
 
@@ -5,6 +7,7 @@ export type ThreadState = {
    parentMessage: Message | null;
    threadMessages: Message[];
    isOpen: boolean;
+   isLoading: boolean;
 };
 
 export function useThread() {
@@ -12,14 +15,44 @@ export function useThread() {
       parentMessage: null,
       threadMessages: [],
       isOpen: false,
+      isLoading: false,
    });
 
-   const openThread = useCallback((parentMessage: Message) => {
+   const openThread = useCallback(async (parentMessage: Message, fetchThread?: (parentId: string) => Promise<Message[] | { error: unknown }>) => {
       setThreadState({
          parentMessage,
-         threadMessages: [], // In a real app, fetch existing thread messages
+         threadMessages: [],
          isOpen: true,
+         isLoading: true,
       });
+
+      if (fetchThread) {
+         try {
+            const result = await fetchThread(parentMessage.id);
+            if (Array.isArray(result)) {
+               setThreadState((prev) => ({
+                  ...prev,
+                  threadMessages: result,
+                  isLoading: false,
+               }));
+            } else {
+               setThreadState((prev) => ({
+                  ...prev,
+                  isLoading: false,
+               }));
+            }
+         } catch {
+            setThreadState((prev) => ({
+               ...prev,
+               isLoading: false,
+            }));
+         }
+      } else {
+         setThreadState((prev) => ({
+            ...prev,
+            isLoading: false,
+         }));
+      }
    }, []);
 
    const closeThread = useCallback(() => {
@@ -27,7 +60,15 @@ export function useThread() {
          parentMessage: null,
          threadMessages: [],
          isOpen: false,
+         isLoading: false,
       });
+   }, []);
+
+   const setThreadMessages = useCallback((messages: Message[]) => {
+      setThreadState((prev) => ({
+         ...prev,
+         threadMessages: messages,
+      }));
    }, []);
 
    const addThreadMessage = useCallback((message: Message) => {
@@ -48,6 +89,7 @@ export function useThread() {
       threadState,
       openThread,
       closeThread,
+      setThreadMessages,
       addThreadMessage,
       removeThreadMessage,
    };
