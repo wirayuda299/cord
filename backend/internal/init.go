@@ -69,7 +69,9 @@ func (s *Server) Run() {
 	uh := handlers.NewUserHandler(s.db)
 	fh := handlers.NewFriendHandler(s.db)
 	crh := handlers.NewConversationHandler(s.db)
+	th := handlers.NewThreadHandler(s.db)
 
+	routes.RegisterThreadRoute(r, th)
 	routes.RegisterConversationRoute(r, crh)
 	routes.RegisterFriendRoutes(r, fh)
 	routes.RegisterUserRoutes(r, uh)
@@ -104,5 +106,4 @@ func (s *Server) Run() {
 	// Wait for the graceful shutdown to complete
 	<-done
 	log.Println("Graceful shutdown complete.")
-
 }

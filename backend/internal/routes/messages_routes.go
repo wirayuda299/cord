@@ -12,7 +12,6 @@ func MessagesRoutes(r *mux.Router, mh *handlers.MessageHandler, hub *websocket.H
 	s := r.PathPrefix("/messages").Subrouter()
 
 	s.HandleFunc("", mh.FindAllMessages).Methods(http.MethodGet)
-	s.HandleFunc("/thread", mh.FindAllThreadMessages).Methods(http.MethodGet)
 	s.HandleFunc("", mh.EditMessage).Methods(http.MethodPatch)
 	s.HandleFunc("", mh.DeleteMessage).Methods(http.MethodDelete)
 	s.HandleFunc("/reactions", mh.AddReaction).Methods(http.MethodPost)
@@ -22,5 +21,4 @@ func MessagesRoutes(r *mux.Router, mh *handlers.MessageHandler, hub *websocket.H
 	p.HandleFunc("/find-all", mh.FindAllPinnedMessages).Methods(http.MethodGet)
 	p.HandleFunc("", mh.DeletePinnedMessage).Methods(http.MethodDelete)
 	p.HandleFunc("", mh.PinMessage).Methods(http.MethodPost)
-
 }

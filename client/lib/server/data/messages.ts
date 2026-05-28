@@ -11,7 +11,9 @@ export async function getAllMessagesByChannelId(channelId: string) {
       "Content-Type": "application/json",
       Accept: "application/json",
     },
-    cache: "no-store",
+    next: {
+      tags: ["messages"]
+    }
   });
   if (!response.ok) {
     return { error: "Failed to get all messages" };

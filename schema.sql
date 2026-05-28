@@ -234,6 +234,7 @@ CREATE TABLE threads (
   channel_id uuid NOT NULL REFERENCES channels(id) ON DELETE CASCADE,
   name varchar(255),
   created_by varchar(100) NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  message_id uuid not null references messages(id) on delete cascade,
   is_archived boolean NOT NULL DEFAULT false,
   is_locked boolean NOT NULL DEFAULT false,
   created_at timestamptz NOT NULL DEFAULT NOW(),

@@ -1,10 +1,7 @@
 "use client";
 
-import type { Channel } from "@/lib/types/channel";
 import type { Message, ResponseMessage } from "@/lib/types/chat";
 import { useAppStore } from "@/stores/store";
-import { Hash, UserRound } from "lucide-react";
-import Image from "next/image";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useShallow } from "zustand/react/shallow";
 import ChatItem from "./ChatItem";
@@ -12,13 +9,17 @@ import ChatForm from "./ChatForm";
 import { TEMP_USR } from "@/lib/utils";
 import MemberList from "@/components/members/MemberList";
 import ReplyBar from "./ReplyBar";
-import ThreadPanel from "./threads/ThreadPanel";
-import { useThread } from "./threads/useThread";
 import { useWebSocket } from "@/hooks/useWebsocket";
-import { getAllThreadMessages } from "@/lib/server/actions/messages";
+import { MessageSquareText } from "lucide-react";
 
 type Props = {
-  channel: Channel;
+  channel: {
+    id: string
+    channel_type: string
+    name: string
+    topic: string
+  }
+  thread_id?: string | null
   serverId: string;
   historyMessages: Message[];
   variant?: "server" | "dm";
@@ -27,58 +28,6 @@ type Props = {
     avatar_url: string;
   };
 };
-
-function ChannelHeader({
-  channel,
-  variant = "server",
-  recipient,
-}: {
-  channel: Channel;
-  variant?: "server" | "dm";
-  recipient?: Props["recipient"];
-}) {
-  const isDirectMessage =
-    variant === "dm" ||
-    channel.channel_type === "dm" ||
-    channel.channel_type === "group_dm";
-  const displayName = recipient?.username || channel.name || "Direct Message";
-
-  if (isDirectMessage) {
-    return (
-      <div className="p-5 space-y-2">
-        <div className="size-20 bg-sidebar-secondary flex items-center justify-center rounded-full overflow-hidden">
-          {recipient?.avatar_url ? (
-            <Image
-              src={recipient.avatar_url}
-              width={80}
-              height={80}
-              alt={displayName}
-              className="size-full rounded-full object-cover"
-            />
-          ) : (
-            <UserRound size={46} className="text-gray-400" />
-          )}
-        </div>
-        <h2 className="text-3xl text-white font-bold">{displayName}</h2>
-        <p className="text-sm text-gray-400">
-          This is the beginning of your direct message with {displayName}.
-        </p>
-      </div>
-    );
-  }
-
-  return (
-    <div className="p-5 space-y-2">
-      <div className="size-20 bg-sidebar-secondary flex items-center justify-center rounded-full">
-        <Hash size={50} className="text-gray-400" />
-      </div>
-      <h2 className="text-3xl text-white font-bold">
-        Welcome to {channel.name} Channel
-      </h2>
-      {channel.topic && <p className="text-sm text-gray-400">{channel.topic}</p>}
-    </div>
-  );
-}
 
 function appendUniqueMessages(
   currentMessages: Message[],
@@ -98,18 +47,19 @@ function appendUniqueMessages(
 
 export default function ChatList({
   serverId,
-  channel,
   historyMessages = [],
   variant = "server",
+  channel,
   recipient,
+  thread_id
 }: Props) {
   const [messages, setMessages] = useState<Message[]>(historyMessages);
   const bottomRef = useRef<HTMLDivElement>(null);
-  const { threadState, openThread, closeThread, addThreadMessage, removeThreadMessage } = useThread();
   const isDirectMessage =
     variant === "dm" ||
     channel.channel_type === "dm" ||
     channel.channel_type === "group_dm";
+
   const displayName = recipient?.username || channel.name || "Direct Message";
 
   const { selectedMsg, setSelectedMsg, isMemberOpen } = useAppStore(
@@ -120,28 +70,13 @@ export default function ChatList({
     }))
   );
 
-  const handleMessages = useCallback(
-    (msg: ResponseMessage) => {
-      setMessages((prev) => appendUniqueMessages(prev, msg.messages));
-
-      // Route thread replies to thread panel
-      const parentId = threadState.parentMessage?.id;
-      if (parentId) {
-        const threadReplies = msg.messages.filter(
-          (m) => m.parent_msg_id === parentId
-        );
-        if (threadReplies.length > 0) {
-          threadReplies.forEach((reply) => addThreadMessage(reply));
-        }
-      }
-    },
-    [threadState.parentMessage?.id, addThreadMessage]
-  );
+  const handleMessages = useCallback((msg: ResponseMessage) => {
+    setMessages((prev) => appendUniqueMessages(prev, msg.messages));
+  }, []);
 
   const handleDelete = useCallback((id: string) => {
     setMessages((prev) => prev.filter((m) => m.id !== id));
-    removeThreadMessage(id);
-  }, [removeThreadMessage]);
+  }, []);
 
   const handleEdit = useCallback((id: string, content: string) => {
     setMessages((prev) =>
@@ -175,13 +110,6 @@ export default function ChatList({
     );
   }, []);
 
-  const handleCreateThread = useCallback(
-    (message: Message) => {
-      openThread(message, getAllThreadMessages);
-    },
-    [openThread]
-  );
-
   const { sendMessage, status } = useWebSocket(serverId, channel.id, {
     onMessage: handleMessages,
     onDelete: handleDelete,
@@ -190,36 +118,29 @@ export default function ChatList({
   });
 
   useEffect(() => {
-    if (!bottomRef) return;
+    setMessages(historyMessages);
+  }, [historyMessages]);
 
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
 
-  const handleSendReply = useCallback(
-    (content: string) => {
-      if (!threadState.parentMessage) return;
-      sendMessage({
-        channel_id: channel.id,
-        message: content,
-        user_id: TEMP_USR,
-        attachment_url: "",
-        attachment_id: "",
-        parent_message_id: threadState.parentMessage.id,
-      });
-    },
-    [sendMessage, channel.id, threadState.parentMessage]
-  );
+
+  const isThread = Boolean(thread_id);
 
   return (
-    <div className="flex flex-1 min-h-0 overflow-hidden">
-      <div className="flex flex-col flex-1 min-w-0 min-h-0">
-        <div className="flex-1 overflow-y-auto min-h-0">
-          <ChannelHeader
-            channel={channel}
-            variant={variant}
-            recipient={recipient}
-          />
-          <div className="flex flex-col gap-5 pb-4">
+    <div className="flex h-full min-h-0 flex-1">
+      <div className="flex flex-col flex-1 min-h-0 min-w-0">
+        {/* Thread context banner */}
+        {isThread && (
+          <div className="shrink-0 flex items-center gap-2 px-4 py-2 bg-indigo-500/8 border-b border-indigo-500/15">
+            <MessageSquareText size={14} className="text-indigo-400 shrink-0" />
+            <p className="text-xs text-indigo-300/80">
+              You&apos;re viewing a <span className="font-semibold text-indigo-300">thread</span> — replies here are separate from the main channel.
+            </p>
+          </div>
+        )}
+
+        {/* Scrollable messages area */}
+        <div className="flex-1 overflow-y-auto">
+          <div className="flex flex-col gap-5 px-4 py-4">
             {messages.map((m) => (
               <ChatItem
                 variant="channel"
@@ -229,15 +150,13 @@ export default function ChatList({
                 handleDelete={handleDelete}
                 onEdit={handleEdit}
                 onToggleReaction={handleToggleReaction}
-                onCreateThread={
-                  isDirectMessage ? undefined : handleCreateThread
-                }
               />
             ))}
+            <div ref={bottomRef} />
           </div>
-          <div ref={bottomRef} />
         </div>
 
+        {/* Sticky bottom form */}
         <div className="shrink-0">
           {selectedMsg && (
             <ReplyBar
@@ -246,12 +165,14 @@ export default function ChatList({
             />
           )}
           <ChatForm
+            thread_id={thread_id ?? null}
             userId={TEMP_USR}
             channelName={displayName}
             channelId={channel.id}
-            serverId={serverId}
             placeholder={
-              isDirectMessage
+              isThread
+                ? `Reply in thread · #${channel.name}`
+                : isDirectMessage
                 ? `Message @${displayName}`
                 : `Message #${channel.name}`
             }
@@ -262,18 +183,6 @@ export default function ChatList({
       </div>
 
       {!isDirectMessage && <MemberList isOpen={isMemberOpen} />}
-      {!isDirectMessage && (
-        <ThreadPanel
-          onSendReply={handleSendReply}
-          parentMessage={threadState.parentMessage}
-          threadMessages={threadState.threadMessages}
-          isOpen={threadState.isOpen}
-          isLoading={threadState.isLoading}
-          onClose={closeThread}
-          onDeleteMessage={handleDelete}
-          serverId={serverId}
-        />
-      )}
     </div>
   );
 }

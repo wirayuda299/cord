@@ -88,7 +88,8 @@ export default function ServerProfile() {
     mode: 'all'
   })
   const { addFiles, attachedFiles, removeFile, errors, isDragging, onDragOver, onDragLeave, onDrop } = useAttachedFiles()
-  const selected = form.watch("banner")
+  const watchedBanner = form.watch("banner")
+  const selected = (watchedBanner && watchedBanner.length >= 2) ? watchedBanner : gradients[0]
   const isChange = form.formState.isDirty
   const isSubmitting = form.formState.isSubmitting
   const [submitStatus, setSubmitStatus] = useState<{ type: 'success' | 'error'; message: string } | null>(null)

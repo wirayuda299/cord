@@ -2,18 +2,17 @@
 
 import { useEffect, useRef, useState, useCallback, memo, useMemo } from "react";
 import {
-   Bookmark,
-   Copy,
-   Edit,
-   Forward,
-   MessageCircle,
-   MoreHorizontal,
-   Pin,
-   Reply,
-   SmilePlus,
-   Trash2,
+  Bookmark,
+  Copy,
+  Edit,
+  Forward,
+  MessageCircle,
+  MoreHorizontal,
+  Pin,
+  Reply,
+  SmilePlus,
+  Trash2,
 } from "lucide-react";
-
 import { topEmojies, emojiList } from "@/constants/emoji";
 import { copyText } from "@/lib/client/clipboard";
 import { deleteMessage, pinMessage } from "@/lib/server/actions/messages";
@@ -21,366 +20,379 @@ import type { Message } from "@/lib/types/chat";
 import { usePathname } from "next/navigation";
 import { TEMP_USR } from "@/lib/utils";
 import { useAppStore } from "@/stores/store";
+import z from "zod";
+
+import CreateThreadForm from "./CreateThreadForm";
 
 type MenuAction = {
-   icon: React.ReactNode;
-   label: string;
-   onClick?: () => void;
-   danger?: boolean;
-   dividerBefore?: boolean;
+  icon: React.ReactNode;
+  label: string;
+  onClick?: () => void;
+  danger?: boolean;
+  dividerBefore?: boolean;
 };
 
 type MessageMenuProps = {
-   isOwn?: boolean;
-   message: Message;
-   onEdit?: () => void;
-   onReaction?: () => void;
-   onToggleReaction?: (emoji: string) => void;
-   onBookmark?: () => void;
-   onForward?: () => void;
-   onCreateThread?: () => void;
-   onMore?: () => void;
-   serverId: string;
-   onDelete: (id: string) => void;
-   userId?: string;
+  isOwn?: boolean;
+  message: Message;
+  onEdit?: () => void;
+  onReaction?: () => void;
+  onToggleReaction?: (emoji: string) => void;
+  onBookmark?: () => void;
+  onForward?: () => void;
+  onMore?: () => void;
+  serverId: string;
+  onDelete: (id: string) => void;
+  userId: string;
 };
 
 function EmojiPicker({
-   onSelectEmoji,
-   onClose,
+  onSelectEmoji,
+  onClose,
 }: {
-   onSelectEmoji: (emoji: string) => void;
-   onClose: () => void;
+  onSelectEmoji: (emoji: string) => void;
+  onClose: () => void;
 }) {
-   const pickerRef = useRef<HTMLDivElement>(null);
+  const pickerRef = useRef<HTMLDivElement>(null);
 
-   useEffect(() => {
-      function handleClick(e: MouseEvent) {
-         if (pickerRef.current && !pickerRef.current.contains(e.target as Node)) {
-            onClose();
-         }
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (pickerRef.current && !pickerRef.current.contains(e.target as Node)) {
+        onClose();
       }
-      document.addEventListener("mousedown", handleClick);
-      return () => document.removeEventListener("mousedown", handleClick);
-   }, [onClose]);
+    }
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, [onClose]);
 
-   return (
-      <div
-         ref={pickerRef}
-         className="absolute left-0 right-0 z-20 bg-surface-raised border border-white/10 rounded-md shadow-xl shadow-black/40 p-2 max-h-64 overflow-y-auto"
-      >
-         <div className="grid grid-cols-8 gap-1">
-            {emojiList.map((e) => (
-               <button
-                  key={e.code}
-                  type="button"
-                  onClick={() => onSelectEmoji(e.emoji)}
-                  className="flex items-center justify-center p-1.5 rounded hover:bg-white/10 transition-colors cursor-pointer text-lg"
-                  title={e.code}
-               >
-                  {e.emoji}
-               </button>
-            ))}
-         </div>
+  return (
+    <div
+      ref={pickerRef}
+      className="absolute left-0 right-0 z-20 bg-surface-raised border border-white/10 rounded-md shadow-xl shadow-black/40 p-2 max-h-64 overflow-y-auto"
+    >
+      <div className="grid grid-cols-8 gap-1">
+        {emojiList.map((e) => (
+          <button
+            key={e.code}
+            type="button"
+            onClick={() => onSelectEmoji(e.emoji)}
+            className="flex items-center justify-center p-1.5 rounded hover:bg-white/10 transition-colors cursor-pointer text-lg"
+            title={e.code}
+          >
+            {e.emoji}
+          </button>
+        ))}
       </div>
-   );
+    </div>
+  );
 }
 
 function EmojiRow({
-   onSelectEmoji,
+  onSelectEmoji,
+  showPicker,
+  setShowPicker,
 }: {
-   onSelectEmoji: (emoji: string) => void;
+  onSelectEmoji: (emoji: string) => void;
+  showPicker: boolean;
+  setShowPicker: React.Dispatch<React.SetStateAction<boolean>>;
 }) {
-   const [showPicker, setShowPicker] = useState(false);
+  const handleSelect = useCallback(
+    (emoji: string) => {
+      onSelectEmoji(emoji);
+      setShowPicker(false);
+    },
+    [onSelectEmoji, setShowPicker],
+  );
 
-   const handleSelect = useCallback(
-      (emoji: string) => {
-         onSelectEmoji(emoji);
-         setShowPicker(false);
-      },
-      [onSelectEmoji],
-   );
-
-   return (
-      <div className="relative">
-         <div className="flex items-center gap-1 px-2 pt-2 pb-1.5">
-            {topEmojies.map((e) => (
-               <button
-                  key={e.code}
-                  type="button"
-                  onClick={() => onSelectEmoji(e.emoji)}
-                  className="flex-1 flex items-center justify-center py-1.5 rounded hover:bg-white/10 transition-colors cursor-pointer"
-                  title={e.code}
-               >
-                  <span className="text-base leading-none">{e.emoji}</span>
-               </button>
-            ))}
-            <button
-               type="button"
-               onClick={() => setShowPicker((s) => !s)}
-               className="flex items-center justify-center p-1.5 rounded hover:bg-white/10 transition-colors cursor-pointer text-text-secondary hover:text-white"
-               title="More reactions"
-            >
-               <SmilePlus size={15} />
-            </button>
-         </div>
-         {showPicker && <EmojiPicker onSelectEmoji={handleSelect} onClose={() => setShowPicker(false)} />}
+  return (
+    <div className="relative">
+      <div className="flex items-center gap-1 px-2 pt-2 pb-1.5">
+        {topEmojies.map((e) => (
+          <button
+            key={e.code}
+            type="button"
+            onClick={() => onSelectEmoji(e.emoji)}
+            className="flex-1 flex items-center justify-center py-1.5 rounded hover:bg-white/10 transition-colors cursor-pointer"
+            title={e.code}
+          >
+            <span className="text-base leading-none">{e.emoji}</span>
+          </button>
+        ))}
+        <button
+          type="button"
+          onClick={() => setShowPicker((s) => !s)}
+          className="flex items-center justify-center p-1.5 rounded hover:bg-white/10 transition-colors cursor-pointer text-text-secondary hover:text-white"
+          title="More reactions"
+        >
+          <SmilePlus size={15} />
+        </button>
       </div>
-   );
+      {showPicker && <EmojiPicker onSelectEmoji={handleSelect} onClose={() => setShowPicker(false)} />}
+    </div>
+  );
 }
 
 function ActionItem({ action }: { action: MenuAction }) {
-   const [active, setActive] = useState(false);
-   const enterTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [active, setActive] = useState(false);
+  const enterTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-   const handleEnter = useCallback(() => {
-      enterTimer.current = setTimeout(() => setActive(true), 80);
-   }, []);
+  const handleEnter = useCallback(() => {
+    enterTimer.current = setTimeout(() => setActive(true), 80);
+  }, []);
 
-   const handleLeave = useCallback(() => {
-      if (enterTimer.current) clearTimeout(enterTimer.current);
-      setActive(false);
-   }, []);
+  const handleLeave = useCallback(() => {
+    if (enterTimer.current) clearTimeout(enterTimer.current);
+    setActive(false);
+  }, []);
 
-   return (
-      <>
-         {action.dividerBefore && (
-            <div className="mx-1 my-1 border-t border-white/6" />
-         )}
-         <button
-            onClick={action.onClick}
-            onMouseEnter={handleEnter}
-            onMouseLeave={handleLeave}
-            className={`
+  return (
+    <>
+      {action.dividerBefore && (
+        <div className="mx-1 my-1 border-t border-white/6" />
+      )}
+      <button
+        onClick={action.onClick}
+        onMouseEnter={handleEnter}
+        onMouseLeave={handleLeave}
+        className={`
           w-full flex items-center gap-2.5 px-2 py-2 rounded text-[13px] font-medium text-left
           transition-colors duration-100 cursor-pointer
-          ${
-             action.danger
-                ? `text-destructive-foreground ${active ? "bg-destructive/20 text-destructive-light" : ""}`
-                : `text-text-primary ${active ? "bg-accent-blue text-white" : ""}`
+          ${action.danger
+            ? `text-destructive-foreground ${active ? "bg-destructive/20 text-destructive-light" : ""}`
+            : `text-text-primary ${active ? "bg-accent-blue text-white" : ""}`
           }
         `}
-         >
-            <span className={action.danger ? "text-danger" : "text-text-secondary"}>
-               {action.icon}
-            </span>
-            {action.label}
-         </button>
-      </>
-   );
+      >
+        <span className={action.danger ? "text-danger" : "text-text-secondary"}>
+          {action.icon}
+        </span>
+        {action.label}
+      </button>
+    </>
+  );
 }
 
 function useMenuActions(
-   message: Message,
-   serverId: string,
-   userId: string,
-   onDelete: (id: string) => void,
-   onEdit?: () => void,
-   onReaction?: () => void,
-   onBookmark?: () => void,
-   onForward?: () => void,
-   onCreateThread?: () => void,
-   onMore?: () => void,
-   onToggleReaction?: (emoji: string) => void,
-   toggleEmojiPicker?: () => void,
+  message: Message,
+  serverId: string,
+  userId: string,
+  onDelete: (id: string) => void,
+  onEdit?: () => void,
+  onReaction?: () => void,
+  onBookmark?: () => void,
+  onForward?: () => void,
+  onMore?: () => void,
+  toggleEmojiPicker?: () => void,
 ): MenuAction[] {
-   const selectMessage = useAppStore((m) => m.setSelectedMsg);
-   const pathname = usePathname();
+  const selectMessage = useAppStore((m) => m.setSelectedMsg);
+  const pathname = usePathname();
 
-   return useMemo(
-      () => [
-         {
-            icon: <Reply size={15} />,
-            label: "Reply",
-            onClick: () => selectMessage(message),
-         },
-         ...(onCreateThread
-            ? [
-                 {
-                    icon: <MessageCircle size={15} />,
-                    label: "Create Thread",
-                    onClick: onCreateThread,
-                 },
-              ]
-            : []),
-         ...(userId === message.user_id && onEdit
-            ? [
-                 {
-                    icon: <Edit size={15} />,
-                    label: "Edit Message",
-                    onClick: onEdit,
-                 },
-              ]
-            : []),
-         {
-            icon: <Forward size={15} />,
-            label: "Forward Message",
-            onClick: onForward,
-         },
-         {
-            icon: <Pin size={15} />,
-            label: "Pin Message",
-            onClick: async () => {
-               try {
-                  const res = await pinMessage(
-                     userId,
-                     message.id,
-                     message.channel_id,
-                  );
-                  if (res?.error) console.error(res.error);
-               } catch (e) {
-                  console.error(e);
-               }
-            },
-         },
-         {
-            icon: <SmilePlus size={15} />,
-            label: "Add Reaction",
-            onClick: toggleEmojiPicker,
-         },
-         { icon: <Bookmark size={15} />, label: "Bookmark", onClick: onBookmark },
-         {
-            icon: <Copy size={15} />,
-            label: "Copy Text",
-            onClick: () =>
-               copyText(message.content).then(() => alert("Text copied!")),
-         },
-         {
-            icon: <MoreHorizontal size={15} />,
-            label: "More Options",
-            onClick: onMore,
-            dividerBefore: true,
-         },
-         {
-            icon: <Trash2 size={15} />,
-            label: "Delete Message",
-            onClick: async () => {
-               try {
-                  await deleteMessage({
-                     id: message.id,
-                     public_id: message.image_asset_id,
-                     channel_id: message.channel_id,
-                     server_id: serverId,
-                     path: pathname,
-                  });
-                  onDelete(message.id);
-               } catch (e) {
-                  console.error(e);
-               }
-            },
-            danger: true,
-         },
-      ],
-      [
-         message,
-         userId,
-         onEdit,
-         onDelete,
-         onForward,
-         onCreateThread,
-         onReaction,
-         onBookmark,
-         onMore,
-         toggleEmojiPicker,
-         selectMessage,
-         pathname,
-         serverId,
-      ],
-   );
+  return useMemo(
+    () => [
+      {
+        icon: <Reply size={15} />,
+        label: "Reply",
+        onClick: () => selectMessage(message),
+      },
+
+      {
+        icon: <MessageCircle size={15} />,
+        label: "Create Thread",
+        onClick: () => { },
+      },
+
+      ...(userId === message.user_id && onEdit
+        ? [
+          {
+            icon: <Edit size={15} />,
+            label: "Edit Message",
+            onClick: onEdit,
+          },
+        ]
+        : []),
+      {
+        icon: <Forward size={15} />,
+        label: "Forward Message",
+        onClick: onForward,
+      },
+      {
+        icon: <Pin size={15} />,
+        label: "Pin Message",
+        onClick: async () => {
+          try {
+            const res = await pinMessage(
+              userId,
+              message.id,
+              message.channel_id,
+            );
+            if (res?.error) console.error(res.error);
+          } catch (e) {
+            console.error(e);
+          }
+        },
+      },
+      {
+        icon: <SmilePlus size={15} />,
+        label: "Add Reaction",
+        onClick: toggleEmojiPicker,
+      },
+      { icon: <Bookmark size={15} />, label: "Bookmark", onClick: onBookmark },
+      {
+        icon: <Copy size={15} />,
+        label: "Copy Text",
+        onClick: () =>
+          copyText(message.content).then(() => alert("Text copied!")),
+      },
+      {
+        icon: <MoreHorizontal size={15} />,
+        label: "More Options",
+        onClick: onMore,
+        dividerBefore: true,
+      },
+      {
+        icon: <Trash2 size={15} />,
+        label: "Delete Message",
+        onClick: async () => {
+          try {
+            await deleteMessage({
+              id: message.id,
+              public_id: message.image_asset_id,
+              channel_id: message.channel_id,
+              server_id: serverId,
+              path: pathname,
+            });
+            onDelete(message.id);
+          } catch (e) {
+            console.error(e);
+          }
+        },
+        danger: true,
+      },
+    ],
+    [
+      message,
+      userId,
+      onEdit,
+      onDelete,
+      onForward,
+      onReaction,
+      onBookmark,
+      onMore,
+      toggleEmojiPicker,
+      selectMessage,
+      pathname,
+      serverId,
+    ],
+  );
 }
 
+export const threadSchema = z.object({
+  name: z.string().min(4).max(50),
+  message_id: z.string(),
+  channel_id: z.string(),
+  created_by: z.string()
+})
+
+export type CreateThreadSchemaType = z.infer<typeof threadSchema>
+
+
 function MessageMenu(props: MessageMenuProps) {
-   const {
-      serverId,
-      onEdit,
-      onReaction,
-      onToggleReaction,
-      onBookmark,
-      onForward,
-      onCreateThread,
-      onMore,
-      message,
-      onDelete,
-      userId = TEMP_USR,
-   } = props;
+  const {
+    serverId,
+    onEdit,
+    onReaction,
+    onToggleReaction,
+    onBookmark,
+    onForward,
+    onMore,
+    message,
+    onDelete,
+    userId = TEMP_USR,
+  } = props;
 
-   const menuRef = useRef<HTMLDivElement>(null);
-   const [flipUp, setFlipUp] = useState(false);
-   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+  const [flipUp, setFlipUp] = useState(false);
+  const [showPicker, setShowPicker] = useState(false);
+  const toggleEmojiPicker = useCallback(() => setShowPicker((s) => !s), []);
 
-   const actions = useMenuActions(
-      message,
-      serverId,
-      userId,
-      onDelete,
-      onEdit,
-      onReaction,
-      onBookmark,
-      onForward,
-      onCreateThread,
-      onMore,
-      onToggleReaction,
-      () => setShowEmojiPicker((s) => !s),
-   );
+  const actions = useMenuActions(
+    message,
+    serverId,
+    userId,
+    onDelete,
+    onEdit,
+    onReaction,
+    onBookmark,
+    onForward,
+    onMore,
+    toggleEmojiPicker,
+  );
 
-   const checkFlip = useCallback(() => {
-      const menu = menuRef.current;
-      if (!menu) return;
-      const trigger = menu.closest<HTMLElement>("[data-chat-item]");
+  const checkFlip = useCallback(() => {
+    const menu = menuRef.current;
+    if (!menu) return;
+    const trigger = menu.closest<HTMLElement>("[data-chat-item]");
 
-      menu.style.display = "flex";
-      const menuHeight = menu.scrollHeight;
-      menu.style.display = "";
+    menu.style.display = "flex";
+    const menuHeight = menu.scrollHeight;
+    menu.style.display = "";
 
-      if (trigger) {
-         const { top, bottom } = trigger.getBoundingClientRect();
-         setFlipUp(
-            window.innerHeight - bottom < menuHeight &&
-               top > window.innerHeight - bottom,
-         );
-      } else {
-         const rect = menu.getBoundingClientRect();
-         setFlipUp(window.innerHeight - rect.top < menuHeight);
-      }
-   }, []);
+    if (trigger) {
+      const { top, bottom } = trigger.getBoundingClientRect();
+      setFlipUp(
+        window.innerHeight - bottom < menuHeight &&
+        top > window.innerHeight - bottom,
+      );
+    } else {
+      const rect = menu.getBoundingClientRect();
+      setFlipUp(window.innerHeight - rect.top < menuHeight);
+    }
+  }, []);
 
-   useEffect(() => {
-      const raf = requestAnimationFrame(checkFlip);
-      window.addEventListener("scroll", checkFlip, true);
-      window.addEventListener("resize", checkFlip);
-      return () => {
-         cancelAnimationFrame(raf);
-         window.removeEventListener("scroll", checkFlip, true);
-         window.removeEventListener("resize", checkFlip);
-      };
-   }, [checkFlip]);
+  useEffect(() => {
+    const raf = requestAnimationFrame(checkFlip);
+    window.addEventListener("scroll", checkFlip, true);
+    window.addEventListener("resize", checkFlip);
+    return () => {
+      cancelAnimationFrame(raf);
+      window.removeEventListener("scroll", checkFlip, true);
+      window.removeEventListener("resize", checkFlip);
+    };
+  }, [checkFlip]);
 
-   const handleEmojiSelect = useCallback((emoji: string) => {
-      onToggleReaction?.(emoji);
-      setShowEmojiPicker(false);
-   }, [onToggleReaction]);
+  const handleEmojiSelect = useCallback((emoji: string) => {
+    onToggleReaction?.(emoji);
+  }, [onToggleReaction]);
 
-   return (
-      <div
-         ref={menuRef}
-         className={`
+
+
+  return (
+    <div
+      ref={menuRef}
+      className={`
         absolute right-2 z-10 w-52 bg-overlay border border-white/6
         group-hover:flex hidden flex-col rounded-md shadow-xl shadow-black/40 overflow-hidden
         ${flipUp ? "bottom-full mb-1" : "top-0"}
       `}
-      >
-         {showEmojiPicker && (
-            <div className="relative">
-               <EmojiRow onSelectEmoji={handleEmojiSelect} />
-            </div>
-         )}
-         <div className="flex flex-col px-1.5 py-1.5 gap-px">
-            {actions.map((action) => (
-               <ActionItem key={action.label} action={action} />
-            ))}
-         </div>
+    >
+      <div className="relative">
+        <EmojiRow
+          onSelectEmoji={handleEmojiSelect}
+          showPicker={showPicker}
+          setShowPicker={setShowPicker}
+        />
       </div>
-   );
+      <div className="flex flex-col px-1.5 py-1.5 gap-px">
+        {actions.map((action) => {
+          if (action.label === "Create Thread") {
+            return <CreateThreadForm key={action.label} channel_id={message.channel_id} messageId={message.id} userId={userId} />
+          } else {
+            return <ActionItem key={action.label} action={action} />
+          }
+        })}
+      </div>
+    </div>
+  );
 }
 
 export default memo(MessageMenu);

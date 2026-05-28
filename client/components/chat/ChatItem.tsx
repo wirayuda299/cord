@@ -3,12 +3,13 @@
 import { format } from "date-fns";
 import Image from "next/image";
 import { memo, useMemo, useState, useCallback } from "react";
-import { AlertCircle, Loader2, Reply, Check, X } from "lucide-react";
+import { AlertCircle, Loader2, Reply, Check, X, MessageCircle } from "lucide-react";
 
 import MessageMenu from "./MessageMenu";
 import type { Message } from "@/lib/types/chat";
 import { addReaction, editMessage, removeReaction } from "@/lib/client/api/messages";
 import { TEMP_USR } from "@/lib/utils";
+import Link from "next/link";
 
 type ChatItemVariant = "channel" | "thread-parent" | "thread-reply";
 
@@ -69,8 +70,7 @@ function AttachmentImage({
   const isBlob = src.startsWith("blob:");
 
   const img = isBlob ? (
-    // eslint-disable-next-line @next/next/no-img-element
-    <img src={src} className="max-w-[300px] rounded" alt="attachment" />
+    <img src={src} className="max-w-75 rounded" alt="attachment" />
   ) : (
     <Image
       className="rounded object-contain"
@@ -110,7 +110,7 @@ function MessageContent({ message }: MessageContentProps) {
       )}
 
       {hasContent && (
-        <p className="whitespace-pre-wrap break-words text-sm text-gray-300">
+        <p className="whitespace-pre-wrap wrap-break-word text-sm text-gray-300">
           {message.content}
         </p>
       )}
@@ -277,7 +277,7 @@ function ChatItem({
       id={message.id}
       data-chat-item
       data-chat-item-variant={variant}
-      className={`group relative px-4 py-1 transition-colors hover:bg-white/5 ${isFailed ? "opacity-60" : ""
+      className={`group relative px-4 py-1 transition-colors rounded-md hover:bg-white/5 ${isFailed ? "opacity-60" : ""
         }`}
     >
       {variant !== "thread-parent" && (
@@ -325,7 +325,7 @@ function ChatItem({
                     handleCancelEdit();
                   }
                 }}
-                className="w-full min-h-[60px] px-3 py-2 text-sm bg-black/40 text-gray-200 rounded-md border border-white/10 focus:outline-none focus:border-discord-blue resize-none"
+                className="w-full min-h-15 px-3 py-2 text-sm bg-black/40 text-gray-200 rounded-md border border-white/10 focus:outline-none focus:border-discord-blue resize-none"
                 autoFocus
               />
               <div className="flex items-center gap-2">
@@ -362,6 +362,15 @@ function ChatItem({
                 currentUserId={TEMP_USR}
                 onToggle={handleToggleReaction}
               />
+              {(message?.threads || []).map(t => (
+                <Link
+                  className="text-secondary text-sm flex items-center gap-2 mt-1"
+                  href={`/${serverId}/${message.channel_id}/${t.id}`}
+                  key={t.id}>
+                  <MessageCircle size={15} />
+                  {t.name}
+                </Link>
+              ))}
             </>
           )}
 
@@ -383,14 +392,12 @@ function ChatItem({
 
         {showMenu && (
           <MessageMenu
+            userId={TEMP_USR}
             message={message}
             serverId={serverId}
-            onDelete={handleDelete ?? (() => {})}
+            onDelete={handleDelete ?? (() => { })}
             onEdit={canEdit ? () => setIsEditing(true) : undefined}
             onToggleReaction={handleToggleReaction}
-            onCreateThread={
-              canCreateThread ? () => onCreateThread?.(message) : undefined
-            }
           />
         )}
       </div>

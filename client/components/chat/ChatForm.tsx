@@ -17,22 +17,22 @@ type UploadState = "idle" | "active" | "consumed";
 
 type ChatFormProps = {
   channelName: string;
-  serverId: string;
   channelId: string;
   userId?: string;
   placeholder?: string;
   sendMessage: (msg: object) => boolean;
   status: ConnectionStatus;
+  thread_id: string | null
 };
 
 export default function ChatForm({
   channelName,
-  serverId,
   channelId,
   userId = TEMP_USR,
   placeholder,
   sendMessage,
   status,
+  thread_id
 }: ChatFormProps) {
   const selectedMsg = useAppStore((s) => s.selectedMsg);
   const setSelectedMsg = useAppStore((s) => s.setSelectedMsg);
@@ -146,14 +146,17 @@ export default function ChatForm({
         attachmentId = result.public_id;
       }
 
-      const sent = sendMessage({
-        channel_id: channelId,
+      const payload = {
         message: trimmed,
         user_id: userId,
         attachment_url: attachmentUrl,
         attachment_id: attachmentId,
-        ...(selectedMsg && { parent_message_id: selectedMsg.id }),
-      });
+        parent_message_id: selectedMsg?.id ?? null,
+        channel_id: thread_id ? null : channelId,
+        thread_id: thread_id ?? null,
+      };
+
+      const sent = sendMessage(payload);
       if (!sent) throw new Error("websocket is not connected");
     } catch {
       // message send failed — could show toast here

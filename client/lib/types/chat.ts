@@ -18,6 +18,10 @@ export type Message = {
   parent_content: string | null;
   parent_username: string | null;
   reactions?: Reaction[];
+  threads?: {
+    id: string
+    name: string
+  }[] | null
   /** Client-only: present only on optimistic messages, never from server */
   _status?: "uploading" | "failed";
 };

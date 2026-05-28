@@ -1,4 +1,4 @@
-package messages
+package threads
 
 import (
 	"context"
@@ -11,9 +11,9 @@ import (
 	"github.com/wirayuda299/backend/internal/services"
 )
 
-func GetAllThreadMessages(ctx context.Context, db *databases.Container, parentID string) ([]services.MessageRow, *httputil.ErrorResponse) {
-	if parentID == "" {
-		return nil, &httputil.ErrorResponse{Err: errors.New("parent message ID is missing"), Code: http.StatusBadRequest}
+func GetAllThreadMessages(ctx context.Context, db *databases.Container, threadID string) ([]services.MessageRow, *httputil.ErrorResponse) {
+	if threadID == "" {
+		return nil, &httputil.ErrorResponse{Err: errors.New("thread ID is missing"), Code: http.StatusBadRequest}
 	}
 
 	rows, err := db.Postgres.Query(ctx, `SELECT
@@ -23,7 +23,7 @@ func GetAllThreadMessages(ctx context.Context, db *databases.Container, parentID
     COALESCE(m.image_url, '') AS image_url,
     COALESCE(m.image_asset_id, '') AS image_asset_id,
     m.user_id,
-    m.channel_id,
+    th.channel_id as channel_id,
     m.created_at,
     m.updated_at,
     m.parent_msg_id,
@@ -34,13 +34,20 @@ func GetAllThreadMessages(ctx context.Context, db *databases.Container, parentID
         (SELECT json_agg(json_build_object('user_id', r.user_id, 'emoji', r.emoji))
          FROM reactions r WHERE r.message_id = m.id),
         '[]'::json
-    ) as reactions
+    ) as reactions,
+  COALESCE(
+        (SELECT json_agg(json_build_object('id', t.id, 'name', t.name))
+         FROM threads as t where t.message_id = m.id),
+        '[]'::json
+    ) as threads,
+    th.id as thread_id
     FROM messages as m
-    JOIN users as u ON m.user_id = u.id
+    JOIN threads AS th ON th.id = m.thread_id
     LEFT JOIN messages as pm ON m.parent_msg_id = pm.id
+    JOIN users as u ON m.user_id = u.id
     LEFT JOIN users as pu ON pm.user_id = pu.id
-    WHERE m.parent_msg_id = $1
-    ORDER BY m.created_at ASC;`, parentID)
+    WHERE m.thread_id = $1
+    ORDER BY m.created_at ASC;`, threadID)
 	if err != nil {
 		return nil, &httputil.ErrorResponse{
 			Err:  err,
@@ -54,6 +61,7 @@ func GetAllThreadMessages(ctx context.Context, db *databases.Container, parentID
 	for rows.Next() {
 		var m services.MessageRow
 		var reactionsJSON []byte
+		var threadsJSON []byte
 		err = rows.Scan(
 			&m.ID,
 			&m.Content,
@@ -69,6 +77,8 @@ func GetAllThreadMessages(ctx context.Context, db *databases.Container, parentID
 			&m.ParentUsername,
 			&m.Avatar,
 			&reactionsJSON,
+			&threadsJSON,
+			&m.ThreadID,
 		)
 		if err != nil {
 			return nil, &httputil.ErrorResponse{
@@ -78,6 +88,10 @@ func GetAllThreadMessages(ctx context.Context, db *databases.Container, parentID
 		}
 		if len(reactionsJSON) > 0 {
 			json.Unmarshal(reactionsJSON, &m.Reactions)
+		}
+
+		if len(threadsJSON) > 0 {
+			json.Unmarshal(threadsJSON, &m.Threads)
 		}
 		messages = append(messages, m)
 	}

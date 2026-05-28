@@ -36,7 +36,7 @@ export default function Notification() {
     <DropdownWrapper
       style="min-w-80 bg-sidebar-primary text-gray-400 p-0 max-h-[300px]"
       icon={<Bell className="text-muted-foreground text-sm hover:text-white" />}>
-
-      <NotificationItem />    </DropdownWrapper>
+      <NotificationItem />
+    </DropdownWrapper>
   )
 }

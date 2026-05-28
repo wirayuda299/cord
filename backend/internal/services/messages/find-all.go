@@ -34,7 +34,12 @@ func GetAllMessages(ctx context.Context, db *databases.Container, channelID stri
         (SELECT json_agg(json_build_object('user_id', r.user_id, 'emoji', r.emoji))
          FROM reactions r WHERE r.message_id = m.id),
         '[]'::json
-    ) as reactions
+    ) as reactions,
+    COALESCE(
+        (SELECT json_agg(json_build_object('id', t.id, 'name', t.name))
+         FROM threads as t where t.message_id = m.id),
+        '[]'::json
+    ) as threads
     FROM messages as m
     JOIN users as u ON m.user_id = u.id
     LEFT JOIN messages as pm ON m.parent_msg_id = pm.id
@@ -54,6 +59,7 @@ func GetAllMessages(ctx context.Context, db *databases.Container, channelID stri
 	for rows.Next() {
 		var m services.MessageRow
 		var reactionsJSON []byte
+		var threadsJSON []byte
 		err = rows.Scan(
 			&m.ID,
 			&m.Content,
@@ -69,6 +75,7 @@ func GetAllMessages(ctx context.Context, db *databases.Container, channelID stri
 			&m.ParentUsername,
 			&m.Avatar,
 			&reactionsJSON,
+			&threadsJSON,
 		)
 		if err != nil {
 			return nil, &httputil.ErrorResponse{
@@ -79,6 +86,11 @@ func GetAllMessages(ctx context.Context, db *databases.Container, channelID stri
 		if len(reactionsJSON) > 0 {
 			json.Unmarshal(reactionsJSON, &m.Reactions)
 		}
+
+		if len(threadsJSON) > 0 {
+			json.Unmarshal(threadsJSON, &m.Threads)
+		}
+
 		messages = append(messages, m)
 	}
 

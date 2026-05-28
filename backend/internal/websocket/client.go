@@ -51,7 +51,6 @@ func (c *Client) ReadIncomingMessage(db *databases.Container) {
 		c.hub.unregister <- c
 		err := c.Conn.Close()
 		if err != nil {
-
 			return
 		}
 	}()
@@ -86,7 +85,8 @@ func (c *Client) ReadIncomingMessage(db *databases.Container) {
 			continue
 		}
 
-		log.Println("Messages -> ", m)
+		log.Println(m)
+
 		row, err := messages.Send(c.ctx, m, db, c.channelID)
 		if err != nil {
 			log.Println("error sending message", err.Error())
@@ -101,7 +101,7 @@ func (c *Client) ReadIncomingMessage(db *databases.Container) {
 	}
 }
 
-// function that only have task to send message to client
+// WriteMessage function only have task to send message to client
 func (c *Client) WriteMessage() {
 	ticker := time.NewTicker(pingPeriod)
 	defer func() {

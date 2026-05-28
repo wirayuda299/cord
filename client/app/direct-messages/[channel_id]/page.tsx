@@ -62,16 +62,18 @@ export default async function DirectMessageDetail({
           </h1>
         </header>
 
-        <ChatList
-          variant="dm"
-          channel={conversation}
-          serverId={DM_SCOPE_ID}
-          historyMessages={messages ?? []}
-          recipient={{
-            username: displayName,
-            avatar_url: conversation.other_avatar_url,
-          }}
-        />
+        <div className="flex-1 min-h-0 overflow-hidden">
+          <ChatList
+            variant="dm"
+            channel={conversation}
+            serverId={DM_SCOPE_ID}
+            historyMessages={messages ?? []}
+            recipient={{
+              username: displayName,
+              avatar_url: conversation.other_avatar_url,
+            }}
+          />
+        </div>
 
       </div>
     </phantom-ui>
