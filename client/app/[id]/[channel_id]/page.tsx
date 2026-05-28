@@ -1,4 +1,5 @@
 import ChatList from "@/components/chat/ChatList";
+import VideoCall from "@/components/VideoCall";
 import { getChannelById } from "@/lib/server/data/channel_detail";
 import { getAllMessagesByChannelId } from "@/lib/server/data/messages";
 
@@ -15,19 +16,24 @@ export default async function ChannelDetail({
     return <p className="text-red-600 text-sm">failed to fetch channel</p>
   }
 
-  const messages = await getAllMessagesByChannelId(channel_id)
+  if (channel.channel_type === 'audio') {
+    return <VideoCall room={channel.id} serverId={id} />
+  } else {
+    const messages = await getAllMessagesByChannelId(channel_id)
 
-  if (messages && 'error' in messages) {
-    return <p className="text-red-600 text-sm">failed to fetch messages</p>
+    if (messages && 'error' in messages) {
+      return <p className="text-red-600 text-sm">failed to fetch messages</p>
+    }
+    return (
+      <div className="flex-1 min-h-0 overflow-hidden">
+        <ChatList
+          thread_id={null}
+          serverId={id}
+          channel={channel}
+          historyMessages={messages}
+        />
+      </div>
+    );
   }
-  return (
-    <div className="flex-1 min-h-0 overflow-hidden">
-      <ChatList
-        thread_id={null}
-        serverId={id}
-        channel={channel}
-        historyMessages={messages}
-      />
-    </div>
-  );
+
 }

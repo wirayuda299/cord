@@ -355,13 +355,8 @@ function ChatItem({
               </div>
             </div>
           ) : (
-            <>
+            <div className="flex flex-col gap-2">
               <MessageContent message={message} />
-              <ReactionBar
-                reactions={message.reactions}
-                currentUserId={TEMP_USR}
-                onToggle={handleToggleReaction}
-              />
               {(message?.threads || []).map(t => (
                 <Link
                   className="text-secondary text-sm flex items-center gap-2 mt-1"
@@ -371,7 +366,12 @@ function ChatItem({
                   {t.name}
                 </Link>
               ))}
-            </>
+              <ReactionBar
+                reactions={message.reactions}
+                currentUserId={TEMP_USR}
+                onToggle={handleToggleReaction}
+              />
+            </div>
           )}
 
           {isFailed && (

@@ -3,8 +3,11 @@ import path from 'path'
 
 const nextConfig: NextConfig = {
   turbopack: {
-      root: path.join(__dirname, './'),
-    },
+    root: path.join(__dirname, './'),
+  },
+  env: {
+    LIVEKIT_URL: process.env.LIVEKIT_URL
+  },
   images: {
     remotePatterns: [
       {

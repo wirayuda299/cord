@@ -225,7 +225,12 @@ function useMenuActions(
               message.id,
               message.channel_id,
             );
-            if (res?.error) console.error(res.error);
+            if (res?.error) {
+              alert(res.error)
+              return
+            };
+
+            alert("message pinned")
           } catch (e) {
             console.error(e);
           }
@@ -241,7 +246,7 @@ function useMenuActions(
         icon: <Copy size={15} />,
         label: "Copy Text",
         onClick: () =>
-          copyText(message.content).then(() => alert("Text copied!")),
+          copyText(message.content).then(() => alert("Text copied!")).catch(e => alert(e)),
       },
       {
         icon: <MoreHorizontal size={15} />,
@@ -263,7 +268,7 @@ function useMenuActions(
             });
             onDelete(message.id);
           } catch (e) {
-            console.error(e);
+            alert(e)
           }
         },
         danger: true,
