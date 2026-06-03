@@ -7,6 +7,7 @@ import (
 
 	"github.com/wirayuda299/backend/internal/databases"
 	"github.com/wirayuda299/backend/internal/services"
+	"github.com/wirayuda299/backend/internal/utils"
 )
 
 type Message struct {
@@ -19,6 +20,10 @@ type Message struct {
 }
 
 func Send(ctx context.Context, m Message, db *databases.Container, channelID string) (*services.MessageRow, error) {
+	userID, err := utils.GetSession(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("error inserting message: %w", err)
+	}
 	var row services.MessageRow
 
 	var parentMsgID *string
@@ -29,15 +34,14 @@ func Send(ctx context.Context, m Message, db *databases.Container, channelID str
 	var threadIDArg any = nil
 
 	if m.ThreadID != nil && *m.ThreadID != "" {
-		// Thread message: masuk ke thread, jadi channel_id harus NULL.
 		channelIDArg = nil
 		threadIDArg = *m.ThreadID
 	} else {
-		// Channel message: masuk ke channel, jadi thread_id harus NULL.
 		threadIDArg = nil
 	}
 
-	err := db.Postgres.QueryRow(ctx, `
+	log.Println("message user id -> ", userID)
+	err = db.Postgres.QueryRow(ctx, `
 		INSERT INTO messages (
 			content,
 			user_id,
@@ -61,7 +65,7 @@ func Send(ctx context.Context, m Message, db *databases.Container, channelID str
 			thread_id
 	`,
 		m.Message,
-		m.UserID,
+		userID,
 		m.AttachmentURL,
 		m.AttachmentID,
 		channelIDArg,
@@ -93,7 +97,7 @@ func Send(ctx context.Context, m Message, db *databases.Container, channelID str
 	err = db.Postgres.QueryRow(
 		ctx,
 		`SELECT username, COALESCE(avatar_url, '') FROM users WHERE id = $1`,
-		m.UserID,
+		userID,
 	).Scan(&row.Username, &row.Avatar)
 	if err != nil {
 		return nil, fmt.Errorf("error fetching user: %w", err)

@@ -9,29 +9,29 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/wirayuda299/backend/internal/databases"
 	"github.com/wirayuda299/backend/internal/httputil"
+	"github.com/wirayuda299/backend/internal/utils"
 )
 
 type PendingRequests struct {
-	ID          string `json:"id"`
-	RequesterID string `json:"requester_id"`
+	ID string `json:"id"`
 }
 
 func CancelFriendRequest(ctx context.Context, db *databases.Container, id string, currentUserID string) *httputil.ErrorResponse {
+	userID, err := utils.GetSession(ctx)
+	if err != nil {
+		return &httputil.ErrorResponse{Err: err, Code: http.StatusUnauthorized}
+	}
 	if id == "" {
 		return &httputil.ErrorResponse{Err: errors.New("request id is missing"), Code: http.StatusBadRequest}
 	}
 
 	var p PendingRequests
-	err := db.Postgres.QueryRow(ctx, `SELECT id,requester_id from friends where id = $1`, id).Scan(&p.ID, &p.RequesterID)
+	err = db.Postgres.QueryRow(ctx, `SELECT id,requester_id from friends where id = $1`, id).Scan(&p.ID, userID)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return &httputil.ErrorResponse{Err: err, Code: http.StatusNotFound}
 		}
 		return &httputil.ErrorResponse{Err: err, Code: http.StatusBadRequest}
-	}
-
-	if p.RequesterID != currentUserID {
-		return &httputil.ErrorResponse{Err: errors.New("Unauthorized"), Code: http.StatusUnauthorized}
 	}
 
 	tx, err := db.Postgres.Begin(ctx)
@@ -44,7 +44,6 @@ func CancelFriendRequest(ctx context.Context, db *databases.Container, id string
 		}
 	}()
 	_, err = tx.Exec(ctx, `DELETE FROM friends where id = $1`, id)
-
 	if err != nil {
 		return &httputil.ErrorResponse{Err: err, Code: http.StatusInternalServerError}
 	}

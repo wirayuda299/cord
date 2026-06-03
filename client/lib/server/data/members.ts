@@ -1,14 +1,18 @@
 import { getPublicApiUrl } from "@/lib/env"
+import { auth } from "@clerk/nextjs/server"
 
 export async function isUserJoin(server_id: string, user_id: string): Promise<boolean> {
   try {
-    const base = getPublicApiUrl()
+    const { getToken } = await auth()
+    const token = await getToken()
 
-    const res = await fetch(`${base}/members/is-join?user_id=${user_id}&server_id=${server_id}`, {
+    const res = await fetch(`${getPublicApiUrl()}/members/is-join?server_id=${server_id}`, {
       method: "GET",
       headers: {
-        "Content-Type": "application/json"
-      }
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+        "Authorization": `Bearer ${token}`
+      },
     })
 
     if (!res.ok) {

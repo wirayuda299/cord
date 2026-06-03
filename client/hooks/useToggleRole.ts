@@ -28,7 +28,7 @@ export default function useToggleRoleMember({ serverID, member, onMutate, server
         if (member.role_id) {
           await unassignRole(member.user_id, serverID, member.role_id)
         }
-        await assignRole(member.user_id, serverID, roleID, TEMP_USR)
+        await assignRole(member.user_id, serverID, roleID)
       }
       onMutate()
     } catch (err) {

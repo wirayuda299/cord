@@ -1,4 +1,3 @@
-
 "use client";
 
 import "@livekit/components-styles";
@@ -11,19 +10,21 @@ import {
   ControlBar,
 } from "@livekit/components-react";
 import { Track } from "livekit-client";
-import { useEffect, useId, useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useSession } from "@clerk/nextjs";
 
 export default function VideoCall({ room, serverId }: { room: string; serverId: string }) {
   const [token, setToken] = useState('');
   const router = useRouter();
-  const id = useId()
+  const { session } = useSession()
+
   useEffect(() => {
-    // TODO: return early if no user
+    if (!session) return
     (async () => {
       try {
         const resp = await fetch(
-          `/api/get-participant-token?room=${room}&username=wira${id}`
+          `/api/get-participant-token?room=${room}&username=${session?.user.username}`
         );
         const data = await resp.json();
         setToken(data.token);
@@ -38,7 +39,7 @@ export default function VideoCall({ room, serverId }: { room: string; serverId: 
   return (
     <LiveKitRoom
       onDisconnected={() => {
-        router.push(`/server/${serverId}`);
+        router.push(`/${serverId}`);
       }}
       video={true}
       audio={true}

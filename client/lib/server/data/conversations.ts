@@ -2,42 +2,58 @@ import "server-only";
 
 import { getPublicApiUrl } from "@/lib/env";
 import type { Conversation, ConversationDetail } from "@/lib/types/conversation";
+import { auth } from "@clerk/nextjs/server";
 
-export async function getAllConversations(userId: string) {
-  const res = await fetch(`${getPublicApiUrl()}/conversation?user_id=${userId}`, {
-    method: "GET",
-    headers: {
-      "Content-Type": "application/json",
-      Accept: "application/json",
-    },
-    cache: "no-store",
-  });
+export async function getAllConversations() {
+  try {
+    const { getToken } = await auth()
+    const token = await getToken()
 
-  if (!res.ok) {
-    throw new Error("Failed to fetch conversations");
-  }
-
-  const { data } = await res.json();
-  return data as Conversation[];
-}
-
-export async function getConversationById(channelId: string, userId: string) {
-  const res = await fetch(
-    `${getPublicApiUrl()}/conversation/find-one?channelId=${channelId}&user_id=${userId}`,
-    {
+    const res = await fetch(`${getPublicApiUrl()}/conversation`, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
         Accept: "application/json",
+        "Authorization": `Bearer ${token}`
       },
-      cache: "no-store",
-    },
-  );
+    });
 
-  if (!res.ok) {
-    return { error: "Failed to fetch conversation" };
+    if (!res.ok) {
+      throw new Error("Failed to fetch conversations");
+    }
+
+    const { data } = await res.json();
+    return data as Conversation[];
+  } catch (e) {
+    throw e
   }
+}
 
-  const { data } = await res.json();
-  return data as ConversationDetail;
+export async function getConversationById(channelId: string) {
+  try {
+    const { getToken } = await auth()
+    const token = await getToken()
+
+    const res = await fetch(
+      `${getPublicApiUrl()}/conversation/find-one?channelId=${channelId}`,
+      {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+          "Authorization": `Bearer ${token}`
+        },
+        cache: "no-store",
+      },
+    );
+
+    if (!res.ok) {
+      return { error: "Failed to fetch conversation" };
+    }
+
+    const { data } = await res.json();
+    return data as ConversationDetail;
+  } catch (e) {
+    throw e
+  }
 }

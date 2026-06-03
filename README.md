@@ -21,46 +21,34 @@ cd server
 go run main.go
 ```
 
-## Features
+## Features (current status)
 
-### Implemented
-- Server creation, joining by invite code
-- Channel & category creation
-- Real-time messaging via WebSocket
-- Message deletion, pinning, replies, editing (within 5 min)
-- File/image attachments (Cloudinary)
-- Role & permission management
-- Invite code generation and deletion
-- Member list with online/offline status
-- Server settings (name, icon)
-- Direct messages (DM) with conversation list
-- Friend requests (send, cancel, accept, decline)
-- Emoji reactions on messages
+### Implemented / Available
+- **Authentication** — Clerk is integrated on frontend and backend middleware (see [client/proxy.ts](client/proxy.ts) and [backend/internal/middleware/clerk_auth.go](backend/internal/middleware/clerk_auth.go)).
+- **Server creation & joining** — server services & routes exist (see [backend/internal/services/servers](backend/internal/services/servers)).
+- **Channel & category management** — handlers and services present (see [backend/internal/handlers/channels.go](backend/internal/handlers/channels.go) and [backend/internal/services/categories](backend/internal/services/categories)).
+- **Real-time messaging (WebSocket)** — hub and client hook implemented (see [backend/internal/websocket/hub.go](backend/internal/websocket/hub.go) and [client/hooks/useWebsocket.ts](client/hooks/useWebsocket.ts)).
+- **Message send / delete / pin / reactions** — server handlers and client APIs exist (see [backend/internal/handlers/messages.go](backend/internal/handlers/messages.go) and [client/lib/client/api/messages.ts](client/lib/client/api/messages.ts)).
+- **Message editing (5-minute window)** — enforced server-side and supported client-side; edits are broadcast to the channel and clients merge updates (see [backend/internal/services/messages/edit.go](backend/internal/services/messages/edit.go) and [client/components/chat/ChatList.tsx](client/components/chat/ChatList.tsx)).
+- **File/image attachments (Cloudinary)** — image upload flows and image service exist (see [backend/internal/services/images](backend/internal/services/images) and Cloudinary config in client).
+- **Threads** — backend endpoints for creating threads and fetching thread messages exist (see [backend/internal/handlers/threads.go](backend/internal/handlers/threads.go)) and client has UI components for threads.
+- **Roles & permissions** — services and handlers present (see [backend/internal/services/roles](backend/internal/services/roles) and [backend/internal/services/permissions](backend/internal/services/permissions)).
+- **Invites / invitation codes** — implemented (see [backend/internal/handlers/invitations.go](backend/internal/handlers/invitations.go)).
+- **Members listing** — member retrieval exists (see [backend/internal/services/members/find-all.go](backend/internal/services/members/find-all.go)).
+- **Direct messages (conversations)** — conversation handlers and client flows exist (see [backend/internal/handlers/conversations.go](backend/internal/handlers/conversations.go)).
+- **Friend requests** — handlers/services present (see [backend/internal/handlers/friends.go](backend/internal/handlers/friends.go)).
 
-### Not Yet Implemented
-- Authentication (sign-in / sign-up)
-- Member moderation (ban, kick, timeout)
-- Audit logs
-- Search
-- Voice / video channels
-- Threads (UI ready, reply sending not wired)
-- Message search (DB index ready)
+### Partially implemented / UI wiring
+- **Threads UI** — backend fully supports threads; some client UX may be partial (thread navigation and creation present, reply UX differs between main channel and thread view).
+
+### Not Implemented / Missing
+- **Voice & video channels** — no backend or client support.
+- **Member moderation (ban/kick/timeout)** — no dedicated endpoints for moderation actions.
+- **Audit logs (server-side)** — client has an AuditLog UI shell, but backend audit storage/endpoints are not present.
+- **Global search / message search** — basic user/name lookups exist, but a full-text message search endpoint is not implemented.
+
+### Notes & constraints
+- Message edits are allowed only within a 5-minute window and only by the original author — enforced server-side ([backend/internal/services/messages/edit.go](backend/internal/services/messages/edit.go)).
+- After recent changes, edited messages are broadcast via WebSocket and clients merge incoming updates so other users see edits in real time.
 
 
-- TODO:
-● Skenario yang terjadi:
-
-  1. User attach gambar → upload mulai ke Cloudinary (proses ini butuh beberapa detik)
-  2. Sebelum upload selesai, user langsung reload/tutup halaman
-  3. Upload tetap jalan di server Cloudinary sampai selesai — tapi browser sudah mati duluan
-  4. Client tidak pernah dapat response (tidak tahu public_id-nya apa)
-  5. Gambar sudah tersimpan di Cloudinary, tapi kita tidak bisa delete karena tidak tahu ID-nya
-
-  Ini beda dengan skenario yang sudah ditangani:
-  - Upload sudah selesai (client dapat public_id) → baru user reload → beforeunload bisa delete pakai ID yang sudah ada
-
-  Untuk skenario yang belum ditangani, solusinya hanya di backend: setiap X menit, cek Cloudinary assets yang tidak punya pasangan di
-  database messages, lalu delete. Ini namanya orphan cleanup job.
-
-  Tapi untuk project ini, itu sangat jarang terjadi (harus reload tepat saat upload berlangsung) dan storage waste-nya kecil. Bisa
-  diabaikan dulu.

@@ -1,12 +1,11 @@
 "use client";
+
 import { cn } from "@/lib/utils";
 import { useAppStore } from "@/stores/store";
 import { Users } from "lucide-react";
 import { useShallow } from "zustand/react/shallow";
 
 export default function MembersButton() {
-
-
   const { isOpen, toggleMemberPanel } = useAppStore(
     useShallow((state) => ({
       isOpen: state.isMemberOpen,

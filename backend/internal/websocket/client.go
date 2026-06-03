@@ -8,6 +8,8 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/clerk/clerk-sdk-go/v2"
+	"github.com/clerk/clerk-sdk-go/v2/jwt"
 	"github.com/gorilla/websocket"
 	"github.com/wirayuda299/backend/internal/databases"
 	"github.com/wirayuda299/backend/internal/services"
@@ -70,7 +72,6 @@ func (c *Client) ReadIncomingMessage(db *databases.Container) {
 	for {
 		_, message, err := c.Conn.ReadMessage()
 		if err != nil {
-
 			if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
 				log.Printf("error: %v", err)
 			}
@@ -84,8 +85,6 @@ func (c *Client) ReadIncomingMessage(db *databases.Container) {
 			log.Println("error unmarshalling", err)
 			continue
 		}
-
-		log.Println(m)
 
 		row, err := messages.Send(c.ctx, m, db, c.channelID)
 		if err != nil {
@@ -156,13 +155,33 @@ func (c *Client) WriteMessage() {
 }
 
 func ServeWs(hub *Hub, db *databases.Container, w http.ResponseWriter, r *http.Request) {
+	// WebSocket clients can't set custom headers, so the Clerk JWT is passed
+	// as a query parameter: /ws?token=<clerk_session_token>&...
+	token := r.URL.Query().Get("token")
+	if token == "" {
+		http.Error(w, "unauthorized: missing token", http.StatusUnauthorized)
+		return
+	}
+
+	claims, err := jwt.Verify(r.Context(), &jwt.VerifyParams{Token: token})
+	if err != nil {
+		log.Printf("ws auth error: %v", err)
+		http.Error(w, "unauthorized: invalid token", http.StatusUnauthorized)
+		return
+	}
+
+	// Upgrade only after successful auth
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		log.Printf("upgrade error: %v", err)
 		return
 	}
 
-	ctx, cancel := context.WithCancel(context.Background())
+	// Inject claims into context so utils.GetSession works inside ReadIncomingMessage.
+	// Must be rooted at context.Background() — NOT r.Context() — because r.Context()
+	// is canceled when the HTTP handler returns (right after the upgrade), which would
+	// immediately cancel all DB calls in ReadIncomingMessage.
+	ctx, cancel := context.WithCancel(clerk.ContextWithSessionClaims(context.Background(), claims))
 	serverID := r.URL.Query().Get("serverId")
 	channelID := r.URL.Query().Get("channelId")
 

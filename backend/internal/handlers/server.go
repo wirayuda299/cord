@@ -96,8 +96,7 @@ func (sh *ServerHandler) UpdateServer(w http.ResponseWriter, r *http.Request) {
 }
 
 func (sh *ServerHandler) BrowseServers(w http.ResponseWriter, r *http.Request) {
-	userId := r.URL.Query().Get("user_id")
-	res, err := servers.BrowseServers(r.Context(), sh.db, userId)
+	res, err := servers.BrowseServers(r.Context(), sh.db)
 	if err != nil {
 		httputil.WriteErrorResponse(w, err.Err.Error(), err.Code)
 		return
@@ -105,12 +104,10 @@ func (sh *ServerHandler) BrowseServers(w http.ResponseWriter, r *http.Request) {
 	httputil.EncodeResponse(w, "Servers fetched successfully", http.StatusOK, res)
 }
 
-func (sh *ServerHandler) FindAllServersByUserId(w http.ResponseWriter, r *http.Request) {
-	user_id := r.URL.Query().Get("user_id")
-
-	res, err := servers.GetAllServersByUserId(r.Context(), sh.db, user_id)
+func (sh *ServerHandler) FindAllServersByUserID(w http.ResponseWriter, r *http.Request) {
+	res, err := servers.GetAllServersByUserID(r.Context(), sh.db)
 	if err != nil {
-		log.Println(err.Err.Error())
+		log.Println("Error find user servers -> ", err.Err.Error())
 		httputil.WriteErrorResponse(w, err.Err.Error(), err.Code)
 		return
 	}
@@ -119,9 +116,8 @@ func (sh *ServerHandler) FindAllServersByUserId(w http.ResponseWriter, r *http.R
 
 func (sh *ServerHandler) GetServerProfile(w http.ResponseWriter, r *http.Request) {
 	serverID := r.URL.Query().Get("server_id")
-	userID := r.URL.Query().Get("user_id")
 
-	profile, err := servers.GetServerProfile(r.Context(), sh.db, serverID, userID)
+	profile, err := servers.GetServerProfile(r.Context(), sh.db, serverID)
 	if err != nil {
 		httputil.WriteErrorResponse(w, err.Err.Error(), err.Code)
 		return

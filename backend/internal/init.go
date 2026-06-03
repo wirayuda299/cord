@@ -59,7 +59,7 @@ func (s *Server) Run() {
 	middleware.SetupMiddleware(r)
 
 	ch := handlers.NewChannelHandler(s.db)
-	categoryHandler := handlers.NewCategoryHandler(s.db)
+	cth := handlers.NewCategoryHandler(s.db)
 	sh := handlers.NewServerHandler(s.db)
 	mh := handlers.NewMessageHandler(s.db, hub)
 	rh := handlers.NewRoleHandler(s.db)
@@ -71,25 +71,25 @@ func (s *Server) Run() {
 	crh := handlers.NewConversationHandler(s.db)
 	th := handlers.NewThreadHandler(s.db)
 
-	routes.RegisterThreadRoute(r, th)
-	routes.RegisterConversationRoute(r, crh)
-	routes.RegisterFriendRoutes(r, fh)
+	routes.RegisterThreadRoute(r, th, middleware.ClerkAuth())
+	routes.RegisterConversationRoute(r, crh, middleware.ClerkAuth())
+	routes.RegisterFriendRoutes(r, fh, middleware.ClerkAuth())
 	routes.RegisterUserRoutes(r, uh)
-	routes.RegisterMemberRoutes(r, mrh)
-	routes.RegisterInvitationRoutes(r, ih)
-	routes.RegisterPermissionRoute(r, ph)
-	routes.RegisterRoleRoute(r, rh)
-	routes.RegisterChannelRoutes(r, ch)
-	routes.RegisterImagesRoutes(r)
-	routes.ServerRoutes(r, sh)
+	routes.RegisterMemberRoutes(r, mrh, middleware.ClerkAuth())
+	routes.RegisterInvitationRoutes(r, ih, middleware.ClerkAuth())
+	routes.RegisterPermissionRoute(r, ph, middleware.ClerkAuth())
+	routes.RegisterRoleRoute(r, rh, middleware.ClerkAuth())
+	routes.RegisterChannelRoutes(r, ch, middleware.ClerkAuth())
+	routes.RegisterImagesRoutes(r, middleware.ClerkAuth())
+	routes.ServerRoutes(r, sh, middleware.ClerkAuth())
 	routes.WebSocketRoutes(r, hub, s.db)
-	routes.MessagesRoutes(r, mh, hub)
-	routes.RegisterCategoriesRoute(r, categoryHandler)
+	routes.MessagesRoutes(r, mh, hub, middleware.ClerkAuth())
+	routes.RegisterCategoriesRoute(r, cth, middleware.ClerkAuth())
 
 	done := make(chan bool, 1)
 
 	server := &http.Server{
-		Handler:      r,
+		Handler:      middleware.CORSHandler(r),
 		Addr:         ":" + "8080",
 		WriteTimeout: 20 * time.Second,
 		ReadTimeout:  15 * time.Second,

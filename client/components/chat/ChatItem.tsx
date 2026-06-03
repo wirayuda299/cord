@@ -8,7 +8,6 @@ import { AlertCircle, Loader2, Reply, Check, X, MessageCircle } from "lucide-rea
 import MessageMenu from "./MessageMenu";
 import type { Message } from "@/lib/types/chat";
 import { addReaction, editMessage, removeReaction } from "@/lib/client/api/messages";
-import { TEMP_USR } from "@/lib/utils";
 import Link from "next/link";
 
 type ChatItemVariant = "channel" | "thread-parent" | "thread-reply";
@@ -21,6 +20,7 @@ type ChatItemProps = {
   onEdit?: (id: string, content: string) => void;
   onToggleReaction?: (messageId: string, emoji: string) => void;
   variant?: ChatItemVariant;
+  currentUser: string
 };
 
 type ReplyThreadProps = {
@@ -203,6 +203,7 @@ function ChatItem({
   onCreateThread,
   onEdit,
   onToggleReaction,
+  currentUser,
   variant = "channel",
 }: ChatItemProps) {
   const isFailed = message._status === "failed";
@@ -214,7 +215,7 @@ function ChatItem({
     variant === "channel" && !isFailed && Boolean(onCreateThread);
 
   const canDelete =
-    !isFailed && Boolean(handleDelete) && variant !== "thread-parent";
+    !isFailed && Boolean(handleDelete);
 
   const isWithinEditWindow = useMemo(() => {
     const created = new Date(message.created_at);
@@ -229,7 +230,7 @@ function ChatItem({
     async (emoji: string) => {
       if (!onToggleReaction) return;
       const hasReacted = message.reactions?.some(
-        (r) => r.user_id === TEMP_USR && r.emoji === emoji,
+        (r) => r.user_id === currentUser && r.emoji === emoji,
       );
       try {
         if (hasReacted) {
@@ -256,11 +257,11 @@ function ChatItem({
         id: message.id,
         content: editContent.trim(),
         channel_id: message.channel_id,
+        server_id: serverId
       });
       onEdit?.(message.id, editContent.trim());
       setIsEditing(false);
     } catch (e) {
-      console.error(e);
       alert(e instanceof Error ? e.message : "Failed to edit message");
     } finally {
       setIsSaving(false);
@@ -368,7 +369,7 @@ function ChatItem({
               ))}
               <ReactionBar
                 reactions={message.reactions}
-                currentUserId={TEMP_USR}
+                currentUserId={currentUser}
                 onToggle={handleToggleReaction}
               />
             </div>
@@ -392,7 +393,7 @@ function ChatItem({
 
         {showMenu && (
           <MessageMenu
-            userId={TEMP_USR}
+            currentUser={currentUser}
             message={message}
             serverId={serverId}
             onDelete={handleDelete ?? (() => { })}

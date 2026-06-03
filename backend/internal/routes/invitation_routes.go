@@ -7,8 +7,9 @@ import (
 	"github.com/wirayuda299/backend/internal/handlers"
 )
 
-func RegisterInvitationRoutes(r *mux.Router, ih *handlers.InvitationHandler) {
+func RegisterInvitationRoutes(r *mux.Router, ih *handlers.InvitationHandler, middleware ...mux.MiddlewareFunc) {
 	ir := r.PathPrefix("/invitation").Subrouter()
+	ir.Use(middleware...)
 
 	ir.HandleFunc("/find-one", ih.FindInvitationByCode).Methods(http.MethodGet)
 	ir.HandleFunc("/find-all", ih.FindAllInvitations).Methods(http.MethodGet)

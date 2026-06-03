@@ -8,8 +8,9 @@ import (
 	"github.com/wirayuda299/backend/internal/websocket"
 )
 
-func MessagesRoutes(r *mux.Router, mh *handlers.MessageHandler, hub *websocket.Hub) {
+func MessagesRoutes(r *mux.Router, mh *handlers.MessageHandler, hub *websocket.Hub, middlewares ...mux.MiddlewareFunc) {
 	s := r.PathPrefix("/messages").Subrouter()
+	s.Use(middlewares...)
 
 	s.HandleFunc("", mh.FindAllMessages).Methods(http.MethodGet)
 	s.HandleFunc("", mh.EditMessage).Methods(http.MethodPatch)

@@ -9,11 +9,11 @@ import (
 	"github.com/wirayuda299/backend/internal/databases"
 	"github.com/wirayuda299/backend/internal/httputil"
 	"github.com/wirayuda299/backend/internal/queue"
+	"github.com/wirayuda299/backend/internal/utils"
 )
 
 type JoinServerPayload struct {
 	ServerId string `json:"server_id"`
-	UserId   string `json:"user_id"`
 }
 
 type ServerInfo struct {
@@ -24,11 +24,10 @@ func JoinServer(ctx context.Context, db *databases.Container, p *JoinServerPaylo
 	if p.ServerId == "" {
 		return &httputil.ErrorResponse{Err: errors.New("Server ID is missing"), Code: http.StatusBadRequest}
 	}
-
-	if p.UserId == "" {
-		return &httputil.ErrorResponse{Err: errors.New("User ID is missing"), Code: http.StatusBadRequest}
+	userID, err := utils.GetSession(ctx)
+	if err != nil {
+		return &httputil.ErrorResponse{Err: err, Code: http.StatusUnauthorized}
 	}
-
 	tx, err := db.Postgres.Begin(ctx)
 	if err != nil {
 		return &httputil.ErrorResponse{Err: err, Code: http.StatusInternalServerError}
@@ -43,12 +42,12 @@ func JoinServer(ctx context.Context, db *databases.Container, p *JoinServerPaylo
 		return &httputil.ErrorResponse{Err: err, Code: http.StatusInternalServerError}
 	}
 
-	if server.CreatedBy == p.UserId {
-		return &httputil.ErrorResponse{Err: errors.New("You are own the server"), Code: http.StatusBadRequest}
+	if server.CreatedBy == userID {
+		return &httputil.ErrorResponse{Err: errors.New("you are own the server"), Code: http.StatusBadRequest}
 	}
 
 	var userExist bool
-	err = tx.QueryRow(ctx, "SELECT EXISTS(SELECT 1 FROM users where id = $1)", p.UserId).Scan(&userExist)
+	err = tx.QueryRow(ctx, "SELECT EXISTS(SELECT 1 FROM users where id = $1)", userID).Scan(&userExist)
 	if err != nil {
 		return &httputil.ErrorResponse{Err: err, Code: http.StatusInternalServerError}
 	}
@@ -58,14 +57,13 @@ func JoinServer(ctx context.Context, db *databases.Container, p *JoinServerPaylo
 	}
 
 	var memberID string
-	err = tx.QueryRow(ctx, "INSERT INTO members(server_id,user_id) VALUES($1,$2) RETURNING id", p.ServerId, p.UserId).Scan(&memberID)
+	err = tx.QueryRow(ctx, "INSERT INTO members(server_id,user_id) VALUES($1,$2) RETURNING id", p.ServerId, userID).Scan(&memberID)
 	if err != nil {
 		return &httputil.ErrorResponse{Err: err, Code: http.StatusInternalServerError}
 	}
 
 	if err := queue.PushJob(ctx, db.Redis, queue.CreateDefaultServerProfile, &queue.CreateDefaultServerProfilePayload{
 		ServerID: p.ServerId,
-		UserID:   p.UserId,
 		MemberID: memberID,
 	}); err != nil {
 		return &httputil.ErrorResponse{

@@ -4,7 +4,7 @@ import { useState, useTransition } from 'react'
 import Image from 'next/image'
 import { Users } from 'lucide-react'
 import { useRouter } from 'next/navigation'
-import { cn, TEMP_USR } from '@/lib/utils'
+import { cn } from '@/lib/utils'
 import { joinServer } from '@/lib/server/actions/servers'
 import type { BrowsableServer } from '@/lib/types/server'
 

@@ -8,6 +8,7 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/wirayuda299/backend/internal/databases"
 	"github.com/wirayuda299/backend/internal/httputil"
+	"github.com/wirayuda299/backend/internal/utils"
 )
 
 type ServerProfileData struct {
@@ -17,16 +18,17 @@ type ServerProfileData struct {
 	Bio      string `json:"bio"`
 }
 
-func GetServerProfile(ctx context.Context, db *databases.Container, serverID, userID string) (*ServerProfileData, *httputil.ErrorResponse) {
+func GetServerProfile(ctx context.Context, db *databases.Container, serverID string) (*ServerProfileData, *httputil.ErrorResponse) {
 	if serverID == "" {
 		return nil, &httputil.ErrorResponse{Err: errors.New("server_id is required"), Code: http.StatusBadRequest}
 	}
-	if userID == "" {
-		return nil, &httputil.ErrorResponse{Err: errors.New("user_id is required"), Code: http.StatusBadRequest}
+	userID, err := utils.GetSession(ctx)
+	if err != nil {
+		return nil, &httputil.ErrorResponse{Err: err, Code: http.StatusUnauthorized}
 	}
 
 	var p ServerProfileData
-	err := db.Postgres.QueryRow(ctx, `
+	err = db.Postgres.QueryRow(ctx, `
 		SELECT username, COALESCE(avatar, '') as avatar, COALESCE(avatar_asset_id, '') as avatar_id, COALESCE(bio, '') as bio
 		FROM server_profile
 		WHERE server_id = $1 AND user_id = $2

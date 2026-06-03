@@ -10,11 +10,11 @@ import (
 	"github.com/wirayuda299/backend/internal/databases"
 	"github.com/wirayuda299/backend/internal/httputil"
 	"github.com/wirayuda299/backend/internal/queue"
+	"github.com/wirayuda299/backend/internal/utils"
 )
 
 type UpdateServerProfilePayload struct {
 	ServerID      string  `json:"server_id"`
-	UserID        string  `json:"user_id"`
 	Username      *string `json:"username"`
 	Avatar        *string `json:"avatar"`
 	AvatarAssetID *string `json:"avatar_asset_id"`
@@ -25,8 +25,10 @@ func UpdateServerProfile(ctx context.Context, db *databases.Container, p *Update
 	if p.ServerID == "" {
 		return &httputil.ErrorResponse{Err: errors.New("server_id is required"), Code: http.StatusBadRequest}
 	}
-	if p.UserID == "" {
-		return &httputil.ErrorResponse{Err: errors.New("user_id is required"), Code: http.StatusBadRequest}
+
+	userID, err := utils.GetSession(ctx)
+	if err != nil {
+		return &httputil.ErrorResponse{Err: err, Code: http.StatusUnauthorized}
 	}
 
 	var setClauses []string
@@ -45,7 +47,7 @@ func UpdateServerProfile(ctx context.Context, db *databases.Container, p *Update
 	}
 	if p.Avatar != nil && p.AvatarAssetID != nil {
 		var oldAvatarID *string
-		_ = db.Postgres.QueryRow(ctx, "SELECT avatar_asset_id FROM server_profile WHERE server_id = $1 AND user_id = $2", p.ServerID, p.UserID).Scan(&oldAvatarID)
+		_ = db.Postgres.QueryRow(ctx, "SELECT avatar_asset_id FROM server_profile WHERE server_id = $1 AND user_id = $2", p.ServerID, userID).Scan(&oldAvatarID)
 
 		setClauses = append(setClauses, fmt.Sprintf("avatar = $%d", idx), fmt.Sprintf("avatar_asset_id = $%d", idx+1))
 		args = append(args, *p.Avatar, *p.AvatarAssetID)
@@ -62,7 +64,7 @@ func UpdateServerProfile(ctx context.Context, db *databases.Container, p *Update
 		return nil
 	}
 
-	args = append(args, p.ServerID, p.UserID)
+	args = append(args, p.ServerID, userID)
 	query := fmt.Sprintf(
 		"UPDATE server_profile SET %s WHERE server_id = $%d AND user_id = $%d",
 		strings.Join(setClauses, ", "),

@@ -2,12 +2,18 @@ import ChatList from "@/components/chat/ChatList";
 import VideoCall from "@/components/VideoCall";
 import { getChannelById } from "@/lib/server/data/channel_detail";
 import { getAllMessagesByChannelId } from "@/lib/server/data/messages";
+import { auth } from "@clerk/nextjs/server";
+import { unauthorized } from "next/navigation";
 
 export default async function ChannelDetail({
   params,
 }: {
   params: Promise<{ channel_id: string; id: string }>;
 }) {
+
+  const { userId } = await auth()
+
+  if (!userId) return unauthorized()
 
   const { channel_id, id } = await params
   const channel = await getChannelById(channel_id)
@@ -27,6 +33,7 @@ export default async function ChannelDetail({
     return (
       <div className="flex-1 min-h-0 overflow-hidden">
         <ChatList
+          currentUser={userId}
           thread_id={null}
           serverId={id}
           channel={channel}

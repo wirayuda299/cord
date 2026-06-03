@@ -4,12 +4,11 @@ import { FolderPlus } from "lucide-react"
 import { DialogContent, Dialog, DialogTrigger, DialogClose } from "@/components/ui/dialog"
 import { Controller, useForm } from "react-hook-form"
 import { createCategory } from "@/lib/server/actions/categories"
-import { TEMP_USR } from "@/lib/utils"
 import type { CreateCategoryPayload } from "@/lib/types/category"
 
 export default function CreateCategoryDialog({ serverId }: { serverId: string }) {
   const { handleSubmit, reset, control, formState: { isSubmitting } } = useForm<CreateCategoryPayload>({
-    defaultValues: { name: "", server_id: serverId, created_by: TEMP_USR },
+    defaultValues: { name: "", server_id: serverId },
   })
 
   const onSubmit = async (data: CreateCategoryPayload) => {

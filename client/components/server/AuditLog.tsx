@@ -11,22 +11,21 @@ import {
   ActionCategory,
 } from "@/constants/auditLog"
 
-// ─── helpers ──────────────────────────────────────────────────────────────────
 
 function relativeTime(date: Date): string {
   const diff = Math.floor((Date.now() - date.getTime()) / 1000)
-  if (diff < 60)          return "just now"
-  if (diff < 3600)        return `${Math.floor(diff / 60)}m ago`
-  if (diff < 86400)       return `${Math.floor(diff / 3600)}h ago`
-  if (diff < 86400 * 7)   return `${Math.floor(diff / 86400)}d ago`
+  if (diff < 60) return "just now"
+  if (diff < 3600) return `${Math.floor(diff / 60)}m ago`
+  if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`
+  if (diff < 86400 * 7) return `${Math.floor(diff / 86400)}d ago`
   return date.toLocaleDateString("en-US", { month: "short", day: "numeric" })
 }
 
 function dateLabel(date: Date): string {
-  const now   = new Date()
+  const now = new Date()
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
-  const d     = new Date(date.getFullYear(), date.getMonth(), date.getDate())
-  const diff  = Math.floor((today.getTime() - d.getTime()) / 86400000)
+  const d = new Date(date.getFullYear(), date.getMonth(), date.getDate())
+  const diff = Math.floor((today.getTime() - d.getTime()) / 86400000)
   if (diff === 0) return "Today"
   if (diff === 1) return "Yesterday"
   return date.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })
@@ -42,7 +41,6 @@ function groupByDate(entries: AuditEntry[]): { label: string; entries: AuditEntr
   return Array.from(map.entries()).map(([label, entries]) => ({ label, entries }))
 }
 
-// ─── change row ───────────────────────────────────────────────────────────────
 
 function ChangeRow({ field, before, after }: { field: string; before: string; after: string }) {
   return (
@@ -65,11 +63,10 @@ function ChangeRow({ field, before, after }: { field: string; before: string; af
   )
 }
 
-// ─── entry row ────────────────────────────────────────────────────────────────
 
 function EntryRow({ entry }: { entry: AuditEntry }) {
   const [expanded, setExpanded] = useState(false)
-  const meta     = ACTION_META[entry.type]
+  const meta = ACTION_META[entry.type]
   const hasChanges = (entry.changes?.length ?? 0) > 0
 
   return (
@@ -77,8 +74,8 @@ function EntryRow({ entry }: { entry: AuditEntry }) {
       <div
         className={cn(
           "flex items-center gap-3 px-4 py-3 rounded-xl transition-colors",
-          hasChanges ? "cursor-pointer hover:bg-white/[0.03]" : "",
-          expanded && "bg-white/[0.03] rounded-b-none"
+          hasChanges ? "cursor-pointer hover:bg-white/3" : "",
+          expanded && "bg-white/3 rounded-b-none"
         )}
         onClick={() => hasChanges && setExpanded((v) => !v)}
       >
@@ -120,7 +117,7 @@ function EntryRow({ entry }: { entry: AuditEntry }) {
 
       {/* Expanded changes */}
       {expanded && entry.changes && (
-        <div className="px-4 pb-3 pt-2 rounded-b-xl bg-white/[0.03] border-t border-white/5 ml-0">
+        <div className="px-4 pb-3 pt-2 rounded-b-xl bg-white/3 border-t border-white/5 ml-0">
           <p className="text-[10px] font-semibold uppercase tracking-widest text-white/25 mb-2 px-11">
             Changes
           </p>
@@ -138,7 +135,7 @@ function EntryRow({ entry }: { entry: AuditEntry }) {
 // ─── filter bar ───────────────────────────────────────────────────────────────
 
 const ALL_CATEGORIES: { value: ActionCategory | "all"; label: string }[] = [
-  { value: "all",     label: "All Actions" },
+  { value: "all", label: "All Actions" },
   ...Object.entries(CATEGORY_LABELS).map(([value, label]) => ({
     value: value as ActionCategory,
     label,
@@ -198,12 +195,12 @@ function FilterBar({
 // ─── root ─────────────────────────────────────────────────────────────────────
 
 export default function AuditLog() {
-  const [query,    setQuery]    = useState("")
+  const [query, setQuery] = useState("")
   const [category, setCategory] = useState<ActionCategory | "all">("all")
 
   const filtered = useMemo(() => {
     return AUDIT_LOG.filter((e) => {
-      const matchesQuery    = query === "" || e.actor.name.toLowerCase().includes(query.toLowerCase())
+      const matchesQuery = query === "" || e.actor.name.toLowerCase().includes(query.toLowerCase())
       const matchesCategory = category === "all" || e.category === category
       return matchesQuery && matchesCategory
     })

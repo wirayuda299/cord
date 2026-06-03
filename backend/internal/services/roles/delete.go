@@ -9,6 +9,7 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/wirayuda299/backend/internal/databases"
 	"github.com/wirayuda299/backend/internal/httputil"
+	"github.com/wirayuda299/backend/internal/utils"
 )
 
 type DeleteRolePayload struct {
@@ -17,11 +18,14 @@ type DeleteRolePayload struct {
 }
 
 type RoleRes struct {
-	RoleId string
-	UserID string
+	RoleID string
 }
 
 func DeleteRole(ctx context.Context, db *databases.Container, p *DeleteRolePayload) *httputil.ErrorResponse {
+	userID, err := utils.GetSession(ctx)
+	if err != nil {
+		return &httputil.ErrorResponse{Err: err, Code: http.StatusUnauthorized}
+	}
 	var r RoleRes
 
 	tx, err := db.Postgres.Begin(ctx)
@@ -33,7 +37,7 @@ func DeleteRole(ctx context.Context, db *databases.Container, p *DeleteRolePaylo
 			log.Printf("Error rollback -> %s", err)
 		}
 	}()
-	err = tx.QueryRow(ctx, "SELECT id, created_by from roles where id = $1", p.RoleId).Scan(&r.RoleId, &r.UserID)
+	err = tx.QueryRow(ctx, "SELECT id, created_by from roles where id = $1", p.RoleId).Scan(&r.RoleID, userID)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return &httputil.ErrorResponse{Err: errors.New("Role not found"), Code: http.StatusNotFound}
@@ -41,7 +45,7 @@ func DeleteRole(ctx context.Context, db *databases.Container, p *DeleteRolePaylo
 		return &httputil.ErrorResponse{Err: err, Code: http.StatusInternalServerError}
 	}
 
-	if p.UserId != r.UserID {
+	if p.UserId != userID {
 		return &httputil.ErrorResponse{Err: errors.New("unauthorized"), Code: http.StatusUnauthorized}
 	}
 	_, err = tx.Exec(ctx, "DELETE FROM roles where id = $1", p.RoleId)

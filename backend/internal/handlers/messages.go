@@ -7,6 +7,8 @@ import (
 	"github.com/wirayuda299/backend/internal/databases"
 	"github.com/wirayuda299/backend/internal/httputil"
 	"github.com/wirayuda299/backend/internal/queue"
+	"github.com/wirayuda299/backend/internal/services"
+
 	"github.com/wirayuda299/backend/internal/services/messages"
 	"github.com/wirayuda299/backend/internal/services/messages/pin"
 )
@@ -24,8 +26,8 @@ func NewMessageHandler(db *databases.Container, hub messages.BroadcastDeleter) *
 }
 
 func (mh *MessageHandler) FindAllPinnedMessages(w http.ResponseWriter, r *http.Request) {
-	channelId := r.URL.Query().Get("channelID")
-	res, err := pin.GetAllPinnedMessage(r.Context(), channelId, mh.db)
+	channelID := r.URL.Query().Get("channelID")
+	res, err := pin.GetAllPinnedMessage(r.Context(), channelID, mh.db)
 	if err != nil {
 		httputil.WriteErrorResponse(w, err.Err.Error(), err.Code)
 		return
@@ -77,6 +79,12 @@ func (mh *MessageHandler) EditMessage(w http.ResponseWriter, r *http.Request) {
 	if res != nil {
 		httputil.WriteErrorResponse(w, res.Err.Error(), res.Code)
 		return
+	}
+
+	// Fetch the updated message row to broadcast to other clients
+	updatedMsg, getErr := messages.GetMessageByID(r.Context(), mh.db, p.ID, p.ChannelID)
+	if getErr == nil && mh.hub != nil {
+		mh.hub.BroadcastMessages(p.ServerID, p.ChannelID, []services.MessageRow{*updatedMsg})
 	}
 
 	httputil.EncodeResponse(w, "Message edited", http.StatusOK, nil)

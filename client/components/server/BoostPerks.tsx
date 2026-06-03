@@ -3,7 +3,6 @@
 import { Check, Lock, Zap } from "lucide-react"
 import { cn } from "@/lib/utils"
 
-// Wire to real server data when boost backend exists
 const CURRENT_BOOSTS = 0
 
 const LEVELS = [

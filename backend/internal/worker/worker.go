@@ -75,7 +75,6 @@ func StartWorker(ctx context.Context, db *databases.Container) {
 
 func handleJob(ctx context.Context, db *databases.Container, job queue.Job) error {
 	switch job.Type {
-
 	case queue.CreateDefaultServerProfile:
 		log.Println("📦 Raw payload:", string(job.Payload))
 		var p queue.CreateDefaultServerProfilePayload
@@ -86,10 +85,9 @@ func handleJob(ctx context.Context, db *databases.Container, job queue.Job) erro
 
 		err := servers.CreateDefaultServerProfile(ctx, db, &p)
 		if err != nil {
-			return fmt.Errorf("Error create server profile :%s", err.Err.Error())
+			return fmt.Errorf("error create server profile :%s", err.Err.Error())
 		}
 		return nil
-
 	case queue.UpdateRolePermission:
 
 		log.Println("📦 Raw payload:", string(job.Payload))
@@ -118,7 +116,6 @@ func handleJob(ctx context.Context, db *databases.Container, job queue.Job) erro
 		}
 		log.Println("Channel created")
 		return nil
-
 	case queue.DeleteImage:
 
 		log.Println("📦 Raw payload delete image:", string(job.Payload))
@@ -137,6 +134,5 @@ func handleJob(ctx context.Context, db *databases.Container, job queue.Job) erro
 	default:
 		log.Printf("Unknown job type: %s", job.Type)
 		return fmt.Errorf("unknown job type: %s", job.Type)
-
 	}
 }

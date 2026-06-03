@@ -7,8 +7,9 @@ import (
 	"github.com/wirayuda299/backend/internal/handlers"
 )
 
-func RegisterCategoriesRoute(r *mux.Router, ch *handlers.CategoryHandler) {
+func RegisterCategoriesRoute(r *mux.Router, ch *handlers.CategoryHandler, middleware ...mux.MiddlewareFunc) {
 	cr := r.PathPrefix("/categories").Subrouter()
+	cr.Use(middleware...)
 
 	cr.HandleFunc("", ch.FindAllCategories).Methods(http.MethodGet)
 	cr.HandleFunc("", ch.CreateCategory).Methods(http.MethodPost)

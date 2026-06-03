@@ -11,17 +11,12 @@ import (
 )
 
 type DeleteInvitationPayload struct {
-	Code      string `json:"code"`
-	DeletedBy string `json:"deleted_by"`
+	Code string `json:"code"`
 }
 
 func DeleteInvitationCode(ctx context.Context, db *databases.Container, p *DeleteInvitationPayload) *httputil.ErrorResponse {
 	if p.Code == "" {
 		return &httputil.ErrorResponse{Err: errors.New("Invitation code is missing"), Code: http.StatusBadRequest}
-	}
-
-	if p.DeletedBy == "" {
-		return &httputil.ErrorResponse{Err: errors.New("Unauthorized"), Code: http.StatusUnauthorized}
 	}
 	tx, err := db.Postgres.Begin(ctx)
 	if err != nil {

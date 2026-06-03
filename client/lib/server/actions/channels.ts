@@ -5,9 +5,9 @@ import {
   createChannelSchema,
   type CreateChannelServer,
 } from "@/lib/validation/channel"
-import { TEMP_USR } from "@/lib/utils"
 import { updateTag } from "next/cache"
 import { ZodError } from "zod"
+import { auth } from "@clerk/nextjs/server"
 
 export async function createChannel(data: CreateChannelServer) {
   try {
@@ -18,24 +18,27 @@ export async function createChannel(data: CreateChannelServer) {
     if (!parsed.success) {
       return { error: parsed.error.message }
     }
+    const { getToken } = await auth()
+    const token = await getToken()
 
     const base = getPublicApiUrl()
     const res = await fetch(`${base}/channel/create`, {
       method: "POST",
       headers: {
-        "Content-type": "application/json",
+        "Content-Type": "application/json",
+        Accept: "application/json",
+        "Authorization": `Bearer ${token}`
       },
+
       body: JSON.stringify({
         name: parsed.data.name,
         type: parsed.data.type,
-        created_by: TEMP_USR,
         category_id: data.categoryID,
         server_id: data.serverID
       }),
     })
     if (!res.ok) {
       const result = await res.json()
-      console.log(result)
       return { error: result.message }
     }
     updateTag("channels")

@@ -7,8 +7,9 @@ import (
 	"github.com/wirayuda299/backend/internal/handlers"
 )
 
-func RegisterRoleRoute(r *mux.Router, rh *handlers.RoleHandler) {
+func RegisterRoleRoute(r *mux.Router, rh *handlers.RoleHandler, middleware ...mux.MiddlewareFunc) {
 	rs := r.PathPrefix("/roles").Subrouter()
+	rs.Use(middleware...)
 
 	rs.HandleFunc("", rh.DeleteRole).Methods(http.MethodDelete)
 	rs.HandleFunc("/unassign", rh.UnassignRole).Methods(http.MethodDelete)

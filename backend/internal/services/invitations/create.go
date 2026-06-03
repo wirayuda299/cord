@@ -5,18 +5,17 @@ import (
 	"crypto/rand"
 	"encoding/base64"
 	"errors"
-	"fmt"
 	"net/http"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/wirayuda299/backend/internal/databases"
 	"github.com/wirayuda299/backend/internal/httputil"
+	"github.com/wirayuda299/backend/internal/utils"
 )
 
 type CreateInvitationType struct {
-	ServerId  string `json:"server_id"`
-	MaxUsers  uint8  `json:"max_users"`
-	CreatedBy string `json:"created_by"`
+	ServerId string `json:"server_id"`
+	MaxUsers uint8  `json:"max_users"`
 }
 
 func generateInviteCode() (string, error) {
@@ -31,7 +30,10 @@ func generateInviteCode() (string, error) {
 }
 
 func CreateInvitationCode(ctx context.Context, db *databases.Container, p CreateInvitationType) (string, *httputil.ErrorResponse) {
-	fmt.Println("Payload -> ", p)
+	userID, err := utils.GetSession(ctx)
+	if err != nil {
+		return "", &httputil.ErrorResponse{Err: err, Code: http.StatusUnauthorized}
+	}
 	if p.ServerId == "" {
 		return "", &httputil.ErrorResponse{
 			Err:  errors.New("server ID is missing"),
@@ -63,7 +65,7 @@ func CreateInvitationCode(ctx context.Context, db *databases.Container, p Create
 			Code: http.StatusInternalServerError,
 		}
 	}
-	err = db.Postgres.QueryRow(ctx, "INSERT INTO invitations(code,server_id,max_users,created_by) VALUES($1,$2,$3,$4) returning code;", generatedCode, p.ServerId, p.MaxUsers, p.CreatedBy).Scan(&code)
+	err = db.Postgres.QueryRow(ctx, "INSERT INTO invitations(code,server_id,max_users,created_by) VALUES($1,$2,$3,$4) returning code;", generatedCode, p.ServerId, p.MaxUsers, userID).Scan(&code)
 	if err != nil {
 		return "", &httputil.ErrorResponse{
 			Err:  err,

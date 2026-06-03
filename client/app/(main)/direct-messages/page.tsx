@@ -5,6 +5,8 @@ import { cn } from "@/lib/utils";
 import AllFriends from "@/components/friends/AllFriends";
 import { Suspense } from "react";
 import AddFriendPanel from "@/components/friends/AddFriendPanel";
+import { auth } from "@clerk/nextjs/server";
+import { unauthorized } from "next/navigation";
 
 type Tab = "online" | "all" | "pending" | "add";
 
@@ -16,7 +18,10 @@ const tabs: { id: Tab; label: string; icon: React.ReactNode }[] = [
 ];
 
 
-export default function DirectMessagesPage() {
+export default async function DirectMessagesPage() {
+  const { userId } = await auth()
+
+  if (!userId) return unauthorized()
   return (
     <Tabs
       defaultValue="all"
@@ -59,7 +64,7 @@ export default function DirectMessagesPage() {
       </TabsContent>
 
       <TabsContent value="pending" className="flex-1 overflow-y-auto px-4 py-4">
-        <PendingRequests />
+        <PendingRequests currentUser={userId} />
       </TabsContent>
 
       <TabsContent value="online" className="flex-1 overflow-y-auto px-4 py-4">

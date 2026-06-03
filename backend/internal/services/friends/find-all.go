@@ -2,12 +2,12 @@ package friends
 
 import (
 	"context"
-	"errors"
 	"net/http"
 	"time"
 
 	"github.com/wirayuda299/backend/internal/databases"
 	"github.com/wirayuda299/backend/internal/httputil"
+	"github.com/wirayuda299/backend/internal/utils"
 )
 
 type FriendListItem struct {
@@ -19,14 +19,11 @@ type FriendListItem struct {
 	CreatedAt    time.Time `json:"created_at"`
 }
 
-func FindAllFriends(ctx context.Context, db *databases.Container, currentUserID string) ([]FriendListItem, *httputil.ErrorResponse) {
-	if currentUserID == "" {
-		return nil, &httputil.ErrorResponse{
-			Err:  errors.New("user ID is missing"),
-			Code: http.StatusBadRequest,
-		}
+func FindAllFriends(ctx context.Context, db *databases.Container) ([]FriendListItem, *httputil.ErrorResponse) {
+	userID, err := utils.GetSession(ctx)
+	if err != nil {
+		return nil, &httputil.ErrorResponse{Err: err, Code: http.StatusUnauthorized}
 	}
-
 	friends := make([]FriendListItem, 0)
 
 	rows, err := db.Postgres.Query(ctx, `
@@ -60,8 +57,7 @@ func FindAllFriends(ctx context.Context, db *databases.Container, currentUserID 
 			(f.requester_id = $1 OR f.addressee_id = $1)
 			AND f.status = 'accepted'
 		ORDER BY f.created_at DESC
-	`, currentUserID)
-
+	`, userID)
 	if err != nil {
 		return nil, &httputil.ErrorResponse{
 			Err:  err,

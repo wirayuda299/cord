@@ -2,15 +2,20 @@ import "server-only";
 
 import { getPublicApiUrl } from "@/lib/env";
 import type { BrowsableServer, ServerListItem } from "@/lib/types/server";
+import { auth } from "@clerk/nextjs/server";
 
-export async function getAllServers(userId: string) {
+export async function getAllServers() {
   try {
-    const base = getPublicApiUrl();
-    const response = await fetch(`${base}/server/find-all?user_id=${userId}`, {
-      method: "get",
+
+    const { getToken } = await auth()
+    const token = await getToken()
+
+    const response = await fetch(`${getPublicApiUrl()}/server/find-all`, {
+      method: "GET",
       headers: {
         "Content-Type": "application/json",
-        accept: "application/json",
+        "Accept": "application/json",
+        "Authorization": `Bearer ${token}`
       },
       next: {
         tags: ["servers"],
@@ -23,20 +28,23 @@ export async function getAllServers(userId: string) {
   }
 }
 
-export async function browseServers(userId: string) {
+export async function browseServers() {
   try {
-    const base = getPublicApiUrl();
-    const response = await fetch(`${base}/server/browse?user_id=${userId}`, {
+    const { getToken } = await auth()
+    const token = await getToken()
+
+    const response = await fetch(`${getPublicApiUrl()}/server/browse`, {
       method: "get",
       headers: {
         "Content-Type": "application/json",
         accept: "application/json",
+        "Authorization": `Bearer ${token}`
       },
       next: { tags: ["servers"] },
     });
     const { data } = await response.json();
     return (data as BrowsableServer[]) ?? [];
-  } catch {
-    return [];
+  } catch (e) {
+    throw e
   }
 }

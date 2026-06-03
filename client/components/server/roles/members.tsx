@@ -2,7 +2,6 @@ import useToggleRoleMember from "@/hooks/useToggleRole"
 import { getAllMemberByRole, UserRole } from "@/lib/client/api/roles"
 import { Role } from "@/lib/types/role"
 import { Loader2, Users, X } from "lucide-react"
-import { server } from "shadcn/mcp"
 import useSWR from "swr"
 
 function MemberRow({

@@ -46,6 +46,6 @@ type UpdateRolePermissionPayload struct {
 
 type CreateDefaultServerProfilePayload struct {
 	ServerID string `json:"server_id"`
-	UserID   string `json:"user_id"`
 	MemberID string `json:"member_id"`
+	UserID   string `json:"user_id"`
 }

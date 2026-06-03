@@ -8,6 +8,7 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/wirayuda299/backend/internal/databases"
 	"github.com/wirayuda299/backend/internal/httputil"
+	"github.com/wirayuda299/backend/internal/utils"
 )
 
 type ConversationDetail struct {
@@ -21,7 +22,11 @@ type ConversationDetail struct {
 	OtherAvatarURL string `json:"other_avatar_url"`
 }
 
-func FindConversationByID(ctx context.Context, db *databases.Container, channelID, currentUserID string) (*ConversationDetail, *httputil.ErrorResponse) {
+func FindConversationByID(ctx context.Context, db *databases.Container, channelID string) (*ConversationDetail, *httputil.ErrorResponse) {
+	userID, err := utils.GetSession(ctx)
+	if err != nil {
+		return nil, &httputil.ErrorResponse{Err: err, Code: http.StatusUnauthorized}
+	}
 	if channelID == "" {
 		return nil, &httputil.ErrorResponse{
 			Err:  errors.New("conversation id is required"),
@@ -29,15 +34,8 @@ func FindConversationByID(ctx context.Context, db *databases.Container, channelI
 		}
 	}
 
-	if currentUserID == "" {
-		return nil, &httputil.ErrorResponse{
-			Err:  errors.New("user id is required"),
-			Code: http.StatusBadRequest,
-		}
-	}
-
 	var c ConversationDetail
-	err := db.Postgres.QueryRow(ctx, `
+	err = db.Postgres.QueryRow(ctx, `
 		SELECT
 			ch.id::text,
 			COALESCE(ch.name, other_user.username, 'Direct Message') AS name,
@@ -66,7 +64,7 @@ func FindConversationByID(ctx context.Context, db *databases.Container, channelI
 				WHERE cm.channel_id = ch.id
 					AND cm.user_id = $2
 			)
-	`, channelID, currentUserID).Scan(
+	`, channelID, userID).Scan(
 		&c.ID,
 		&c.Name,
 		&c.ChannelType,

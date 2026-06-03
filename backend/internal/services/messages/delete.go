@@ -7,10 +7,12 @@ import (
 	"github.com/wirayuda299/backend/internal/databases"
 	"github.com/wirayuda299/backend/internal/httputil"
 	"github.com/wirayuda299/backend/internal/queue"
+	"github.com/wirayuda299/backend/internal/services"
 )
 
 type BroadcastDeleter interface {
 	BroadcastDelete(serverId, channelId, messageId string)
+	BroadcastMessages(serverId, channelId string, messages []services.MessageRow)
 }
 
 type DeleteMessagePayload struct {

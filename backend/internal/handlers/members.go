@@ -27,7 +27,7 @@ func (mh *MemberHandler) FindAllMemberInServer(w http.ResponseWriter, r *http.Re
 }
 
 func (mh *MemberHandler) IsUserJoined(w http.ResponseWriter, r *http.Request) {
-	joined, err := members.IsUserJoinedServer(r.Context(), mh.db, r.URL.Query().Get("user_id"), r.URL.Query().Get("server_id"))
+	joined, err := members.IsUserJoinedServer(r.Context(), mh.db, r.URL.Query().Get("server_id"))
 	if err != nil {
 		httputil.WriteErrorResponse(w, err.Err.Error(), err.Code)
 		return

@@ -1,7 +1,7 @@
 "use server"
 
 import { getPublicApiUrl } from "@/lib/env"
-import { TEMP_USR } from "@/lib/utils"
+import { auth } from "@clerk/nextjs/server"
 
 export async function createInvitationCode(server_id: string, max_users: number = 10) {
 
@@ -9,15 +9,19 @@ export async function createInvitationCode(server_id: string, max_users: number 
 
   const base = getPublicApiUrl()
 
+  const { getToken } = await auth()
+  const token = await getToken()
+
   const res = await fetch(`${base}/invitation/create`, {
     headers: {
-      "Content-Type": "application/json"
+      "Content-Type": "application/json",
+      Accept: "application/json",
+      "Authorization": `Bearer ${token}`
     },
     method: "POST",
     body: JSON.stringify({
       server_id,
       max_users,
-      created_by: TEMP_USR
     })
   })
 
@@ -35,10 +39,14 @@ export async function joinServerByCode(code: string, user_id: string) {
 
 
   const base = getPublicApiUrl()
+  const { getToken } = await auth()
+  const token = await getToken()
 
   const res = await fetch(`${base}/invitation/join`, {
     headers: {
-      "Content-Type": "application/json"
+      "Content-Type": "application/json",
+      Accept: "application/json",
+      "Authorization": `Bearer ${token}`
     },
     method: "POST",
     body: JSON.stringify({

@@ -10,6 +10,7 @@ import (
 	"github.com/wirayuda299/backend/internal/databases"
 	"github.com/wirayuda299/backend/internal/httputil"
 	"github.com/wirayuda299/backend/internal/queue"
+	"github.com/wirayuda299/backend/internal/utils"
 )
 
 type UpdateServerPayload struct {
@@ -23,6 +24,10 @@ type UpdateServerPayload struct {
 }
 
 func UpdateServer(ctx context.Context, db *databases.Container, p *UpdateServerPayload) *httputil.ErrorResponse {
+	_, err := utils.GetSession(ctx)
+	if err != nil {
+		return &httputil.ErrorResponse{Err: err, Code: http.StatusUnauthorized}
+	}
 	if p.ServerID == "" {
 		return &httputil.ErrorResponse{Err: errors.New("server ID is required"), Code: http.StatusBadRequest}
 	}

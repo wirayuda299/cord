@@ -11,16 +11,16 @@ import (
 )
 
 type Category struct {
-	Id         string `json:"id"`
+	ID         string `json:"id"`
 	Name       string `json:"name"`
 	CreatedBy  string `json:"created_by"`
-	ServerId   string `json:"server_id"`
+	ServerID   string `json:"server_id"`
 	ServerName string `json:"server_name"`
 }
 
-func FindAllCategories(ctx context.Context, db *databases.Container, serverId string) ([]Category, *httputil.ErrorResponse) {
-	if serverId == "" {
-		return nil, &httputil.ErrorResponse{Err: errors.New("Server ID is missing"), Code: http.StatusBadRequest}
+func FindAllCategories(ctx context.Context, db *databases.Container, serverID string) ([]Category, *httputil.ErrorResponse) {
+	if serverID == "" {
+		return nil, &httputil.ErrorResponse{Err: errors.New("server ID is missing"), Code: http.StatusBadRequest}
 	}
 	categories := make([]Category, 0)
 
@@ -29,7 +29,7 @@ func FindAllCategories(ctx context.Context, db *databases.Container, serverId st
 	FROM category as c
 	JOIN servers as s ON c.server_id = s.id
 	WHERE c.server_id = $1
-`, serverId)
+`, serverID)
 	if err != nil {
 		return nil, &httputil.ErrorResponse{Err: err, Code: http.StatusInternalServerError}
 	}
@@ -37,7 +37,7 @@ func FindAllCategories(ctx context.Context, db *databases.Container, serverId st
 
 	for rows.Next() {
 		var c Category
-		if err := rows.Scan(&c.Id, &c.Name, &c.ServerId, &c.CreatedBy, &c.ServerName); err != nil {
+		if err := rows.Scan(&c.ID, &c.Name, &c.ServerID, &c.CreatedBy, &c.ServerName); err != nil {
 			log.Println(err.Error())
 			return nil, &httputil.ErrorResponse{Err: err, Code: http.StatusInternalServerError}
 		}

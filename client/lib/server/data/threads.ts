@@ -1,21 +1,31 @@
 import 'server-only'
+
 import { getPublicApiUrl } from '@/lib/env'
+import { auth } from '@clerk/nextjs/server'
 
 export async function getAllThreadMessages(thread_id: string) {
 
-  const res = await fetch(`${getPublicApiUrl()}/threads/find-messages?thread_id=${thread_id}`, {
-    method: "GET",
-    headers: {
-      "Content-Type": "application/json",
-      "Accept": "application/json"
-    }
-  })
+  try {
+    const { getToken } = await auth()
+    const token = await getToken()
 
-  if (!res.ok) {
-    return {
-      error: "Failed to fetch thread messages"
+    const res = await fetch(`${getPublicApiUrl()}/threads/find-messages?thread_id=${thread_id}`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+        "Authorization": `Bearer ${token}`
+      },
+    })
+
+    if (!res.ok) {
+      return {
+        error: "Failed to fetch thread messages"
+      }
     }
+    const data = await res.json()
+    return data.data
+  } catch (e) {
+    throw e
   }
-  const data = await res.json()
-  return data.data
 }

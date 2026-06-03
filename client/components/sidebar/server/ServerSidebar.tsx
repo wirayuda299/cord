@@ -1,26 +1,31 @@
-import {
-  ChevronDown,
-  UserPlus,
-} from "lucide-react"
+import { ChevronDown, UserPlus } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import InviteFriendDialog from "@/components/server/InviteFriendDialog"
-import CreateChannel from "@/components/server/CreateChannel"
-import ServerSettingDialog from "@/components/server/ServerSettingDialog"
-import CreateCategoryDialog from "@/components/server/CreateCategoryDialog"
-import EditPerServerProfileDialog from "@/components/server/EditPerServerProfileDialog"
-import ChannelList from "./ChannelList"
-import { getAllChannel } from "@/lib/server/data/channels"
-import CopyServerIDButton from "@/components/server/CopyServerIDButton"
-import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog"
-import Invites from "@/components/server/Invites"
+} from "@/components/ui/dropdown-menu";
+import InviteFriendDialog from "@/components/server/InviteFriendDialog";
+import CreateChannel from "@/components/server/CreateChannel";
+import ServerSettingDialog from "@/components/server/ServerSettingDialog";
+import CreateCategoryDialog from "@/components/server/CreateCategoryDialog";
+import EditPerServerProfileDialog from "@/components/server/EditPerServerProfileDialog";
+import ChannelList from "./ChannelList";
+import { getAllChannel } from "@/lib/server/data/channels";
+import CopyServerIDButton from "@/components/server/CopyServerIDButton";
+import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
+import Invites from "@/components/server/Invites";
+import { auth } from "@clerk/nextjs/server";
+import { unauthorized } from "next/navigation";
 
-export default async function ServerSidebar({ serverId }: { serverId: string }) {
-  const channels = await getAllChannel(serverId)
-  const serverOwner = channels.server.created_by
+export default async function ServerSidebar({
+  serverId,
+}: {
+  serverId: string;
+}) {
+  const channels = await getAllChannel(serverId);
+  const { userId } = await auth()
+
+  if (!userId) unauthorized()
 
   return (
     <aside className="bg-overlay min-w-64 w-64 h-screen flex flex-col rounded-l-2xl">
@@ -37,11 +42,18 @@ export default async function ServerSidebar({ serverId }: { serverId: string }) 
               />
             </DropdownMenuTrigger>
             <DropdownMenuContent className="w-52 p-2 bg-sidebar-secondary shadow backdrop-blur-lg text-white space-y-3">
-              <InviteFriendDialog />
+              {userId === channels.server.created_by && (
+                <InviteFriendDialog />
+              )}
               <CreateChannel serverID={serverId} />
-              <ServerSettingDialog serverId={serverId} serverOwner={serverOwner} />
+              {userId === channels.server.created_by && (
+                <ServerSettingDialog
+                  serverId={serverId}
+                  serverOwner={channels.server.created_by}
+                />
+              )}
               <CreateCategoryDialog serverId={serverId} />
-              <EditPerServerProfileDialog serverId={serverId} userId={serverOwner} />
+              <EditPerServerProfileDialog serverId={serverId} />
               <CopyServerIDButton serverID={serverId} />
             </DropdownMenuContent>
           </DropdownMenu>
@@ -60,5 +72,5 @@ export default async function ServerSidebar({ serverId }: { serverId: string }) 
         <ChannelList channels={channels} />
       </div>
     </aside>
-  )
+  );
 }

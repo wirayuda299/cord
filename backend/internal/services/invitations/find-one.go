@@ -12,11 +12,11 @@ import (
 
 type InvitationResponse struct {
 	Invitation
-	ServerName   string   `json:"server_name"`
-	Username     string   `json:"username"`
-	Member_count int      `json:"member_count"`
-	Logo         *string  `json:"logo"`
-	BannerColor  []string `json:"banner_color"`
+	ServerName  string   `json:"server_name"`
+	Username    string   `json:"username"`
+	MemberCount int      `json:"member_count"`
+	Logo        *string  `json:"logo"`
+	BannerColor []string `json:"banner_color"`
 }
 
 func FindInvitationByCode(ctx context.Context, db *databases.Container, code string) (*InvitationResponse, *httputil.ErrorResponse) {
@@ -30,7 +30,7 @@ func FindInvitationByCode(ctx context.Context, db *databases.Container, code str
 		from invitations as i
 		left join users as u on u.id = i.created_by
 		left join servers as s on s.id = i.server_id
-	 	where code = $1;`, code).Scan(&i.Id, &i.Code, &i.ServerID, &i.CreatedBy, &i.MaxUsers, &i.CreatedAt, &i.Uses, &i.Username, &i.ServerName, &i.Logo, &i.Member_count, &i.BannerColor)
+	 	where code = $1;`, code).Scan(&i.Id, &i.Code, &i.ServerID, &i.CreatedBy, &i.MaxUsers, &i.CreatedAt, &i.Uses, &i.Username, &i.ServerName, &i.Logo, &i.MemberCount, &i.BannerColor)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, &httputil.ErrorResponse{Err: err, Code: http.StatusNotFound}

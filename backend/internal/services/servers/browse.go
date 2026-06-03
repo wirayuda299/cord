@@ -7,6 +7,7 @@ import (
 
 	"github.com/wirayuda299/backend/internal/databases"
 	"github.com/wirayuda299/backend/internal/httputil"
+	"github.com/wirayuda299/backend/internal/utils"
 )
 
 type BrowsableServer struct {
@@ -16,7 +17,12 @@ type BrowsableServer struct {
 	MemberCount int    `json:"member_count"`
 }
 
-func BrowseServers(ctx context.Context, db *databases.Container, userId string) ([]BrowsableServer, *httputil.ErrorResponse) {
+func BrowseServers(ctx context.Context, db *databases.Container) ([]BrowsableServer, *httputil.ErrorResponse) {
+	userID, err := utils.GetSession(ctx)
+	if err != nil {
+		return nil, &httputil.ErrorResponse{Err: err, Code: http.StatusUnauthorized}
+	}
+
 	rows, err := db.Postgres.Query(ctx, `
 		SELECT s.id, s.name, COALESCE(s.logo, '') as logo,
 		       (SELECT COUNT(*) FROM members WHERE server_id = s.id) as member_count
@@ -25,7 +31,7 @@ func BrowseServers(ctx context.Context, db *databases.Container, userId string) 
 		  AND s.created_by != $1
 		  AND s.id NOT IN (SELECT server_id FROM members WHERE user_id = $1)
 		ORDER BY member_count DESC
-	`, userId)
+	`, userID)
 	if err != nil {
 		return nil, &httputil.ErrorResponse{Err: err, Code: http.StatusInternalServerError}
 	}

@@ -7,28 +7,29 @@ import (
 
 	"github.com/wirayuda299/backend/internal/databases"
 	"github.com/wirayuda299/backend/internal/httputil"
+	"github.com/wirayuda299/backend/internal/utils"
 )
 
 type CreateCategoryPayload struct {
-	Name      string `json:"name"`
-	ServerID  string `json:"server_id"`
-	CreatedBy string `json:"created_by"`
+	Name     string `json:"name"`
+	ServerID string `json:"server_id"`
 }
 
 func CreateCategory(ctx context.Context, db *databases.Container, payload *CreateCategoryPayload) *httputil.ErrorResponse {
+	userID, err := utils.GetSession(ctx)
+	if err != nil {
+		return &httputil.ErrorResponse{Err: err, Code: http.StatusUnauthorized}
+	}
 	if payload.Name == "" {
 		return &httputil.ErrorResponse{Err: errors.New("name is required"), Code: http.StatusBadRequest}
 	}
 	if payload.ServerID == "" {
 		return &httputil.ErrorResponse{Err: errors.New("server_id is required"), Code: http.StatusBadRequest}
 	}
-	if payload.CreatedBy == "" {
-		return &httputil.ErrorResponse{Err: errors.New("created_by is required"), Code: http.StatusBadRequest}
-	}
 
-	_, err := db.Postgres.Exec(ctx,
+	_, err = db.Postgres.Exec(ctx,
 		"INSERT INTO categories(name, server_id, created_by) VALUES($1, $2, $3)",
-		payload.Name, payload.ServerID, payload.CreatedBy,
+		payload.Name, payload.ServerID, userID,
 	)
 	if err != nil {
 		return &httputil.ErrorResponse{Err: err, Code: http.StatusInternalServerError}

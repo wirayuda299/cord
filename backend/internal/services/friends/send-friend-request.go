@@ -8,10 +8,10 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/wirayuda299/backend/internal/databases"
 	"github.com/wirayuda299/backend/internal/httputil"
+	"github.com/wirayuda299/backend/internal/utils"
 )
 
 type SendFriendRequestPayload struct {
-	RequesterID string `json:"requester_id"`
 	AddresseeID string `json:"addressee_id"`
 }
 
@@ -38,6 +38,11 @@ func SendFriendRequest(ctx context.Context, db *databases.Container, p *SendFrie
 		}
 	}
 
+	userID, err := utils.GetSession(ctx)
+	if err != nil {
+		return &httputil.ErrorResponse{Err: err, Code: http.StatusUnauthorized}
+	}
+
 	if p.AddresseeID == "" {
 		return &httputil.ErrorResponse{
 			Err:  errors.New("target user ID is missing"),
@@ -45,14 +50,7 @@ func SendFriendRequest(ctx context.Context, db *databases.Container, p *SendFrie
 		}
 	}
 
-	if p.RequesterID == "" {
-		return &httputil.ErrorResponse{
-			Err:  errors.New("requester ID is missing"),
-			Code: http.StatusBadRequest,
-		}
-	}
-
-	if p.AddresseeID == p.RequesterID {
+	if p.AddresseeID == userID {
 		return &httputil.ErrorResponse{
 			Err:  errors.New("you can't send friend request to yourself"),
 			Code: http.StatusBadRequest,
@@ -73,7 +71,7 @@ func SendFriendRequest(ctx context.Context, db *databases.Container, p *SendFrie
 		}
 	}
 
-	if _, err := isUserExist(ctx, db, p.RequesterID); err != nil {
+	if _, err := isUserExist(ctx, db, userID); err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return &httputil.ErrorResponse{
 				Err:  errors.New("requester user not found"),
@@ -89,20 +87,20 @@ func SendFriendRequest(ctx context.Context, db *databases.Container, p *SendFrie
 
 	var status string
 
-	err := db.Postgres.QueryRow(ctx, `
+	err = db.Postgres.QueryRow(ctx, `
 		SELECT status
 		FROM friends
 		WHERE 
 			(requester_id = $1 AND addressee_id = $2)
 			OR
 			(requester_id = $2 AND addressee_id = $1)
-	`, p.RequesterID, p.AddresseeID).Scan(&status)
+	`, userID, p.AddresseeID).Scan(&status)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			_, err = db.Postgres.Exec(ctx, `
 				INSERT INTO friends(requester_id, addressee_id, status)
 				VALUES($1, $2, 'pending')
-			`, p.RequesterID, p.AddresseeID)
+			`, userID, p.AddresseeID)
 			if err != nil {
 				return &httputil.ErrorResponse{
 					Err:  err,

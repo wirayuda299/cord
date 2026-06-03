@@ -18,7 +18,6 @@ import { copyText } from "@/lib/client/clipboard";
 import { deleteMessage, pinMessage } from "@/lib/server/actions/messages";
 import type { Message } from "@/lib/types/chat";
 import { usePathname } from "next/navigation";
-import { TEMP_USR } from "@/lib/utils";
 import { useAppStore } from "@/stores/store";
 import z from "zod";
 
@@ -43,7 +42,7 @@ type MessageMenuProps = {
   onMore?: () => void;
   serverId: string;
   onDelete: (id: string) => void;
-  userId: string;
+  currentUser: string;
 };
 
 function EmojiPicker({
@@ -68,7 +67,7 @@ function EmojiPicker({
   return (
     <div
       ref={pickerRef}
-      className="absolute left-0 right-0 z-20 bg-surface-raised border border-white/10 rounded-md shadow-xl shadow-black/40 p-2 max-h-64 overflow-y-auto"
+      className="absolute  left-0 right-0 z-20 bg-surface-raised border border-white/10 rounded-md shadow-xl shadow-black/40 p-2 max-h-64 overflow-y-auto"
     >
       <div className="grid grid-cols-8 gap-1">
         {emojiList.map((e) => (
@@ -221,7 +220,6 @@ function useMenuActions(
         onClick: async () => {
           try {
             const res = await pinMessage(
-              userId,
               message.id,
               message.channel_id,
             );
@@ -312,7 +310,7 @@ function MessageMenu(props: MessageMenuProps) {
     onMore,
     message,
     onDelete,
-    userId = TEMP_USR,
+    currentUser
   } = props;
 
   const menuRef = useRef<HTMLDivElement>(null);
@@ -323,7 +321,7 @@ function MessageMenu(props: MessageMenuProps) {
   const actions = useMenuActions(
     message,
     serverId,
-    userId,
+    currentUser,
     onDelete,
     onEdit,
     onReaction,
@@ -390,7 +388,7 @@ function MessageMenu(props: MessageMenuProps) {
       <div className="flex flex-col px-1.5 py-1.5 gap-px">
         {actions.map((action) => {
           if (action.label === "Create Thread") {
-            return <CreateThreadForm key={action.label} channel_id={message.channel_id} messageId={message.id} userId={userId} />
+            return <CreateThreadForm key={action.label} channel_id={message.channel_id} messageId={message.id} />
           } else {
             return <ActionItem key={action.label} action={action} />
           }

@@ -18,9 +18,7 @@ func NewConversationHandler(db *databases.Container) *ConversationHandler {
 }
 
 func (ch *ConversationHandler) FindAllConversations(w http.ResponseWriter, r *http.Request) {
-	userID := r.URL.Query().Get("user_id")
-
-	res, err := conversations.FindAllConversations(r.Context(), ch.db, userID)
+	res, err := conversations.FindAllConversations(r.Context(), ch.db)
 	if err != nil {
 		httputil.WriteErrorResponse(w, err.Err.Error(), err.Code)
 		return
@@ -31,9 +29,8 @@ func (ch *ConversationHandler) FindAllConversations(w http.ResponseWriter, r *ht
 
 func (ch *ConversationHandler) FindConversationByID(w http.ResponseWriter, r *http.Request) {
 	channelID := r.URL.Query().Get("channelId")
-	userID := r.URL.Query().Get("user_id")
 
-	res, err := conversations.FindConversationByID(r.Context(), ch.db, channelID, userID)
+	res, err := conversations.FindConversationByID(r.Context(), ch.db, channelID)
 	if err != nil {
 		httputil.WriteErrorResponse(w, err.Err.Error(), err.Code)
 		return
@@ -43,7 +40,6 @@ func (ch *ConversationHandler) FindConversationByID(w http.ResponseWriter, r *ht
 }
 
 func (ch *ConversationHandler) DeleteConversation(w http.ResponseWriter, r *http.Request) {
-
 	var p conversations.DeleteConversationPayload
 	if err := json.NewDecoder(r.Body).Decode(&p); err != nil {
 		httputil.WriteErrorResponse(w, err.Error(), http.StatusBadRequest)
@@ -56,11 +52,9 @@ func (ch *ConversationHandler) DeleteConversation(w http.ResponseWriter, r *http
 	}
 
 	httputil.EncodeResponse(w, "Conversation deleted", http.StatusOK, nil)
-
 }
 
 func (ch *ConversationHandler) CreateConversation(w http.ResponseWriter, r *http.Request) {
-
 	var p conversations.CreateConversationPayload
 
 	if err := json.NewDecoder(r.Body).Decode(&p); err != nil {

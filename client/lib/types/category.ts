@@ -14,5 +14,4 @@ export type Category = {
 export type CreateCategoryPayload = {
   name: string
   server_id: string
-  created_by: string
 }

@@ -8,7 +8,6 @@ import { getPublicApiUrl } from "@/lib/env";
 import { ALLOWED_FILE_EXTENSIONS } from "@/lib/shared/file-validation";
 import { useAttachedFiles } from "@/hooks/useAttachedFiles";
 import { useAppStore } from "@/stores/store";
-import { TEMP_USR } from "@/lib/utils";
 import { emojiList } from "@/constants/emoji";
 import { FilePreview } from "./FilePreview";
 
@@ -28,7 +27,7 @@ type ChatFormProps = {
 export default function ChatForm({
   channelName,
   channelId,
-  userId = TEMP_USR,
+  userId,
   placeholder,
   sendMessage,
   status,

@@ -8,6 +8,7 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/wirayuda299/backend/internal/databases"
 	"github.com/wirayuda299/backend/internal/httputil"
+	"github.com/wirayuda299/backend/internal/utils"
 )
 
 type Thread struct {
@@ -21,13 +22,17 @@ type Thread struct {
 }
 
 func FindThreadByID(ctx context.Context, db *databases.Container, id string) (*Thread, *httputil.ErrorResponse) {
+	_, err := utils.GetSession(ctx)
+	if err != nil {
+		return nil, &httputil.ErrorResponse{Err: err, Code: http.StatusUnauthorized}
+	}
 	if id == "" {
 		return nil, &httputil.ErrorResponse{Err: errors.New("thread is is missing"), Code: http.StatusBadRequest}
 	}
 
 	var t Thread
 
-	err := db.Postgres.QueryRow(ctx, `
+	err = db.Postgres.QueryRow(ctx, `
 		SELECT
 		id,
 		channel_id,

@@ -7,11 +7,12 @@ import (
 	"github.com/wirayuda299/backend/internal/handlers"
 )
 
-func ServerRoutes(r *mux.Router, sh *handlers.ServerHandler) {
+func ServerRoutes(r *mux.Router, sh *handlers.ServerHandler, middleware ...mux.MiddlewareFunc) {
 	s := r.PathPrefix("/server").Subrouter()
+	s.Use(middleware...)
 
 	s.HandleFunc("", sh.GetServerByID).Methods(http.MethodGet)
-	s.HandleFunc("/find-all", sh.FindAllServersByUserId).Methods(http.MethodGet)
+	s.HandleFunc("/find-all", sh.FindAllServersByUserID).Methods(http.MethodGet)
 	s.HandleFunc("/browse", sh.BrowseServers).Methods(http.MethodGet)
 	s.HandleFunc("/create", sh.CreateServer).Methods(http.MethodPost)
 	s.HandleFunc("/join", sh.JoinServer).Methods(http.MethodPost)

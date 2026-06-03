@@ -23,8 +23,7 @@ type PendingRequestPayload struct {
 }
 
 func (fh *FriendsHandler) FindAllFriends(w http.ResponseWriter, r *http.Request) {
-	friends, err := friends.FindAllFriends(r.Context(), fh.db, r.URL.Query().Get("user_id"))
-
+	friends, err := friends.FindAllFriends(r.Context(), fh.db)
 	if err != nil {
 		httputil.WriteErrorResponse(w, err.Err.Error(), err.Code)
 		return
@@ -34,7 +33,6 @@ func (fh *FriendsHandler) FindAllFriends(w http.ResponseWriter, r *http.Request)
 }
 
 func (fh *FriendsHandler) CancelFriendRequest(w http.ResponseWriter, r *http.Request) {
-
 	var p PendingRequestPayload
 
 	if err := json.NewDecoder(r.Body).Decode(&p); err != nil {
@@ -42,19 +40,15 @@ func (fh *FriendsHandler) CancelFriendRequest(w http.ResponseWriter, r *http.Req
 		return
 	}
 	err := friends.CancelFriendRequest(r.Context(), fh.db, p.ID, p.CurrentUserID)
-
 	if err != nil {
 		httputil.WriteErrorResponse(w, err.Err.Error(), err.Code)
 		return
 	}
 	httputil.EncodeResponse(w, "Friend request canceled", http.StatusOK, nil)
-
 }
 
 func (fh *FriendsHandler) FindAllPendingInvitation(w http.ResponseWriter, r *http.Request) {
-
-	result, err := friends.GetAllPendingInvitations(r.Context(), fh.db, r.URL.Query().Get("user_id"))
-
+	result, err := friends.GetAllPendingInvitations(r.Context(), fh.db)
 	if err != nil {
 		httputil.WriteErrorResponse(w, err.Err.Error(), err.Code)
 		return

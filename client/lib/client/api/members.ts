@@ -1,4 +1,5 @@
 import { getPublicApiUrl } from "@/lib/env"
+import { getToken } from "@clerk/nextjs"
 
 export type Member = {
   id: string
@@ -13,11 +14,15 @@ export type Member = {
   server_id: string
 }
 export async function getAllMembers(serverID: string): Promise<Member[]> {
+  const token = await getToken()
+
   const res = await fetch(`${getPublicApiUrl()}/members/find-all?serverID=${serverID}`, {
     method: "GET",
     headers: {
-      "Content-Type": "application/json"
-    }
+      "Content-Type": "application/json",
+      "Accept": "application/json",
+      "Authorization": `Bearer ${token}`
+    },
   })
 
   if (!res.ok) {

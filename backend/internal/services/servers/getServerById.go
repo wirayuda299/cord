@@ -8,6 +8,7 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/wirayuda299/backend/internal/databases"
 	"github.com/wirayuda299/backend/internal/httputil"
+	"github.com/wirayuda299/backend/internal/utils"
 )
 
 type Server struct {
@@ -24,13 +25,18 @@ type Server struct {
 }
 
 func GetServerByID(db *databases.Container, ctx context.Context, serverID string) (*Server, *httputil.ErrorResponse) {
+	_, err := utils.GetSession(ctx)
+	if err != nil {
+		return nil, &httputil.ErrorResponse{Err: err, Code: http.StatusUnauthorized}
+	}
+
 	if serverID == "" {
 		return nil, &httputil.ErrorResponse{Err: errors.New("Server ID is missing"), Code: http.StatusBadRequest}
 	}
 
 	var server Server
 
-	err := db.Postgres.QueryRow(ctx, "SELECT id,name,logo,logo_id,created_by,banner,banner_id,description, private,banner_colors from servers where id = $1", serverID).Scan(&server.Id, &server.Name, &server.Logo, &server.LogoID, &server.OwnerID, &server.Banner, &server.BannerID, &server.Description, &server.Private, &server.BannerColors)
+	err = db.Postgres.QueryRow(ctx, "SELECT id,name,logo,logo_id,created_by,banner,banner_id,description, private,banner_colors from servers where id = $1", serverID).Scan(&server.Id, &server.Name, &server.Logo, &server.LogoID, &server.OwnerID, &server.Banner, &server.BannerID, &server.Description, &server.Private, &server.BannerColors)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, &httputil.ErrorResponse{Err: errors.New("Server not found"), Code: http.StatusNotFound}

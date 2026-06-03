@@ -2,12 +2,12 @@ package friends
 
 import (
 	"context"
-	"errors"
 	"net/http"
 	"time"
 
 	"github.com/wirayuda299/backend/internal/databases"
 	"github.com/wirayuda299/backend/internal/httputil"
+	"github.com/wirayuda299/backend/internal/utils"
 )
 
 type Friend struct {
@@ -22,10 +22,10 @@ type Friend struct {
 	CreatedAt          time.Time `json:"created_at"`
 }
 
-func GetAllPendingInvitations(ctx context.Context, db *databases.Container, userID string) ([]Friend, *httputil.ErrorResponse) {
-
-	if userID == "" {
-		return nil, &httputil.ErrorResponse{Err: errors.New("user id is missing"), Code: http.StatusBadRequest}
+func GetAllPendingInvitations(ctx context.Context, db *databases.Container) ([]Friend, *httputil.ErrorResponse) {
+	userID, err := utils.GetSession(ctx)
+	if err != nil {
+		return nil, &httputil.ErrorResponse{Err: err, Code: http.StatusUnauthorized}
 	}
 
 	rows, err := db.Postgres.Query(ctx, `
@@ -43,10 +43,8 @@ func GetAllPendingInvitations(ctx context.Context, db *databases.Container, user
 		left join users as ru on ru.id =requester_id
 		left join users as au on au.id = addressee_id
 		where (requester_id = $1 or addressee_id = $1) and status = 'pending'`, userID)
-
 	if err != nil {
 		return nil, &httputil.ErrorResponse{Err: err, Code: http.StatusInternalServerError}
-
 	}
 	defer rows.Close()
 
@@ -66,5 +64,4 @@ func GetAllPendingInvitations(ctx context.Context, db *databases.Container, user
 	}
 
 	return invitations, nil
-
 }

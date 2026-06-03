@@ -76,5 +76,6 @@ func FindMembersInServer(ctx context.Context, db *databases.Container, serverID 
 	if err := rows.Err(); err != nil {
 		return nil, &httputil.ErrorResponse{Err: err, Code: http.StatusInternalServerError}
 	}
+
 	return members, nil
 }

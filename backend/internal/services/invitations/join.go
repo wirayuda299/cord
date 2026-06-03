@@ -59,7 +59,6 @@ func JoinServerWithInvitationCode(ctx context.Context, db *databases.Container, 
 
 	if err := queue.PushJob(ctx, db.Redis, queue.CreateDefaultServerProfile, &queue.CreateDefaultServerProfilePayload{
 		ServerID: serverID,
-		UserID:   userId,
 		MemberID: memberID,
 	}); err != nil {
 		return &httputil.ErrorResponse{Err: err, Code: http.StatusInternalServerError}

@@ -2,12 +2,12 @@ package conversations
 
 import (
 	"context"
-	"errors"
 	"net/http"
 	"time"
 
 	"github.com/wirayuda299/backend/internal/databases"
 	"github.com/wirayuda299/backend/internal/httputil"
+	"github.com/wirayuda299/backend/internal/utils"
 )
 
 type ConversationListItem struct {
@@ -21,14 +21,11 @@ type ConversationListItem struct {
 	LastMessageAt      time.Time `json:"last_message_at"`
 }
 
-func FindAllConversations(ctx context.Context, db *databases.Container, currentUserID string) ([]ConversationListItem, *httputil.ErrorResponse) {
-	if currentUserID == "" {
-		return nil, &httputil.ErrorResponse{
-			Err:  errors.New("user id is required"),
-			Code: http.StatusBadRequest,
-		}
+func FindAllConversations(ctx context.Context, db *databases.Container) ([]ConversationListItem, *httputil.ErrorResponse) {
+	userID, err := utils.GetSession(ctx)
+	if err != nil {
+		return nil, &httputil.ErrorResponse{Err: err, Code: http.StatusUnauthorized}
 	}
-
 	rows, err := db.Postgres.Query(ctx, `
 		SELECT
 			c.id::text,
@@ -61,7 +58,7 @@ func FindAllConversations(ctx context.Context, db *databases.Container, currentU
 			AND c.server_id IS NULL
 			AND c.channel_type IN ('dm', 'group_dm')
 		ORDER BY COALESCE(last_msg.created_at, c.created_at) DESC
-	`, currentUserID)
+	`, userID)
 	if err != nil {
 		return nil, &httputil.ErrorResponse{
 			Err:  err,

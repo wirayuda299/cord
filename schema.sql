@@ -35,6 +35,7 @@ CREATE TABLE users (
   avatar_url text NOT NULL DEFAULT '',
   avatar_id varchar(100) NOT NULL DEFAULT '',
   bio text NOT NULL DEFAULT '',
+  email_verified boolean default false,
   created_at timestamptz NOT NULL DEFAULT NOW(),
   updated_at timestamptz NOT NULL DEFAULT NOW()
 );

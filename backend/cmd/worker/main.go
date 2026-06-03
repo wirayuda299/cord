@@ -8,6 +8,7 @@ import (
 	"sync"
 	"syscall"
 
+	"github.com/clerk/clerk-sdk-go/v2"
 	"github.com/wirayuda299/backend/internal/config"
 	"github.com/wirayuda299/backend/internal/databases"
 	"github.com/wirayuda299/backend/internal/worker"
@@ -18,24 +19,22 @@ func main() {
 		panic(err)
 	}
 
-	var ctx, cancel = context.WithCancel(context.Background())
+	ctx, cancel := context.WithCancel(context.Background())
 
 	defer cancel()
 
 	db, err := databases.NewContainer(ctx)
-
 	if err != nil {
 		panic(err)
 	}
 
 	defer db.Close()
 	var wg sync.WaitGroup
-
+	clerk.SetKey(os.Getenv("CLERK_SECRET_KEY"))
 	for range 5 {
 		wg.Go(func() {
 			worker.StartWorker(ctx, db)
 		})
-
 	}
 
 	quit := make(chan os.Signal, 1)

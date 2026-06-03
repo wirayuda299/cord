@@ -1,7 +1,7 @@
 'use server'
 
 import { getPublicApiUrl } from "@/lib/env"
-import { TEMP_USR } from "@/lib/utils"
+import { auth } from "@clerk/nextjs/server"
 
 type CreateRolePayload = {
   name: string
@@ -33,10 +33,15 @@ export async function createRole(
   } = p
   const base = getPublicApiUrl()
 
+  const { getToken } = await auth()
+  const token = await getToken()
+
   const res = await fetch(`${base}/roles/create`, {
     method: "POST",
     headers: {
-      "Content-Type": "application/json"
+      "Content-Type": "application/json",
+      Accept: "application/json",
+      "Authorization": `Bearer ${token}`
     },
     body: JSON.stringify({
       name,
@@ -46,7 +51,6 @@ export async function createRole(
       hoist,
       mentionable,
       permission_ids,
-      created_by: TEMP_USR
     })
   })
 
@@ -71,16 +75,20 @@ type UpdateRolePayload = {
 export async function updateRole(
   p: UpdateRolePayload
 ): Promise<{ error: string } | undefined> {
+  const { getToken } = await auth()
+  const token = await getToken()
 
-  console.log("Payload client -> ", p)
   const base = getPublicApiUrl()
   const res = await fetch(`${base}/roles/update`, {
     method: "PATCH",
-    headers: { "Content-Type": "application/json" },
+    headers: {
+      "Content-Type": "application/json",
+      Accept: "application/json",
+      "Authorization": `Bearer ${token}`
+    },
     body: JSON.stringify(p),
   })
   const json = (await res.json().catch(() => ({}))) as { message?: string }
-  console.log("Error -> ", json)
   if (!res.ok) {
     return { error: json.message ?? res.statusText }
   }

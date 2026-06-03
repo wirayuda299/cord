@@ -2,15 +2,21 @@ import "server-only"
 
 import { getPublicApiUrl } from "@/lib/env"
 import type { Category } from "@/lib/types/category"
+import { auth } from "@clerk/nextjs/server"
 
 export async function getAllCategories(serverID: string) {
   try {
-    const base = getPublicApiUrl()
-    const res = await fetch(`${base}/categories?serverID=${serverID}`, {
+    const { getToken } = await auth()
+    const token = await getToken()
+
+    const res = await fetch(`${getPublicApiUrl()}/categories?serverID=${serverID}`, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
+        Accept: "application/json",
+        "Authorization": `Bearer ${token}`
       },
+
       next: {
         tags: ["categories"],
       },

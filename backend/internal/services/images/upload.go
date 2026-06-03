@@ -46,7 +46,7 @@ func HandleUpload(p *UploadImagePayload) (*UploadResponse, *httputil.ErrorRespon
 	}
 	if header.Size > 1<<20 {
 		return nil, &httputil.ErrorResponse{
-			Err:  errors.New("File size 1mb exceed"),
+			Err:  errors.New("file size 1mb exceed"),
 			Code: http.StatusBadRequest,
 		}
 	}

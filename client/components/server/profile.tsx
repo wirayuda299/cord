@@ -13,9 +13,9 @@ import { Switch } from "../ui/switch"
 import useSWR from "swr"
 import getServerById from "@/lib/client/api/server"
 import { useParams } from "next/navigation"
-import { updateServer } from "@/lib/server/actions/servers"
 import { uploadImage } from "@/lib/server/actions/images"
 import { updateServerSchema, UpdateServerType } from "@/lib/validation/server"
+import { updateServer } from "@/lib/server/actions/servers"
 
 const gradients = [
   ["#1f1f1f", "#3a3a3a"], // dark gray
@@ -32,10 +32,14 @@ const gradients = [
 
 type Props = {
   selected: string[]
-  name: string
+  server: {
+    name: string
+    logo?: string
+
+  }
 }
 
-function ServerProfilePreview({ selected, name }: Props) {
+function ServerProfilePreview({ selected, server }: Props) {
   return (
     <div
       style={{
@@ -48,10 +52,21 @@ function ServerProfilePreview({ selected, name }: Props) {
       className={`size-64 min-w-64 rounded-lg sticky top-0`}>
       <div className="absolute h-max w-full p-3 bottom-0 bg-(--discord-chat)">
         <div className="size-14  border border-sidebar-secondary rounded-md absolute bottom-20 left-7">
-          <Image src="/globe.svg" className="size-full" width={20} height={20} alt="logo" />
+          {server?.logo ? (
+            <Image
+              src={server.logo}
+              className="size-full object-cover rounded-md"
+              width={56}
+              height={56}
+              alt='icon'
+            />
+          ) : (
+            <div className="size-full rounded-md bg-gray-500" />
+
+          )}
         </div>
         <div className="mt-10">
-          <p>{name}</p>
+          <p>{server?.name}</p>
           <div className="flex items-center gap-3 mt-1">
             <p className='flex items-center text-xs gap-2'>
               <span className="block size-2 rounded-full bg-green-500"></span>
@@ -131,7 +146,7 @@ export default function ServerProfile() {
         },
       })
 
-      if (result?.error) {
+      if (result && result?.error) {
         setSubmitStatus({ type: 'error', message: result.error })
         return
       }
@@ -139,9 +154,10 @@ export default function ServerProfile() {
       form.reset({ ...data, icon: iconUrl })
       setSubmitStatus({ type: 'success', message: 'Changes saved!' })
       setTimeout(() => setSubmitStatus(null), 3000)
-    } catch {
-      setSubmitStatus({ type: 'error', message: 'Something went wrong. Try again.' })
+    } catch (e) {
+      alert(e)
     }
+
   }
   return (
     <div className="px-5 pt-5 overflow-y-auto max-h-screen text-white w-full flex justify-between gap-5">
@@ -285,7 +301,7 @@ export default function ServerProfile() {
                         </div>
                         <FieldDescription className="text-sm">When enabled, only server members can view profile content. Non-members won't be able to see this content unless they have an invite.</FieldDescription>
                       </div>
-                      <ServerProfilePreview selected={selected} name={data?.data.name} />
+                      <ServerProfilePreview selected={selected} server={data?.data} />
                     </div>
                   </Field>
                 )}
@@ -337,7 +353,7 @@ export default function ServerProfile() {
         </form>
 
       </div>
-      <ServerProfilePreview selected={selected} name={data?.data.name} />
+      <ServerProfilePreview selected={selected} server={data?.data} />
     </div >
 
   )

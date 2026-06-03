@@ -7,6 +7,7 @@ import (
 
 	"github.com/wirayuda299/backend/internal/databases"
 	"github.com/wirayuda299/backend/internal/httputil"
+	"github.com/wirayuda299/backend/internal/utils"
 )
 
 type Reaction struct {
@@ -16,26 +17,26 @@ type Reaction struct {
 
 type ReactionPayload struct {
 	MessageID string `json:"message_id"`
-	UserID    string `json:"user_id"`
 	Emoji     string `json:"emoji"`
 }
 
 func AddReaction(ctx context.Context, db *databases.Container, p *ReactionPayload) *httputil.ErrorResponse {
+	userID, err := utils.GetSession(ctx)
+	if err != nil {
+		return &httputil.ErrorResponse{Err: err, Code: http.StatusUnauthorized}
+	}
 	if p == nil {
 		return &httputil.ErrorResponse{Err: errors.New("payload is required"), Code: http.StatusBadRequest}
 	}
 	if p.MessageID == "" {
 		return &httputil.ErrorResponse{Err: errors.New("message id is missing"), Code: http.StatusBadRequest}
 	}
-	if p.UserID == "" {
-		return &httputil.ErrorResponse{Err: errors.New("user id is missing"), Code: http.StatusBadRequest}
-	}
 	if p.Emoji == "" {
 		return &httputil.ErrorResponse{Err: errors.New("emoji is missing"), Code: http.StatusBadRequest}
 	}
 
 	var exists bool
-	err := db.Postgres.QueryRow(ctx, `SELECT EXISTS(SELECT 1 FROM messages WHERE id = $1)`, p.MessageID).Scan(&exists)
+	err = db.Postgres.QueryRow(ctx, `SELECT EXISTS(SELECT 1 FROM messages WHERE id = $1)`, p.MessageID).Scan(&exists)
 	if err != nil {
 		return &httputil.ErrorResponse{Err: err, Code: http.StatusInternalServerError}
 	}
@@ -47,7 +48,7 @@ func AddReaction(ctx context.Context, db *databases.Container, p *ReactionPayloa
 		INSERT INTO reactions (message_id, user_id, emoji)
 		VALUES ($1, $2, $3)
 		ON CONFLICT (message_id, user_id, emoji) DO NOTHING
-	`, p.MessageID, p.UserID, p.Emoji)
+	`, p.MessageID, userID, p.Emoji)
 	if err != nil {
 		return &httputil.ErrorResponse{Err: err, Code: http.StatusInternalServerError}
 	}
@@ -56,23 +57,24 @@ func AddReaction(ctx context.Context, db *databases.Container, p *ReactionPayloa
 }
 
 func RemoveReaction(ctx context.Context, db *databases.Container, p *ReactionPayload) *httputil.ErrorResponse {
+	userID, err := utils.GetSession(ctx)
+	if err != nil {
+		return &httputil.ErrorResponse{Err: err, Code: http.StatusUnauthorized}
+	}
 	if p == nil {
 		return &httputil.ErrorResponse{Err: errors.New("payload is required"), Code: http.StatusBadRequest}
 	}
 	if p.MessageID == "" {
 		return &httputil.ErrorResponse{Err: errors.New("message id is missing"), Code: http.StatusBadRequest}
 	}
-	if p.UserID == "" {
-		return &httputil.ErrorResponse{Err: errors.New("user id is missing"), Code: http.StatusBadRequest}
-	}
 	if p.Emoji == "" {
 		return &httputil.ErrorResponse{Err: errors.New("emoji is missing"), Code: http.StatusBadRequest}
 	}
 
-	_, err := db.Postgres.Exec(ctx, `
+	_, err = db.Postgres.Exec(ctx, `
 		DELETE FROM reactions
 		WHERE message_id = $1 AND user_id = $2 AND emoji = $3
-	`, p.MessageID, p.UserID, p.Emoji)
+	`, p.MessageID, userID, p.Emoji)
 	if err != nil {
 		return &httputil.ErrorResponse{Err: err, Code: http.StatusInternalServerError}
 	}

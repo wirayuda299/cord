@@ -36,7 +36,7 @@ export default function CreateChannel({ serverID }: { serverID: string }) {
       }
       alert("Success")
     } catch (e) {
-      console.log(e)
+      alert(e)
     } finally {
       reset()
     }

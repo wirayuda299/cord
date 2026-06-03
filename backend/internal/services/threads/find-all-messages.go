@@ -9,6 +9,7 @@ import (
 	"github.com/wirayuda299/backend/internal/httputil"
 	"github.com/wirayuda299/backend/internal/services"
 	"github.com/wirayuda299/backend/internal/services/messageutil"
+	"github.com/wirayuda299/backend/internal/utils"
 )
 
 const queryAllThreadMessages = `SELECT
@@ -45,6 +46,10 @@ const queryAllThreadMessages = `SELECT
     ORDER BY m.created_at ASC;`
 
 func GetAllThreadMessages(ctx context.Context, db *databases.Container, threadID string) ([]services.MessageRow, *httputil.ErrorResponse) {
+	_, err := utils.GetSession(ctx)
+	if err != nil {
+		return nil, &httputil.ErrorResponse{Err: err, Code: http.StatusUnauthorized}
+	}
 	if threadID == "" {
 		return nil, &httputil.ErrorResponse{Err: errors.New("thread ID is missing"), Code: http.StatusBadRequest}
 	}

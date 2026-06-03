@@ -21,6 +21,7 @@ import { getAllRoles, unassignRole } from "@/lib/client/api/roles"
 import { Role } from "@/lib/types/role"
 import Image from "next/image"
 import useToggleRoleMember from "@/hooks/useToggleRole"
+import { format } from "date-fns"
 
 
 function MemberAvatar({ member }: { member: Member }) {
@@ -91,6 +92,7 @@ function MemberRow({ member, allRoles, serverID, onMutate, serverOwner }: Member
     onMutate,
     serverOwner,
   })
+  
   const handleRemoveRole = async () => {
     if (!member.role_id || pendingRoleId) return
     setError(null)
@@ -111,7 +113,7 @@ function MemberRow({ member, allRoles, serverID, onMutate, serverOwner }: Member
         <p className="text-sm font-medium text-[#f2f3f5] truncate leading-tight">
           {member.username}
         </p>
-        <p className="text-[11px] text-[#6d6f78] truncate">{member.user_id}</p>
+        <p className="text-[11px] text-[#6d6f78] truncate"> joined at {format(member.joined_at, "MMM d, yyyy")}</p>
       </div>
 
       {error && (

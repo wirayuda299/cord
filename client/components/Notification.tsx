@@ -2,6 +2,7 @@ import DropdownWrapper from "@/components/shared/DropdownWrapper";
 import { Bell } from "lucide-react";
 
 const notifications = Array.from({ length: 10 })
+
 function NotificationItem() {
   return (
     <>

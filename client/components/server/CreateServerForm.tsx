@@ -17,7 +17,6 @@ import { Field, FieldLabel } from "@/components/ui/field"
 import { createServer } from "@/lib/server/actions/servers"
 import { Controller, useForm } from "react-hook-form"
 import { createServerSchema, type CreateServerSchemaType } from "@/lib/validation/server"
-import { TEMP_USR } from "@/lib/utils"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useAttachedFiles } from "@/hooks/useAttachedFiles"
 import { ALLOWED_FILE_EXTENSIONS } from "@/lib/shared/file-validation"
@@ -34,7 +33,7 @@ export default function CreateServerForm() {
   const handleSubmit = async (data: CreateServerSchemaType) => {
     if (!data.name.trim()) return
     try {
-      const res = await createServer(data.name, TEMP_USR)
+      const res = await createServer(data.name)
       if (res.error) {
         alert(res.error)
         return
@@ -69,11 +68,10 @@ export default function CreateServerForm() {
                 className="hidden"
                 onChange={(e) => e.target.files && addFiles(Array.from(e.target.files))}
               />
-              <div className={`w-20 h-20 rounded-full relative border-2 border-dashed transition-colors flex items-center justify-center overflow-hidden ${
-                isDragging
-                  ? "border-indigo-400 bg-indigo-400/10"
-                  : "border-gray-500 group-hover:border-indigo-400"
-              }`}>
+              <div className={`w-20 h-20 rounded-full relative border-2 border-dashed transition-colors flex items-center justify-center overflow-hidden ${isDragging
+                ? "border-indigo-400 bg-indigo-400/10"
+                : "border-gray-500 group-hover:border-indigo-400"
+                }`}>
                 {preview ? (
                   <>
                     <Image

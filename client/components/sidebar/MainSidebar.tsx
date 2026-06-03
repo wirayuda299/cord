@@ -4,14 +4,13 @@ import dynamic from "next/dynamic"
 import { Compass } from "lucide-react"
 
 import { getAllServers } from "@/lib/server/data/servers"
-import { cn, TEMP_USR } from "@/lib/utils"
+import { cn } from "@/lib/utils"
 
 const CreateServerForm = dynamic(() => import("@/components/server/CreateServerForm"))
 
 export default async function MainSidebar() {
-  const userId = TEMP_USR
 
-  const servers = await getAllServers(userId)
+  const servers = await getAllServers()
 
   return (
     <aside className="flex gap-5 min-w-20 flex-col items-center min-h-screen w-20 max-h-screen p-3 bg-overlay overflow-y-auto ">

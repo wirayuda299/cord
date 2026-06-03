@@ -8,6 +8,7 @@ import (
 
 	"github.com/wirayuda299/backend/internal/databases"
 	"github.com/wirayuda299/backend/internal/httputil"
+	"github.com/wirayuda299/backend/internal/utils"
 )
 
 type CreateRolePayload struct {
@@ -16,13 +17,16 @@ type CreateRolePayload struct {
 	Color         string   `json:"color"`
 	Icon          string   `json:"icon"`
 	Hoist         bool     `json:"hoist"`
-	CreatedBy     string   `json:"created_by"`
 	Mentionable   bool     `json:"mentionable"`
 	PermissionIDs []string `json:"permission_ids"`
 	IconID        string   `json:"icon_id"`
 }
 
 func CreateRole(ctx context.Context, db *databases.Container, p *CreateRolePayload) *httputil.ErrorResponse {
+	userID, err := utils.GetSession(ctx)
+	if err != nil {
+		return &httputil.ErrorResponse{Err: err, Code: http.StatusUnauthorized}
+	}
 	if p.Name == "" {
 		return &httputil.ErrorResponse{Err: errors.New("role name is required"), Code: http.StatusBadRequest}
 	}
@@ -32,10 +36,6 @@ func CreateRole(ctx context.Context, db *databases.Container, p *CreateRolePaylo
 	}
 	if p.Color == "" {
 		return &httputil.ErrorResponse{Err: errors.New("color is required"), Code: http.StatusBadRequest}
-	}
-
-	if p.CreatedBy == "" {
-		return &httputil.ErrorResponse{Err: errors.New("user ID is missing"), Code: http.StatusBadRequest}
 	}
 
 	var id string
@@ -50,7 +50,7 @@ func CreateRole(ctx context.Context, db *databases.Container, p *CreateRolePaylo
 		}
 	}()
 
-	err = tx.QueryRow(ctx, "INSERT INTO roles(name,server_id,color,icon,hoist,mentionable,created_by,icon_id) values($1,$2,$3,$4,$5,$6,$7,$8) returning id;", p.Name, p.ServerID, p.Color, p.Icon, p.Hoist, p.Mentionable, p.CreatedBy, p.IconID).Scan(&id)
+	err = tx.QueryRow(ctx, "INSERT INTO roles(name,server_id,color,icon,hoist,mentionable,created_by,icon_id) values($1,$2,$3,$4,$5,$6,$7,$8) returning id;", p.Name, p.ServerID, p.Color, p.Icon, p.Hoist, p.Mentionable, userID, p.IconID).Scan(&id)
 	if err != nil {
 		return &httputil.ErrorResponse{Err: err, Code: http.StatusInternalServerError}
 	}

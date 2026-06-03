@@ -7,9 +7,10 @@ import (
 	"github.com/wirayuda299/backend/internal/handlers"
 )
 
-func RegisterFriendRoutes(r *mux.Router, fh *handlers.FriendsHandler) {
+func RegisterFriendRoutes(r *mux.Router, fh *handlers.FriendsHandler, middleware ...mux.MiddlewareFunc) {
 	fr := r.PathPrefix("/friends").Subrouter()
 
+	fr.Use(middleware...)
 	fr.HandleFunc("", fh.FindAllFriends).Methods(http.MethodGet)
 	fr.HandleFunc("/send-request", fh.SendFriendRequest).Methods(http.MethodPost)
 	fr.HandleFunc("/pending", fh.FindAllPendingInvitation).Methods(http.MethodGet)

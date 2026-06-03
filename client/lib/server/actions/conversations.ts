@@ -2,9 +2,8 @@
 
 import { getPublicApiUrl } from "@/lib/env";
 import { redirect } from "next/navigation";
-import { TEMP_USR } from "@/lib/utils";
+import { auth } from "@clerk/nextjs/server";
 
-const CURRENT_USER_ID = TEMP_USR;
 
 export async function startConversation(formData: FormData): Promise<void> {
   const targetedUserId = String(formData.get("targeted_user_id") ?? "");
@@ -13,14 +12,18 @@ export async function startConversation(formData: FormData): Promise<void> {
     throw new Error("Target user id is missing");
   }
 
+  const { getToken } = await auth()
+  const token = await getToken()
+
+
   const res = await fetch(`${getPublicApiUrl()}/conversation/create`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
       Accept: "application/json",
+      "Authorization": `Bearer ${token}`
     },
     body: JSON.stringify({
-      current_user_id: CURRENT_USER_ID,
       targeted_user_id: targetedUserId,
     }),
   });

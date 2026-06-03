@@ -1,23 +1,26 @@
 "use server";
 
 import { getPublicApiUrl } from "@/lib/env";
+import { auth } from "@clerk/nextjs/server";
 import { refresh, revalidatePath, revalidateTag, updateTag } from "next/cache";
 
 export async function createThread(params: {
   channel_id: string;
-  created_by: string;
   name: string;
   message_id: string;
 }) {
   try {
     const base = getPublicApiUrl();
+    const { getToken } = await auth()
+    const token = await getToken()
+
     const response = await fetch(`${base}/threads/create`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         Accept: "application/json",
+        "Authorization": `Bearer ${token}`
       },
-      cache: "no-store",
       body: JSON.stringify(params),
     });
     if (!response.ok) {
@@ -33,17 +36,20 @@ export async function createThread(params: {
 
 
 
-export async function pinMessage(pinned_by: string, msg_id: string, channel_id: string) {
+export async function pinMessage(msg_id: string, channel_id: string) {
   try {
     const base = getPublicApiUrl();
+    const { getToken } = await auth()
+    const token = await getToken()
+
     const response = await fetch(`${base}/messages/pin`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         Accept: "application/json",
+        "Authorization": `Bearer ${token}`
       },
       body: JSON.stringify({
-        pinned_by,
         msg_id,
         channel_id,
       }),
@@ -62,10 +68,15 @@ export async function pinMessage(pinned_by: string, msg_id: string, channel_id: 
 export async function deletePinnedMessage(id: string) {
   try {
     const base = getPublicApiUrl();
+    const { getToken } = await auth()
+    const token = await getToken()
+
     const res = await fetch(`${base}/messages/pin`, {
       method: "DELETE",
       headers: {
-        "content-type": "application/json",
+        "Content-Type": "application/json",
+        Accept: "application/json",
+        "Authorization": `Bearer ${token}`
       },
       body: JSON.stringify(id),
     });
@@ -75,7 +86,6 @@ export async function deletePinnedMessage(id: string) {
       return await res.json();
     }
     return {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       error: (await res.json()).message as any,
     };
   } catch (e) {
@@ -101,10 +111,15 @@ export async function deleteMessage({
 }: DeleteMessageParams) {
   try {
     const base = getPublicApiUrl();
+    const { getToken } = await auth()
+    const token = await getToken()
+
     const res = await fetch(`${base}/messages`, {
       method: "DELETE",
       headers: {
         "Content-Type": "application/json",
+        Accept: "application/json",
+        "Authorization": `Bearer ${token}`
       },
       body: JSON.stringify({
         id,

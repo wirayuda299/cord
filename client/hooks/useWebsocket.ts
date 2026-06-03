@@ -2,6 +2,7 @@
 
 import { getPublicWsUrl } from "@/lib/env";
 import type { ResponseMessage } from "@/lib/types/chat";
+import { useAuth } from "@clerk/nextjs";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 export type { Message } from "@/lib/types/chat";
@@ -20,6 +21,7 @@ export function useWebSocket(
   channelId: string,
   options: Options
 ) {
+  const { getToken } = useAuth();
   const wsRef = useRef<WebSocket | null>(null);
   const reconnectTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
   const optionsRef = useRef(options);
@@ -32,7 +34,7 @@ export function useWebSocket(
   useEffect(() => {
     let active = true;
 
-    function connect() {
+    async function connect() {
       setStatus("connecting");
 
       if (reconnectTimeout.current) {
@@ -44,8 +46,14 @@ export function useWebSocket(
         wsRef.current.close();
       }
 
+      const token = await getToken();
+      if (!token) {
+        setStatus("error");
+        return;
+      }
+
       const ws = new WebSocket(
-        `${getPublicWsUrl()}/ws?serverId=${serverId}&channelId=${channelId}`
+        `${getPublicWsUrl()}/ws?serverId=${serverId}&channelId=${channelId}&token=${token}`
       );
       wsRef.current = ws;
 
@@ -66,7 +74,6 @@ export function useWebSocket(
           }
         } catch (e) {
           console.log(e)
-          // Failed to parse WebSocket message
         }
       };
 

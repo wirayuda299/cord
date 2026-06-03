@@ -143,3 +143,12 @@ func (h *Hub) BroadcastDelete(serverId, channelId, messageId string) {
 		}
 	}
 }
+
+func (h *Hub) BroadcastMessages(serverId, channelId string, messages []services.MessageRow) {
+	// Use the existing broadcast channel to reuse the Run loop logic
+	h.broadcast <- BroadcastPayload{
+		ServerId:  serverId,
+		ChannelId: channelId,
+		Messages:  messages,
+	}
+}

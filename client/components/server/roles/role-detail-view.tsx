@@ -1,6 +1,6 @@
 'use client'
 
-import { cn, TEMP_USR } from "@/lib/utils"
+import { cn } from "@/lib/utils"
 import { ChevronLeft, ImageIcon, Palette, Pencil, Shield, Trash, Users } from "lucide-react"
 import { useState } from "react"
 import MembersTab from "./members"
@@ -180,8 +180,7 @@ export default function RoleDetailView({
 
   const handleDelete = async () => {
     try {
-
-      await deleteRole(role.id, TEMP_USR).then(r => {
+      await deleteRole(role.id).then(r => {
         alert("Role deleted")
         onBack()
       })

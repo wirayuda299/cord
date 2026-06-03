@@ -1,5 +1,6 @@
 import { getPublicApiUrl } from "@/lib/env";
 import { TEMP_USR } from "@/lib/utils";
+import { getToken } from "@clerk/nextjs";
 
 type FriendRequestStatus = "pending" | "accepted" | "rejected";
 
@@ -16,11 +17,13 @@ export type FriendRequest = {
 };
 
 export async function getAllPendingRequest() {
-  const res = await fetch(`${getPublicApiUrl()}/friends/pending?user_id=${TEMP_USR}`, {
+  const token = await getToken()
+  const res = await fetch(`${getPublicApiUrl()}/friends/pending`, {
     method: "GET",
     headers: {
       "Content-Type": "application/json",
-      "Accept": "application/json"
+      "Accept": "application/json",
+      "Authorization": `Bearer ${token}`
     }
   })
   if (!res.ok) {
@@ -32,15 +35,16 @@ export async function getAllPendingRequest() {
 
 
 export async function cancelFriendRequest(id: string) {
+  const token = await getToken()
   const res = await fetch(`${getPublicApiUrl()}/friends/cancel`, {
     method: "DELETE",
     headers: {
       "Content-Type": "application/json",
-      "Accept": "application/json"
+      "Accept": "application/json",
+      "Authorization": `Bearer ${token}`
     },
     body: JSON.stringify({
       id,
-      current_user_id: TEMP_USR
     })
   })
   if (!res.ok) {
@@ -51,15 +55,16 @@ export async function cancelFriendRequest(id: string) {
 }
 
 export async function acceptFriendRequest(id: string) {
+  const token = await getToken()
   const res = await fetch(`${getPublicApiUrl()}/friends/accept`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      "Accept": "application/json"
+      "Accept": "application/json",
+      "Authorization": `Bearer ${token}`
     },
     body: JSON.stringify({
       id,
-      current_user_id: TEMP_USR
     })
   })
   if (!res.ok) {
@@ -70,15 +75,16 @@ export async function acceptFriendRequest(id: string) {
 }
 
 export async function declineFriendRequest(id: string) {
+  const token = await getToken()
   const res = await fetch(`${getPublicApiUrl()}/friends/decline`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      "Accept": "application/json"
+      "Accept": "application/json",
+      "Authorization": `Bearer ${token}`
     },
     body: JSON.stringify({
       id,
-      current_user_id: TEMP_USR
     })
   })
   if (!res.ok) {

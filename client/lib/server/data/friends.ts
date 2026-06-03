@@ -2,20 +2,30 @@ import 'server-only'
 
 import { getPublicApiUrl } from "@/lib/env"
 import { FriendListItem } from "@/lib/types/friends";
+import { auth } from '@clerk/nextjs/server';
 
-export async function getAllFriends(userId: string) {
-   const res = await fetch(`${getPublicApiUrl()}/friends?user_id=${userId}`, {
+export async function getAllFriends() {
+  try {
+    const { getToken } = await auth()
+    const token = await getToken()
+
+    const res = await fetch(`${getPublicApiUrl()}/friends`, {
       method: "GET",
       headers: {
-         "Content-Type": "application/json",
-      }
-   })
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+        "Authorization": `Bearer ${token}`
+      },
+    })
 
-   if (!res.ok) {
+    if (!res.ok) {
       throw new Error("Failed to fetch all friends")
-   }
+    }
 
-   const friends = await res.json()
+    const friends = await res.json()
 
-   return friends.data as FriendListItem[]
+    return friends.data as FriendListItem[]
+  } catch (e) {
+    throw e
+  }
 }

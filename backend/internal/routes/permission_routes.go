@@ -7,8 +7,9 @@ import (
 	"github.com/wirayuda299/backend/internal/handlers"
 )
 
-func RegisterPermissionRoute(r *mux.Router, ph *handlers.PermissionHandler) {
+func RegisterPermissionRoute(r *mux.Router, ph *handlers.PermissionHandler, middleware ...mux.MiddlewareFunc) {
 	pr := r.PathPrefix("/permission").Subrouter()
+	pr.Use(middleware...)
 
 	pr.HandleFunc("/find", ph.FindPermissionByID).Methods(http.MethodGet)
 }

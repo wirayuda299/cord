@@ -7,20 +7,20 @@ import (
 
 	"github.com/wirayuda299/backend/internal/databases"
 	"github.com/wirayuda299/backend/internal/httputil"
+	"github.com/wirayuda299/backend/internal/utils"
 )
 
 type DeleteConversationPayload struct {
-	ChannelID     string `json:"channel_id"`
-	CurrentUserID string `json:"current_user_id"`
+	ChannelID string `json:"channel_id"`
 }
 
 func DeleteConversation(ctx context.Context, db *databases.Container, p DeleteConversationPayload) *httputil.ErrorResponse {
+	userID, err := utils.GetSession(ctx)
+	if err != nil {
+		return &httputil.ErrorResponse{Err: err, Code: http.StatusUnauthorized}
+	}
 	if p.ChannelID == "" {
 		return &httputil.ErrorResponse{Err: errors.New("conversation id is missing"), Code: http.StatusBadRequest}
-	}
-
-	if p.CurrentUserID == "" {
-		return &httputil.ErrorResponse{Err: errors.New("user id is missing"), Code: http.StatusBadRequest}
 	}
 
 	cmd, err := db.Postgres.Exec(ctx, `
@@ -31,7 +31,7 @@ func DeleteConversation(ctx context.Context, db *databases.Container, p DeleteCo
 			AND cm.user_id = $2
 			AND ch.server_id IS NULL
 			AND ch.channel_type IN ('dm', 'group_dm')
-	`, p.ChannelID, p.CurrentUserID)
+	`, p.ChannelID, userID)
 	if err != nil {
 		return &httputil.ErrorResponse{Err: err, Code: http.StatusInternalServerError}
 	}

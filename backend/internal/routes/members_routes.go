@@ -7,8 +7,9 @@ import (
 	"github.com/wirayuda299/backend/internal/handlers"
 )
 
-func RegisterMemberRoutes(r *mux.Router, mh *handlers.MemberHandler) {
+func RegisterMemberRoutes(r *mux.Router, mh *handlers.MemberHandler, middleware ...mux.MiddlewareFunc) {
 	mr := r.PathPrefix("/members").Subrouter()
+	mr.Use(middleware...)
 
 	mr.HandleFunc("/is-join", mh.IsUserJoined).Methods(http.MethodGet)
 	mr.HandleFunc("/find-all", mh.FindAllMemberInServer).Methods(http.MethodGet)

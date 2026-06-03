@@ -20,18 +20,15 @@ export const threadSchema = z.object({
   name: z.string().min(4).max(50),
   message_id: z.string(),
   channel_id: z.string(),
-  created_by: z.string()
 })
 
 export type CreateThreadSchemaType = z.infer<typeof threadSchema>
 
 export default function CreateThreadForm({
   channel_id,
-  userId,
   messageId
 }: {
   channel_id: string,
-  userId: string
   messageId: string
 }) {
   const router = useRouter();
@@ -39,7 +36,6 @@ export default function CreateThreadForm({
     resolver: zodResolver(threadSchema),
     defaultValues: {
       channel_id: channel_id,
-      created_by: userId,
       message_id: messageId,
       name: ""
     },
@@ -49,7 +45,6 @@ export default function CreateThreadForm({
     try {
       const res = await createThread({
         channel_id: val.channel_id,
-        created_by: val.created_by,
         message_id: val.message_id,
         name: val.name
       })

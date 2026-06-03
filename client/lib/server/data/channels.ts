@@ -3,6 +3,7 @@ import "server-only"
 import { getPublicApiUrl } from "@/lib/env"
 import type { Channel } from "@/lib/types/channel"
 import { Category } from "@/lib/types/category"
+import { auth } from "@clerk/nextjs/server"
 
 
 type CategoryWithChannels = Category & {
@@ -21,11 +22,15 @@ export type GroupedChannels = {
 }
 export async function getAllChannel(serverID: string): Promise<GroupedChannels> {
   try {
-    const base = getPublicApiUrl()
-    const res = await fetch(`${base}/channel/find-all?serverID=${serverID}`, {
+    const { getToken } = await auth()
+    const token = await getToken()
+
+    const res = await fetch(`${getPublicApiUrl()}/channel/find-all?serverID=${serverID}`, {
       method: "GET",
       headers: {
-        "Content-Type": "application/json"
+        "Content-Type": "application/json",
+        Accept: "application/json",
+        "Authorization": `Bearer ${token}`
       },
       next: { tags: ["channels"] }
     })

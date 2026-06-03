@@ -4,9 +4,9 @@ import { UserRound } from "lucide-react";
 import ChatList from "@/components/chat/ChatList";
 import { getConversationById } from "@/lib/server/data/conversations";
 import { getAllMessagesByChannelId } from "@/lib/server/data/messages";
-import { TEMP_USR } from "@/lib/utils";
+import { auth } from "@clerk/nextjs/server";
+import { unauthorized } from "next/navigation";
 
-const CURRENT_USER_ID = TEMP_USR;
 const DM_SCOPE_ID = "dm";
 
 function isApiError(value: unknown): value is { error: string } {
@@ -23,11 +23,14 @@ export default async function DirectMessageDetail({
 }: {
   params: Promise<{ channel_id: string }>;
 }) {
+  const { userId } = await auth()
+
+  if (!userId) return unauthorized()
   const { channel_id } = await params;
 
   const [messages, conversation] = await Promise.all([
     getAllMessagesByChannelId(channel_id),
-    getConversationById(channel_id, CURRENT_USER_ID),
+    getConversationById(channel_id),
   ]);
 
   if (isApiError(messages)) {
@@ -64,6 +67,7 @@ export default async function DirectMessageDetail({
 
         <div className="flex-1 min-h-0 overflow-hidden">
           <ChatList
+            currentUser={userId}
             variant="dm"
             channel={conversation}
             serverId={DM_SCOPE_ID}

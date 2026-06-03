@@ -20,6 +20,7 @@ export default function PinnedMessageItem({
     }
 
   }, [])
+
   return (
     <>
       <header className="flex items-center justify-between bg-sidebar-primary sticky top-0 h-10 px-3">

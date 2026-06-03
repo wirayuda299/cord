@@ -8,11 +8,11 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/wirayuda299/backend/internal/databases"
 	"github.com/wirayuda299/backend/internal/httputil"
+	"github.com/wirayuda299/backend/internal/utils"
 )
 
 type CreateConversationPayload struct {
 	TargetedUserID string `json:"targeted_user_id"`
-	CurrentUserID  string `json:"current_user_id"`
 }
 
 type CreateConversationResult struct {
@@ -32,13 +32,10 @@ func CreateConversation(
 	db *databases.Container,
 	p CreateConversationPayload,
 ) (*CreateConversationResult, *httputil.ErrorResponse) {
-	if p.CurrentUserID == "" {
-		return nil, &httputil.ErrorResponse{
-			Err:  errors.New("current user id is required"),
-			Code: http.StatusUnauthorized,
-		}
+	userID, err := utils.GetSession(ctx)
+	if err != nil {
+		return nil, &httputil.ErrorResponse{Err: err, Code: http.StatusUnauthorized}
 	}
-
 	if p.TargetedUserID == "" {
 		return nil, &httputil.ErrorResponse{
 			Err:  errors.New("targeted user id is required"),
@@ -46,14 +43,14 @@ func CreateConversation(
 		}
 	}
 
-	if p.CurrentUserID == p.TargetedUserID {
+	if userID == p.TargetedUserID {
 		return nil, &httputil.ErrorResponse{
 			Err:  errors.New("cannot create DM with yourself"),
 			Code: http.StatusBadRequest,
 		}
 	}
 
-	dmKey := makeDMKey(p.CurrentUserID, p.TargetedUserID)
+	dmKey := makeDMKey(userID, p.TargetedUserID)
 
 	tx, beginErr := db.Postgres.Begin(ctx)
 	if beginErr != nil {
@@ -73,7 +70,7 @@ func CreateConversation(
 
 	var channelID string
 
-	err := tx.QueryRow(ctx, `
+	err = tx.QueryRow(ctx, `
 		SELECT id::text
 		FROM channels
 		WHERE server_id IS NULL
@@ -106,7 +103,7 @@ func CreateConversation(
 				$1
 			)
 			RETURNING id
-		`, p.CurrentUserID, dmKey).Scan(&channelID)
+		`, userID, dmKey).Scan(&channelID)
 		if err != nil {
 			return nil, &httputil.ErrorResponse{
 				Err:  err,
@@ -119,7 +116,7 @@ func CreateConversation(
 		INSERT INTO channel_members (channel_id, user_id)
 		VALUES ($1, $2), ($1, $3)
 		ON CONFLICT (channel_id, user_id) DO NOTHING
-	`, channelID, p.CurrentUserID, p.TargetedUserID); err != nil {
+	`, channelID, userID, p.TargetedUserID); err != nil {
 		return nil, &httputil.ErrorResponse{
 			Err:  err,
 			Code: http.StatusInternalServerError,

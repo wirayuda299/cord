@@ -1,7 +1,7 @@
 import { getAllFriends } from "@/lib/server/data/friends";
 import { startConversation } from "@/lib/server/actions/conversations";
 import { FriendListItem } from "@/lib/types/friends";
-import { cn, TEMP_USR } from "@/lib/utils";
+import { cn } from "@/lib/utils";
 import { MessageSquare } from "lucide-react";
 import Image from "next/image";
 
@@ -59,7 +59,7 @@ function FriendRow({ avatar_url, username, user_id }: FriendListItem) {
 }
 
 export default async function AllFriends() {
-  const allFriend = await getAllFriends(TEMP_USR);
+  const allFriend = await getAllFriends();
 
   if (allFriend && allFriend.length <= 0) return "No friend yet";
   return (
