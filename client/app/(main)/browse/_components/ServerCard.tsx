@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation'
 import { cn } from '@/lib/utils'
 import { joinServer } from '@/lib/server/actions/servers'
 import type { BrowsableServer } from '@/lib/types/server'
+import { useAuth } from '@clerk/nextjs'
 
 const PALETTE = [
   '#5865f2', '#3ba55d', '#faa61a', '#ed4245', '#9c84ef',
@@ -28,10 +29,16 @@ export default function ServerCard({ server }: { server: BrowsableServer }) {
   const [isPending, startTransition] = useTransition()
   const [joined, setJoined] = useState(false)
   const color = accentColor(server.name)
+  const { userId } = useAuth()
 
   const handleJoin = () => {
+    if (!userId) {
+      alert('You must be signed in to join a server')
+      return
+    }
+
     startTransition(async () => {
-      const res = await joinServer(server.id, TEMP_USR)
+      const res = await joinServer(server.id, userId)
       if (res?.error) {
         alert(res.error)
         return

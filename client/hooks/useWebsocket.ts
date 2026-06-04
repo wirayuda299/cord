@@ -7,11 +7,16 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 export type { Message } from "@/lib/types/chat";
 
-export type ConnectionStatus = "connecting" | "connected" | "disconnected" | "error";
+export type ConnectionStatus =
+  | "connecting"
+  | "connected"
+  | "disconnected"
+  | "error";
 
 type Options = {
   onMessage: (msg: ResponseMessage) => void;
   onDelete?: (id: string) => void;
+  onEvent?: (event: unknown) => void;
   onClose?: () => void;
   onError?: (e: Event) => void;
 };
@@ -19,7 +24,7 @@ type Options = {
 export function useWebSocket(
   serverId: string,
   channelId: string,
-  options: Options
+  options: Options,
 ) {
   const { getToken } = useAuth();
   const wsRef = useRef<WebSocket | null>(null);
@@ -53,7 +58,7 @@ export function useWebSocket(
       }
 
       const ws = new WebSocket(
-        `${getPublicWsUrl()}/ws?serverId=${serverId}&channelId=${channelId}&token=${token}`
+        `${getPublicWsUrl()}/ws?serverId=${serverId}&channelId=${channelId}&token=${token}`,
       );
       wsRef.current = ws;
 
@@ -69,29 +74,38 @@ export function useWebSocket(
           const data = JSON.parse(e.data);
           if (data.type === "message_deleted") {
             optionsRef.current.onDelete?.(data.id);
+          } else if (data.type !== undefined) {
+            optionsRef.current.onEvent?.(data);
+            console.log(data);
           } else {
             optionsRef.current.onMessage(data);
           }
         } catch (e) {
-          console.log(e)
+          console.log(e);
         }
       };
 
-      ws.onclose = (e) => {
+      ws.onmessage = (e) => {
         if (!active || wsRef.current !== ws) return;
 
-        setStatus("disconnected");
-        optionsRef.current.onClose?.();
-        if (e.code !== 1000 && e.code !== 1001) {
-          reconnectTimeout.current = setTimeout(connect, 3000);
+        const raw = typeof e.data === "string" ? e.data : "";
+        // server may send multiple JSON objects separated by newlines
+        const parts = raw.split('\n').map((s) => s.trim()).filter(Boolean);
+
+        for (const part of parts) {
+          try {
+            const data = JSON.parse(part);
+            if (data && data.type === "message_deleted") {
+              optionsRef.current.onDelete?.(data.id);
+            } else if (data && data.type !== undefined) {
+              optionsRef.current.onEvent?.(data);
+            } else {
+              optionsRef.current.onMessage(data);
+            }
+          } catch (err) {
+            console.warn("ws: failed to parse message part", err, part);
+          }
         }
-      };
-
-      ws.onerror = () => {
-        if (!active || wsRef.current !== ws) return;
-
-        setStatus("error");
-        ws.close();
       };
     }
 

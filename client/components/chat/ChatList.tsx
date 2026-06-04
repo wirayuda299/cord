@@ -26,24 +26,10 @@ type Props = {
     username: string;
     avatar_url: string;
   };
-  currentUser: string
+  currentUser?: string
 };
 
-function appendUniqueMessages(
-  currentMessages: Message[],
-  incomingMessages: Message[]
-) {
-  const seen = new Set(currentMessages.map((message) => message.id));
-  const next = [...currentMessages];
 
-  for (const message of incomingMessages) {
-    if (seen.has(message.id)) continue;
-    seen.add(message.id);
-    next.push(message);
-  }
-
-  return next;
-}
 
 export default function ChatList({
   serverId,
@@ -54,7 +40,9 @@ export default function ChatList({
   thread_id,
   currentUser
 }: Props) {
+  const currUser = currentUser ?? "";
   const [messages, setMessages] = useState<Message[]>(historyMessages);
+  const [onlineIds, setOnlineIds] = useState<Set<string>>(new Set());
   const bottomRef = useRef<HTMLDivElement>(null);
   const isDirectMessage =
     variant === "dm" ||
@@ -124,27 +112,40 @@ export default function ChatList({
         if (m.id !== id) return m;
         const reactions = m.reactions ?? [];
         const hasReacted = reactions.some(
-          (r) => r.user_id === currentUser && r.emoji === emoji
+          (r) => r.user_id === currUser && r.emoji === emoji
         );
         if (hasReacted) {
           return {
             ...m,
-            reactions: reactions.filter(
-              (r) => !(r.user_id === currentUser && r.emoji === emoji)
-            ),
+            reactions: reactions.filter((r) => !(r.user_id === currUser && r.emoji === emoji)),
           };
         }
         return {
           ...m,
-          reactions: [...reactions, { user_id: currentUser, emoji }],
+          reactions: [...reactions, { user_id: currUser, emoji }],
         };
       })
     );
-  }, []);
+  }, [currUser]);
 
   const { sendMessage, status } = useWebSocket(serverId, channel.id, {
     onMessage: handleMessages,
     onDelete: handleDelete,
+    onEvent: (ev: any) => {
+      if (ev && ev.type === "user_list") {
+        setOnlineIds(new Set(ev.user_ids));
+      } else if (ev && ev.type === "user_status") {
+        setOnlineIds((prev) => {
+          const next = new Set(prev);
+          if (ev.action === "connected") {
+            next.add(ev.user_id);
+          } else if (ev.action === "disconnected") {
+            next.delete(ev.user_id);
+          }
+          return next;
+        });
+      }
+    },
     onClose: () => console.log("disconnected"),
     onError: (e) => console.error("ws error", e),
   });
@@ -152,8 +153,6 @@ export default function ChatList({
   useEffect(() => {
     setMessages(historyMessages);
   }, [historyMessages]);
-
-
 
   const isThread = Boolean(thread_id);
 
@@ -173,7 +172,7 @@ export default function ChatList({
           <div className="flex flex-col gap-5 px-4 py-4">
             {messages.map((m) => (
               <ChatItem
-                currentUser={currentUser}
+                currentUser={currUser}
                 variant="channel"
                 key={m.id}
                 message={m}
@@ -197,7 +196,7 @@ export default function ChatList({
           )}
           <ChatForm
             thread_id={thread_id ?? null}
-            userId={currentUser}
+            userId={currUser}
             channelName={displayName}
             channelId={channel.id}
             placeholder={
@@ -213,7 +212,7 @@ export default function ChatList({
         </div>
       </div>
 
-      {!isDirectMessage && <MemberList isOpen={isMemberOpen} serverId={serverId} />}
+      {!isDirectMessage && <MemberList isOpen={isMemberOpen} serverId={serverId} onlineIds={onlineIds} />}
     </div>
   );
 }

@@ -14,18 +14,20 @@ import { getAllChannel } from "@/lib/server/data/channels";
 import CopyServerIDButton from "@/components/server/CopyServerIDButton";
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import Invites from "@/components/server/Invites";
-import { auth } from "@clerk/nextjs/server";
+import { currentUser } from "@clerk/nextjs/server";
 import { unauthorized } from "next/navigation";
+import Image from "next/image";
 
 export default async function ServerSidebar({
   serverId,
 }: {
   serverId: string;
 }) {
-  const channels = await getAllChannel(serverId);
-  const { userId } = await auth()
 
-  if (!userId) unauthorized()
+  const [user, channels] = await Promise.all([currentUser(), getAllChannel(serverId)])
+
+  if (!user) unauthorized()
+
 
   return (
     <aside className="bg-overlay min-w-64 w-64 h-screen flex flex-col rounded-l-2xl">
@@ -42,11 +44,11 @@ export default async function ServerSidebar({
               />
             </DropdownMenuTrigger>
             <DropdownMenuContent className="w-52 p-2 bg-sidebar-secondary shadow backdrop-blur-lg text-white space-y-3">
-              {userId === channels.server.created_by && (
+              {user.id === channels.server.created_by && (
                 <InviteFriendDialog />
               )}
               <CreateChannel serverID={serverId} />
-              {userId === channels.server.created_by && (
+              {user.id === channels.server.created_by && (
                 <ServerSettingDialog
                   serverId={serverId}
                   serverOwner={channels.server.created_by}
@@ -70,6 +72,21 @@ export default async function ServerSidebar({
 
       <div className="flex flex-col overflow-y-auto h-full">
         <ChannelList channels={channels} />
+      </div>
+
+      <div className="sticky bottom-0 p-2 flex items-center gap-2 border-t border-sidebar-secondary">
+        <Image
+          src={user.imageUrl}
+          alt="User Image"
+          width={30}
+          height={30}
+          className="rounded-full size-10 object-cover"
+        />
+
+        <div>
+          <p className="text-sm text-white">{user.username}</p>
+          <p className="text-xs text-white/70 truncate">{`${user.primaryEmailAddress?.emailAddress}`}</p>
+        </div>
       </div>
     </aside>
   );

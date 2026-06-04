@@ -14,6 +14,19 @@ type BroadcastPayload struct {
 	Messages  []services.MessageRow `json:"messages"`
 }
 
+type UserStatusPayload struct {
+	Type     string `json:"type"`
+	ServerId string `json:"server_id"`
+	UserId   string `json:"user_id"`
+	Action   string `json:"action"`
+}
+
+type UserListPayload struct {
+	Type     string   `json:"type"`
+	ServerId string   `json:"server_id"`
+	UserIds  []string `json:"user_ids"`
+}
+
 // hub is brain of the application that handles all the connections and messages
 // between the client and the server
 type Hub struct {
@@ -54,24 +67,45 @@ func (h *Hub) Run() {
 		select {
 		case client := <-h.register:
 			h.mu.Lock()
+			userAlreadyConnected := false
+			if servers, ok := h.clients[client.ServerID]; ok {
+				for _, channels := range servers {
+					for c := range channels {
+						if c.UserID == client.UserID {
+							userAlreadyConnected = true
+							break
+						}
+					}
+					if userAlreadyConnected {
+						break
+					}
+				}
+			}
+
 			if h.clients[client.ServerID] == nil {
 				h.clients[client.ServerID] = make(map[string]map[*Client]bool)
 			}
-			if h.clients[client.ServerID][client.channelID] == nil {
-				h.clients[client.ServerID][client.channelID] = make(map[*Client]bool)
+			if h.clients[client.ServerID][client.ChannelID] == nil {
+				h.clients[client.ServerID][client.ChannelID] = make(map[*Client]bool)
 			}
-			h.clients[client.ServerID][client.channelID][client] = true
+			h.clients[client.ServerID][client.ChannelID][client] = true
 			h.mu.Unlock()
+
+			if !userAlreadyConnected {
+				h.BroadcastUserStatus(client.ServerID, client.UserID, "connected")
+			}
+			// send current online user list to the newly connected client
+			h.SendUserListToClient(client.ServerID, client)
 
 		case client := <-h.unregister:
 			h.mu.Lock()
 			if servers, ok := h.clients[client.ServerID]; ok {
-				if channels, ok := servers[client.channelID]; ok {
+				if channels, ok := servers[client.ChannelID]; ok {
 					if _, exists := channels[client]; exists {
 						delete(channels, client)
 						close(client.send)
 						if len(channels) == 0 {
-							delete(servers, client.channelID)
+							delete(servers, client.ChannelID)
 						}
 						if len(servers) == 0 {
 							delete(h.clients, client.ServerID)
@@ -79,23 +113,38 @@ func (h *Hub) Run() {
 					}
 				}
 			}
+
+			userStillConnected := false
+			if servers, ok := h.clients[client.ServerID]; ok {
+				for _, channels := range servers {
+					for c := range channels {
+						if c.UserID == client.UserID {
+							userStillConnected = true
+							break
+						}
+					}
+					if userStillConnected {
+						break
+					}
+				}
+			}
 			h.mu.Unlock()
 
-		case message := <-h.broadcast:
-			h.mu.RLock()
-			servers := h.clients[message.ServerId]
-			h.mu.RUnlock()
+			if !userStillConnected {
+				h.BroadcastUserStatus(client.ServerID, client.UserID, "disconnected")
+			}
 
+		case message := <-h.broadcast:
+			b, err := json.Marshal(message)
+			if err != nil {
+				log.Printf("broadcast: failed to marshal message: %v", err)
+				continue
+			}
+
+			h.mu.Lock()
+			servers := h.clients[message.ServerId]
 			if servers != nil {
-				log.Println("Servers -> ", servers)
 				if clients, ok := servers[message.ChannelId]; ok {
-					log.Println("Clients -> ", clients)
-					b, err := json.Marshal(message)
-					if err != nil {
-						log.Printf("broadcast: failed to marshal message: %v", err)
-						continue
-					}
-					h.mu.Lock()
 					for client := range clients {
 						select {
 						case client.send <- b:
@@ -104,10 +153,51 @@ func (h *Hub) Run() {
 							delete(clients, client)
 						}
 					}
-					h.mu.Unlock()
+				}
+			}
+			h.mu.Unlock()
+		}
+	}
+}
+
+// SendUserListToClient sends a deduplicated list of connected user IDs for the given server
+// to a single client (typically the client that just connected).
+func (h *Hub) SendUserListToClient(serverId string, client *Client) {
+	h.mu.RLock()
+	servers := h.clients[serverId]
+	userSet := make(map[string]bool)
+	if h.clients[serverId] != nil {
+		for _, clients := range servers {
+			for c := range clients {
+				if c.UserID != "" {
+					userSet[c.UserID] = true
 				}
 			}
 		}
+	}
+	h.mu.RUnlock()
+
+	ids := make([]string, 0, len(userSet))
+	for id := range userSet {
+		ids = append(ids, id)
+	}
+
+	payload := UserListPayload{
+		Type:     "user_list",
+		ServerId: serverId,
+		UserIds:  ids,
+	}
+
+	data, err := json.Marshal(payload)
+	if err != nil {
+		log.Printf("SendUserListToClient: failed to marshal payload: %v", err)
+		return
+	}
+
+	select {
+	case client.send <- data:
+	default:
+		// Channel might be full/closed; defer cleanup to unregister
 	}
 }
 
@@ -124,13 +214,12 @@ func (h *Hub) BroadcastDelete(serverId, channelId, messageId string) {
 		return
 	}
 
-	h.mu.RLock()
-	servers := h.clients[serverId]
-	h.mu.RUnlock()
+	h.mu.Lock()
+	defer h.mu.Unlock()
 
+	servers := h.clients[serverId]
 	if servers != nil {
 		if clients, ok := servers[channelId]; ok {
-			h.mu.Lock()
 			for client := range clients {
 				select {
 				case client.send <- data:
@@ -139,7 +228,37 @@ func (h *Hub) BroadcastDelete(serverId, channelId, messageId string) {
 					delete(clients, client)
 				}
 			}
-			h.mu.Unlock()
+		}
+	}
+}
+
+func (h *Hub) BroadcastUserStatus(serverId, userId, action string) {
+	payload := UserStatusPayload{
+		Type:     "user_status",
+		ServerId: serverId,
+		UserId:   userId,
+		Action:   action,
+	}
+	data, err := json.Marshal(payload)
+	if err != nil {
+		log.Printf("BroadcastUserStatus: failed to marshal payload: %v", err)
+		return
+	}
+
+	h.mu.Lock()
+	defer h.mu.Unlock()
+
+	servers := h.clients[serverId]
+	if h.clients[serverId] != nil {
+		for _, clients := range servers {
+			for client := range clients {
+				select {
+				case client.send <- data:
+				default:
+					close(client.send)
+					delete(clients, client)
+				}
+			}
 		}
 	}
 }

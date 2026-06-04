@@ -1,5 +1,4 @@
 import { getPublicApiUrl } from "@/lib/env";
-import { TEMP_USR } from "@/lib/utils";
 import { getToken } from "@clerk/nextjs";
 
 type FriendRequestStatus = "pending" | "accepted" | "rejected";

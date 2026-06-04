@@ -42,7 +42,8 @@ type Client struct {
 	Conn      *websocket.Conn
 	send      chan []byte
 	ServerID  string
-	channelID string
+	ChannelID string
+	UserID    string
 	ctx       context.Context
 	cancel    context.CancelFunc
 }
@@ -86,7 +87,7 @@ func (c *Client) ReadIncomingMessage(db *databases.Container) {
 			continue
 		}
 
-		row, err := messages.Send(c.ctx, m, db, c.channelID)
+		row, err := messages.Send(c.ctx, m, db, c.ChannelID)
 		if err != nil {
 			log.Println("error sending message", err.Error())
 			continue
@@ -94,7 +95,7 @@ func (c *Client) ReadIncomingMessage(db *databases.Container) {
 
 		c.hub.broadcast <- BroadcastPayload{
 			ServerId:  c.ServerID,
-			ChannelId: c.channelID,
+			ChannelId: c.ChannelID,
 			Messages:  []services.MessageRow{*row},
 		}
 	}
@@ -184,15 +185,17 @@ func ServeWs(hub *Hub, db *databases.Container, w http.ResponseWriter, r *http.R
 	ctx, cancel := context.WithCancel(clerk.ContextWithSessionClaims(context.Background(), claims))
 	serverID := r.URL.Query().Get("serverId")
 	channelID := r.URL.Query().Get("channelId")
+	userID := claims.Subject
 
 	client := &Client{
 		hub:       hub,
 		Conn:      conn,
 		send:      make(chan []byte, 256),
 		ServerID:  serverID,
+		ChannelID: channelID,
+		UserID:    userID,
 		ctx:       ctx,
 		cancel:    cancel,
-		channelID: channelID,
 	}
 	client.hub.register <- client
 
