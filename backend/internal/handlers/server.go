@@ -12,8 +12,7 @@ import (
 )
 
 type JoinServerWithCode struct {
-	Code   string `json:"code"`
-	UserId string `json:"user_id"`
+	Code string `json:"code"`
 }
 
 type ServerHandler struct {

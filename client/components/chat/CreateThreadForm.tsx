@@ -26,10 +26,12 @@ export type CreateThreadSchemaType = z.infer<typeof threadSchema>
 
 export default function CreateThreadForm({
   channel_id,
-  messageId
+  messageId,
+  server_id
 }: {
   channel_id: string,
   messageId: string
+  server_id: string
 }) {
   const router = useRouter();
   const form = useForm<CreateThreadSchemaType>({
@@ -46,7 +48,8 @@ export default function CreateThreadForm({
       const res = await createThread({
         channel_id: val.channel_id,
         message_id: val.message_id,
-        name: val.name
+        name: val.name,
+        server_id
       })
 
       if (!res.success) {

@@ -7,8 +7,9 @@ import MembersTab from "./members"
 import { Role } from "@/lib/types/role"
 import useSWR from "swr"
 import { findPermissionByRoleId } from "@/lib/client/api/permissions"
-import { PERMISSION_LIST } from "@/constants/permissions"
 import { deleteRole } from "@/lib/client/api/roles"
+import { PERMISSIONS } from "@/constants/permissions"
+import { useAuth } from "@clerk/nextjs"
 
 type Tab = "display" | "permissions" | "members"
 
@@ -117,14 +118,14 @@ function DisplayTab({ role }: { role: Role }) {
 
 function PermissionsTab({ permissionIds }: { permissionIds: string[] }) {
   const enabledSet = new Set(permissionIds)
-  const enabledCount = PERMISSION_LIST.filter((p) => enabledSet.has(p.label)).length
+  const enabledCount = PERMISSIONS.filter((p) => enabledSet.has(p.label)).length
 
   return (
     <div className="flex flex-col gap-6">
       <p className="text-xs text-white/30">
-        {enabledCount} of {PERMISSION_LIST.length} permissions enabled
+        {enabledCount} of {PERMISSIONS.length} permissions enabled
       </p>
-      {PERMISSION_LIST.map((perm) => {
+      {PERMISSIONS.map((perm) => {
         const on = enabledSet.has(perm.label)
         return (
           <div
@@ -158,18 +159,29 @@ function PermissionsTab({ permissionIds }: { permissionIds: string[] }) {
 }
 
 
-export default function RoleDetailView({
-  role,
-  onBack,
-  onEdit,
-  serverOwner
-}: {
+type RoleDetailViewProps = {
   role: Role
   onBack: () => void
   onEdit: (permissions: string[]) => void,
   serverOwner: string
-}) {
-  const { data, isLoading } = useSWR("/api/permission", () => findPermissionByRoleId(role.id))
+  serverID: string
+}
+
+export default function RoleDetailView({
+  role,
+  onBack,
+  onEdit,
+  serverOwner,
+  serverID
+}: RoleDetailViewProps) {
+  const { getToken } = useAuth()
+  const { data, isLoading } = useSWR(
+    role.id ? ["/api/permission", role.id] : null,
+    async () => {
+      const token = await getToken()
+      return await findPermissionByRoleId(role.id, token)
+    }
+  )
   const [activeTab, setActiveTab] = useState<Tab>("display")
 
   const tabs: { id: Tab; label: string; icon: React.ReactNode }[] = [
@@ -180,7 +192,7 @@ export default function RoleDetailView({
 
   const handleDelete = async () => {
     try {
-      await deleteRole(role.id).then(r => {
+      await deleteRole(role.id, serverID).then(r => {
         alert("Role deleted")
         onBack()
       })

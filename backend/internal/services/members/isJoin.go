@@ -26,5 +26,18 @@ func IsUserJoinedServer(ctx context.Context, db *databases.Container, serverID s
 		return false, &httputil.ErrorResponse{Err: err, Code: http.StatusInternalServerError}
 	}
 
-	return joined, nil
+	isOwnerQuery := "SELECT created_by FROM servers WHERE id = $1"
+	var owner string
+	err = db.Postgres.QueryRow(ctx, isOwnerQuery, serverID).Scan(&owner)
+	if err != nil {
+		return false, &httputil.ErrorResponse{Err: err, Code: http.StatusInternalServerError}
+	}
+
+	if owner == userID {
+		joined = true
+		return joined, nil
+	} else {
+		return joined, nil
+	}
+
 }

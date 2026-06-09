@@ -37,13 +37,13 @@ func (mh *MessageHandler) FindAllPinnedMessages(w http.ResponseWriter, r *http.R
 }
 
 func (mh *MessageHandler) DeletePinnedMessage(w http.ResponseWriter, r *http.Request) {
-	var id string
-	err := json.NewDecoder(r.Body).Decode(&id)
-	if err != nil {
+	var p pin.DeletePinMessagePayload
+	if err := json.NewDecoder(r.Body).Decode(&p); err != nil {
 		httputil.WriteErrorResponse(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	deleteErr := pin.DeletePinMessage(r.Context(), mh.db, id)
+
+	deleteErr := pin.DeletePinMessage(r.Context(), mh.db, p)
 	if deleteErr != nil {
 		httputil.WriteErrorResponse(w, deleteErr.Err.Error(), deleteErr.Code)
 		return

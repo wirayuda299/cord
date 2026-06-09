@@ -22,7 +22,12 @@ func GetAllServersByUserID(ctx context.Context, db *databases.Container) ([]Serv
 		return nil, &httputil.ErrorResponse{Err: err, Code: http.StatusUnauthorized}
 	}
 
-	rows, err := db.Postgres.Query(ctx, `select id, name, COALESCE(logo, '') as logo from servers where created_by = $1`, userID)
+	rows, err := db.Postgres.Query(ctx, `
+		SELECT s.id, s.name, COALESCE(s.logo, '') as logo 
+		FROM servers s
+		INNER JOIN members m ON s.id = m.server_id
+		WHERE m.user_id = $1
+	`, userID)
 	if err != nil {
 		return nil, &httputil.ErrorResponse{
 			Err:  err,

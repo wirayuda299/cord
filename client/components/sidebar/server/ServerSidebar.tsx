@@ -14,9 +14,11 @@ import { getAllChannel } from "@/lib/server/data/channels";
 import CopyServerIDButton from "@/components/server/CopyServerIDButton";
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import Invites from "@/components/server/Invites";
-import { currentUser } from "@clerk/nextjs/server";
+import { auth, currentUser } from "@clerk/nextjs/server";
 import { unauthorized } from "next/navigation";
 import Image from "next/image";
+import { hasPermission } from "@/lib/client/api/permissions";
+import { PermissionKey } from "@/constants/permissions";
 
 export default async function ServerSidebar({
   serverId,
@@ -24,9 +26,13 @@ export default async function ServerSidebar({
   serverId: string;
 }) {
 
-  const [user, channels] = await Promise.all([currentUser(), getAllChannel(serverId)])
-
+  const user = await currentUser()
   if (!user) unauthorized()
+
+
+  const { getToken } = await auth()
+
+  const [hasPermManageChannel, channels] = await Promise.all([hasPermission(serverId, PermissionKey.ManageChannel, await getToken()), getAllChannel(serverId)])
 
 
   return (
@@ -47,14 +53,18 @@ export default async function ServerSidebar({
               {user.id === channels.server.created_by && (
                 <InviteFriendDialog />
               )}
-              <CreateChannel serverID={serverId} />
+              {(user.id === channels.server.created_by || hasPermManageChannel) && (
+                <CreateChannel serverID={serverId} />
+              )}
               {user.id === channels.server.created_by && (
                 <ServerSettingDialog
                   serverId={serverId}
                   serverOwner={channels.server.created_by}
                 />
               )}
-              <CreateCategoryDialog serverId={serverId} />
+              {(user.id === channels.server.created_by || hasPermManageChannel) && (
+                <CreateCategoryDialog serverId={serverId} />
+              )}
               <EditPerServerProfileDialog serverId={serverId} />
               <CopyServerIDButton serverID={serverId} />
             </DropdownMenuContent>
@@ -76,7 +86,7 @@ export default async function ServerSidebar({
 
       <div className="sticky bottom-0 p-2 flex items-center gap-2 border-t border-sidebar-secondary">
         <Image
-          src={user.imageUrl}
+          src={user?.imageUrl ?? ""}
           alt="User Image"
           width={30}
           height={30}
@@ -84,7 +94,7 @@ export default async function ServerSidebar({
         />
 
         <div>
-          <p className="text-sm text-white">{user.username}</p>
+          <p className="text-sm text-white">{user?.username}</p>
           <p className="text-xs text-white/70 truncate">{`${user.primaryEmailAddress?.emailAddress}`}</p>
         </div>
       </div>

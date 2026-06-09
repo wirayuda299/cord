@@ -14,7 +14,7 @@ import { createRole } from "@/lib/server/actions/role"
 import { updateRole } from "@/lib/server/actions/role"
 import { Role } from "@/lib/types/role"
 import { useParams } from "next/navigation"
-import { PERMISSION_LIST } from "@/constants/permissions"
+import { PERMISSIONS } from "@/constants/permissions"
 import { ROLE_COLORS } from "@/constants/role"
 
 
@@ -114,11 +114,11 @@ export default function RoleFormView(props: Props) {
       server_id: params.id as string,
       role_id: props.role.id,
     }
-    if (dirty.name)        payload.name           = values.name
-    if (dirty.role_color)  payload.color          = values.role_color
-    if (dirty.icon)        payload.icon           = values.icon ?? ""
-    if (dirty.hoist)       payload.hoist          = values.hoist
-    if (dirty.mentionable) payload.mentionable    = values.mentionable
+    if (dirty.name) payload.name = values.name
+    if (dirty.role_color) payload.color = values.role_color
+    if (dirty.icon) payload.icon = values.icon ?? ""
+    if (dirty.hoist) payload.hoist = values.hoist
+    if (dirty.mentionable) payload.mentionable = values.mentionable
     if (dirty.permissions) payload.permission_ids = values.permissions
 
     const res = await updateRole(payload)
@@ -332,9 +332,9 @@ export default function RoleFormView(props: Props) {
           {activeTab === "permissions" && (
             <div className="flex flex-col gap-6">
               <p className="text-xs text-white/30">
-                {existing.length} of {PERMISSION_LIST.length} permissions enabled
+                {existing.length} of {PERMISSIONS.length} permissions enabled
               </p>
-              {PERMISSION_LIST.map((perm) => (
+              {PERMISSIONS.map((perm) => (
                 <div
                   key={perm.label}
                   onClick={() => togglePermission(perm.label)}

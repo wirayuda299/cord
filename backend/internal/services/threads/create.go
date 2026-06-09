@@ -7,6 +7,7 @@ import (
 
 	"github.com/wirayuda299/backend/internal/databases"
 	"github.com/wirayuda299/backend/internal/httputil"
+	"github.com/wirayuda299/backend/internal/services/permissions"
 	"github.com/wirayuda299/backend/internal/utils"
 )
 
@@ -14,12 +15,29 @@ type CreateThreadPayload struct {
 	ChannelID string `json:"channel_id"`
 	Name      string `json:"name"`
 	MessageID string `json:"message_id"`
+	ServerID  string `json:"server_id"`
 }
 
 func CreateThread(ctx context.Context, db *databases.Container, p *CreateThreadPayload) *httputil.ErrorResponse {
+
 	userID, err := utils.GetSession(ctx)
 	if err != nil {
 		return &httputil.ErrorResponse{Err: err, Code: http.StatusUnauthorized}
+	}
+
+	hasPerm, err := permissions.HasPermission(&permissions.HasPermissionType{
+		Ctx:        ctx,
+		Db:         db,
+		ServerID:   p.ServerID,
+		Permission: "manage_thread",
+	})
+
+	if err != nil {
+		return &httputil.ErrorResponse{Err: err, Code: http.StatusInternalServerError}
+	}
+
+	if !hasPerm {
+		return &httputil.ErrorResponse{Err: errors.New("you not allowed to create channel"), Code: http.StatusUnauthorized}
 	}
 
 	if p == nil {

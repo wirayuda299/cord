@@ -2,13 +2,15 @@
 
 import { format } from "date-fns";
 import Image from "next/image";
-import { memo, useMemo, useState, useCallback } from "react";
-import { AlertCircle, Loader2, Reply, Check, X, MessageCircle } from "lucide-react";
+import { memo, useMemo, useState, useCallback, useEffect } from "react";
+import { AlertCircle, Loader2, Reply, Check, X, MessageCircle, Trash } from "lucide-react";
 
 import MessageMenu from "./MessageMenu";
 import type { Message } from "@/lib/types/chat";
 import { addReaction, editMessage, removeReaction } from "@/lib/client/api/messages";
 import Link from "next/link";
+import { Dialog, DialogClose, DialogContent, DialogTitle, DialogTrigger } from "../ui/dialog";
+import { deleteThread } from "@/lib/server/actions/threads";
 
 type ChatItemVariant = "channel" | "thread-parent" | "thread-reply";
 
@@ -21,6 +23,7 @@ type ChatItemProps = {
   onToggleReaction?: (messageId: string, emoji: string) => void;
   variant?: ChatItemVariant;
   currentUser: string
+  hasPermissionManageMessages: boolean
 };
 
 type ReplyThreadProps = {
@@ -70,7 +73,7 @@ function AttachmentImage({
   const isBlob = src.startsWith("blob:");
 
   const img = isBlob ? (
-    <img src={src} className="max-w-75 rounded" alt="attachment" />
+    <Image width={300} height={300} src={src} className="max-w-75 rounded" alt="attachment" />
   ) : (
     <Image
       className="rounded object-contain"
@@ -200,31 +203,38 @@ function ChatItem({
   message,
   serverId,
   handleDelete,
-  onCreateThread,
   onEdit,
   onToggleReaction,
   currentUser,
   variant = "channel",
+  hasPermissionManageMessages
 }: ChatItemProps) {
   const isFailed = message._status === "failed";
   const [isEditing, setIsEditing] = useState(false);
   const [editContent, setEditContent] = useState(message.content);
   const [isSaving, setIsSaving] = useState(false);
 
-  const canCreateThread =
-    variant === "channel" && !isFailed && Boolean(onCreateThread);
+  const [isWithinEditWindow, setIsWithinEditWindow] = useState(() => {
+    const createdAt = new Date(message.created_at).getTime();
+    const remaining = 5 * 60 * 1000 - (Date.now() - createdAt);
+    return remaining > 0;
+  });
 
-  const canDelete =
-    !isFailed && Boolean(handleDelete);
+  useEffect(() => {
+    const createdAt = new Date(message.created_at).getTime();
+    const remaining = 5 * 60 * 1000 - (Date.now() - createdAt);
 
-  const isWithinEditWindow = useMemo(() => {
-    const created = new Date(message.created_at);
-    return Date.now() - created.getTime() < 5 * 60 * 1000;
+    if (remaining <= 0) return; // already outside edit window
+
+    const timer = window.setTimeout(() => {
+      setIsWithinEditWindow(false);
+    }, remaining);
+
+    return () => window.clearTimeout(timer);
   }, [message.created_at]);
 
-  const canEdit = !isFailed && onEdit && isWithinEditWindow;
+  const canEdit = !isFailed && message.user_id === currentUser && isWithinEditWindow;
 
-  const showMenu = !isFailed && (canCreateThread || canDelete || canEdit || Boolean(onToggleReaction));
 
   const handleToggleReaction = useCallback(
     async (emoji: string) => {
@@ -240,10 +250,10 @@ function ChatItem({
         }
         onToggleReaction(message.id, emoji);
       } catch (e) {
-        console.error(e);
+        alert(e)
       }
     },
-    [message.id, message.reactions, onToggleReaction],
+    [currentUser, message.id, message.reactions, onToggleReaction],
   );
 
   const handleSaveEdit = useCallback(async () => {
@@ -266,7 +276,7 @@ function ChatItem({
     } finally {
       setIsSaving(false);
     }
-  }, [editContent, message.id, message.content, message.channel_id, onEdit]);
+  }, [editContent, message.content, message.id, message.channel_id, serverId, onEdit]);
 
   const handleCancelEdit = useCallback(() => {
     setEditContent(message.content);
@@ -281,7 +291,7 @@ function ChatItem({
       className={`group relative px-4 py-1 transition-colors rounded-md hover:bg-white/5 ${isFailed ? "opacity-60" : ""
         }`}
     >
-      {variant !== "thread-parent" && (
+      {message.parent_content && (
         <ReplyThread
           parent_content={message.parent_content}
           parent_msg_id={message.parent_msg_id}
@@ -360,11 +370,71 @@ function ChatItem({
               <MessageContent message={message} />
               {(message?.threads || []).map(t => (
                 <Link
-                  className="text-secondary text-sm flex items-center gap-2 mt-1"
+                  className="text-secondary text-sm f mt-1 flex items-center justify-between"
                   href={`/${serverId}/${message.channel_id}/${t.id}`}
                   key={t.id}>
-                  <MessageCircle size={15} />
-                  {t.name}
+                  <div className="flex items-center gap-1 text-xs text-green-500">
+                    <MessageCircle size={15} />
+                    {t.name}
+                  </div>
+
+                  {hasPermissionManageMessages && (
+
+                    <Dialog>
+                      <DialogTrigger title="Delete Thread"
+                        className="cursor-pointer"
+                        onClick={(e) => {
+                          e.preventDefault();
+
+                          e.stopPropagation()
+                        }}>
+                        <Trash size={15} color="red" />
+                      </DialogTrigger>
+                      <DialogContent showCloseButton={false} className="bg-sidebar-secondary text-white shadow">
+                        <DialogTitle className="text-sm font-normal">
+                          Are you sure you want to delete this thread? This action cannot be undone.
+                        </DialogTitle>
+
+                        <div className="mt-4 flex justify-end gap-2">
+                          <DialogClose
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation()
+                            }}
+                            className="flex items-center gap-1 px-3 py-1 text-sm font-medium bg-surface-raised text-gray-300 rounded hover:bg-surface-hover"
+
+                          >
+                            <X size={12} />
+                            Cancel
+                          </DialogClose>
+                          <button
+                            className="flex items-center gap-1 px-3 py-1 text-sm font-medium bg-red-600 text-white rounded hover:bg-red-700"
+                            onClick={async (e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+
+                              try {
+                                await deleteThread(t.id, serverId).then(() => {
+                                  alert("Thread deleted successfully")
+
+                                })
+                              }
+                              catch (error) {
+                                console.error("Failed to delete thread", error);
+                                alert("Failed to delete thread");
+                              }
+                            }}
+                          >
+                            <Trash size={12} />
+                            Delete
+                          </button>
+                        </div>
+                      </DialogContent>
+                    </Dialog>
+
+                  )}
+
+
                 </Link>
               ))}
               <ReactionBar
@@ -391,8 +461,9 @@ function ChatItem({
           )}
         </div>
 
-        {showMenu && (
+        {!isFailed && (
           <MessageMenu
+            hasPermissionManageMessages={hasPermissionManageMessages}
             currentUser={currentUser}
             message={message}
             serverId={serverId}

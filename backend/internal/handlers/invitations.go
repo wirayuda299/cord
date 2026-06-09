@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
+	"log"
 	"net/http"
 
 	"github.com/wirayuda299/backend/internal/databases"
@@ -59,7 +60,10 @@ func (ih *InvitationHandler) JoinServerByCode(w http.ResponseWriter, r *http.Req
 		httputil.WriteErrorResponse(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	err := invitations.JoinServerWithInvitationCode(r.Context(), ih.db, p.Code, p.UserId)
+
+	log.Printf("User is trying to join server with code: %s", p.Code)
+
+	err := invitations.JoinServerWithInvitationCode(r.Context(), ih.db, p.Code)
 	if err != nil {
 		httputil.WriteErrorResponse(w, err.Err.Error(), err.Code)
 		return

@@ -25,9 +25,11 @@ func EditMessage(ctx context.Context, db *databases.Container, p *EditMessagePay
 	if err != nil {
 		return &httputil.ErrorResponse{Err: err, Code: http.StatusUnauthorized}
 	}
+
 	if p == nil {
 		return &httputil.ErrorResponse{Err: errors.New("payload is required"), Code: http.StatusBadRequest}
 	}
+
 	if p.ID == "" {
 		return &httputil.ErrorResponse{Err: errors.New("message id is missing"), Code: http.StatusBadRequest}
 	}

@@ -2,12 +2,13 @@
 
 import { getPublicApiUrl } from "@/lib/env";
 import { auth } from "@clerk/nextjs/server";
-import { refresh, revalidatePath, revalidateTag, updateTag } from "next/cache";
+import { refresh, revalidateTag, updateTag } from "next/cache";
 
 export async function createThread(params: {
   channel_id: string;
   name: string;
   message_id: string;
+  server_id: string;
 }) {
   try {
     const base = getPublicApiUrl();
@@ -35,8 +36,7 @@ export async function createThread(params: {
 }
 
 
-
-export async function pinMessage(msg_id: string, channel_id: string) {
+export async function pinMessage(msg_id: string, channel_id: string, server_id: string) {
   try {
     const base = getPublicApiUrl();
     const { getToken } = await auth()
@@ -52,6 +52,7 @@ export async function pinMessage(msg_id: string, channel_id: string) {
       body: JSON.stringify({
         msg_id,
         channel_id,
+        server_id
       }),
     });
 
@@ -65,7 +66,7 @@ export async function pinMessage(msg_id: string, channel_id: string) {
   }
 }
 
-export async function deletePinnedMessage(id: string) {
+export async function deletePinnedMessage(id: string, server_id: string) {
   try {
     const base = getPublicApiUrl();
     const { getToken } = await auth()
@@ -78,7 +79,10 @@ export async function deletePinnedMessage(id: string) {
         Accept: "application/json",
         "Authorization": `Bearer ${token}`
       },
-      body: JSON.stringify(id),
+      body: JSON.stringify({
+        message_id: id,
+        server_id
+      }),
     });
 
     if (res.ok) {
@@ -133,7 +137,6 @@ export async function deleteMessage({
     if (!res.ok) {
       throw new Error(response.message);
     }
-    revalidatePath(path);
   } catch (e) {
     throw e;
   }

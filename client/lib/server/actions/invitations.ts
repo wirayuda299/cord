@@ -33,16 +33,14 @@ export async function createInvitationCode(server_id: string, max_users: number 
   return await res.json().then(c => c.data)
 }
 
-export async function joinServerByCode(code: string, user_id: string) {
+export async function joinServerByCode(code: string) {
   if (!code) return { error: "Invitation code is missing" }
-  if (!user_id) return { error: "User ID is missing" }
 
 
-  const base = getPublicApiUrl()
   const { getToken } = await auth()
   const token = await getToken()
 
-  const res = await fetch(`${base}/invitation/join`, {
+  const res = await fetch(`${getPublicApiUrl()}/invitation/join`, {
     headers: {
       "Content-Type": "application/json",
       Accept: "application/json",
@@ -51,7 +49,6 @@ export async function joinServerByCode(code: string, user_id: string) {
     method: "POST",
     body: JSON.stringify({
       code,
-      user_id
     })
   })
 

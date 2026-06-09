@@ -4,6 +4,7 @@ export type Channel = {
   channel_type: string
   server_id: string
   topic: string
+  created_by: string
 }
 
 export type ChannelsGrouped = {

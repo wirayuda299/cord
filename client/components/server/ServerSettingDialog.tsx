@@ -8,14 +8,46 @@ import { Dialog, DialogClose, DialogContent, DialogTrigger } from "@/components/
 import { memo, useState } from "react"
 import { cn } from "@/lib/utils"
 import ServerProfile from "./profile"
-import BoostPerks from "./BoostPerks"
-import Members from "./Members"
-import ServerRolesSettings from "./roles"
-import Invites from "./Invites"
-import SafetySetup from "./SafetySetup"
-import AuditLog from "./AuditLog"
-import Bans from "./Bans"
 import { useSearchParams } from "next/navigation"
+import dynamic from "next/dynamic"
+
+function loader(compName: string) {
+
+  return <p className="text-sm text-text-muted">Loading {compName}...</p>
+}
+
+const ServerRolesSettings = dynamic(() => import("./roles"), { ssr: false })
+const Bans = dynamic(() => import("./Bans"), {
+  ssr: false, loading(loadingProps) {
+    return loader("Bans")
+  },
+})
+const AuditLog = dynamic(() => import("./AuditLog"), {
+  ssr: false, loading(loadingProps) {
+    return loader("Audit Log")
+  }
+})
+const Invites = dynamic(() => import("./Invites"), {
+  ssr: false, loading(loadingProps) {
+    return loader("Invites")
+  }
+})
+const Members = dynamic(() => import("./Members"), {
+  ssr: false, loading(loadingProps) {
+    return loader("Members")
+  }
+})
+const BoostPerks = dynamic(() => import("./BoostPerks"), {
+  ssr: false, loading(loadingProps) {
+    return loader("Boost Perks")
+  }
+})
+const SafetySetup = dynamic(() => import("./SafetySetup"), {
+  ssr: false, loading(loadingProps) {
+    return loader("Safety Setup")
+  }
+})
+
 
 
 type SidebarItem = {
@@ -194,7 +226,7 @@ function ServerSettingDialog({ serverId, serverOwner }: { serverId: string, serv
             {active === "server profile" && <ServerProfile />}
             {active === "boost perks" && <BoostPerks />}
             {active === "members" && <Members serverID={serverId} serverOwner={serverOwner} />}
-            {active === "roles" && <ServerRolesSettings serverOwner={serverOwner} />}
+            {active === "roles" && <ServerRolesSettings serverOwner={serverOwner} serverID={serverId} />}
             {active === "invites" && <Invites serverID={serverId} />}
             {active === "safety setup" && <SafetySetup />}
             {active === "audit log" && <AuditLog />}

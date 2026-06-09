@@ -22,6 +22,9 @@ import { Role } from "@/lib/types/role"
 import Image from "next/image"
 import useToggleRoleMember from "@/hooks/useToggleRole"
 import { format } from "date-fns"
+import { hasPermission } from "@/lib/client/api/permissions"
+import { PermissionKey, PERMISSIONS } from "@/constants/permissions"
+import { useAuth } from "@clerk/nextjs"
 
 
 function MemberAvatar({ member }: { member: Member }) {
@@ -79,10 +82,13 @@ type MemberRowProps = {
   serverID: string
   onMutate: () => void
   serverOwner: string
+  hasKickMemberPerm: boolean
+  hasBanMemberPerm: boolean
 }
 
-function MemberRow({ member, allRoles, serverID, onMutate, serverOwner }: MemberRowProps) {
+function MemberRow({ member, allRoles, serverID, onMutate, serverOwner, hasKickMemberPerm, hasBanMemberPerm }: MemberRowProps) {
   const isOwner = member.user_id === serverOwner
+
   const { error, pendingRoleId, handleToggleRole, setError } = useToggleRoleMember({
     member: {
       user_id: member.user_id,
@@ -92,7 +98,7 @@ function MemberRow({ member, allRoles, serverID, onMutate, serverOwner }: Member
     onMutate,
     serverOwner,
   })
-  
+
   const handleRemoveRole = async () => {
     if (!member.role_id || pendingRoleId) return
     setError(null)
@@ -105,12 +111,13 @@ function MemberRow({ member, allRoles, serverID, onMutate, serverOwner }: Member
     }
   }
 
+
   return (
     <div className="group flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-white/5 transition-colors">
       <MemberAvatar member={member} />
 
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-medium text-[#f2f3f5] truncate leading-tight">
+        <p className="text-sm font-medium text-[#f2f3f5] hover:text-white truncate leading-tight">
           {member.username}
         </p>
         <p className="text-[11px] text-[#6d6f78] truncate"> joined at {format(member.joined_at, "MMM d, yyyy")}</p>
@@ -152,7 +159,7 @@ function MemberRow({ member, allRoles, serverID, onMutate, serverOwner }: Member
                   return (
                     <DropdownMenuItem
                       key={role.id}
-                      className="flex items-center gap-2.5 px-2 py-1.5 rounded cursor-pointer text-xs hover:bg-white/5 focus:bg-white/5"
+                      className="flex items-center group gap-2.5 px-2 py-1.5 rounded cursor-pointer text-xs hover:bg-white/5 focus:bg-white/5  focus:text-white"
                       onClick={(e) => {
                         e.stopPropagation()
                         handleToggleRole(role.id)
@@ -162,7 +169,7 @@ function MemberRow({ member, allRoles, serverID, onMutate, serverOwner }: Member
                         className="size-2.5 rounded-full shrink-0 ring-1 ring-white/10"
                         style={{ background: role.color || "#6d6f78" }}
                       />
-                      <span className="flex-1 truncate text-[#dbdee1]">{role.name}</span>
+                      <span className="flex-1 truncate text-[#dbdee1] group-hover:text-white">{role.name}</span>
                       {isPending ? (
                         <Loader2 size={12} className="animate-spin text-[#949ba4] shrink-0" />
                       ) : isAssigned ? (
@@ -199,20 +206,24 @@ function MemberRow({ member, allRoles, serverID, onMutate, serverOwner }: Member
 
           {!isOwner && (
             <>
-              <DropdownMenuItem
-                variant="destructive"
-                className="gap-2 text-xs cursor-pointer px-2 py-1.5 rounded"
-              >
-                <UserX size={13} />
-                Kick {member.username}
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                variant="destructive"
-                className="gap-2 text-xs cursor-pointer px-2 py-1.5 rounded"
-              >
-                <Ban size={13} />
-                Ban {member.username}
-              </DropdownMenuItem>
+              {hasKickMemberPerm && (
+                <DropdownMenuItem
+                  variant="destructive"
+                  className="gap-2 text-xs cursor-pointer px-2 py-1.5 rounded"
+                >
+                  <UserX size={13} />
+                  Kick {member.username}
+                </DropdownMenuItem>
+              )}
+              {hasBanMemberPerm && (
+                <DropdownMenuItem
+                  variant="destructive"
+                  className="gap-2 text-xs cursor-pointer px-2 py-1.5 rounded"
+                >
+                  <Ban size={13} />
+                  Ban {member.username}
+                </DropdownMenuItem>
+              )}
             </>
           )}
         </DropdownMenuContent>
@@ -225,6 +236,15 @@ function MemberRow({ member, allRoles, serverID, onMutate, serverOwner }: Member
 export default function Members({ serverID, serverOwner }: { serverOwner: string, serverID: string }) {
   const [query, setQuery] = useState("")
   const [roleFilter, setRoleFilter] = useState<string>("all")
+  const { getToken } = useAuth()
+
+  const { data: hasKickMemberPerm, error: kickMemberError, isLoading: kickMemberLoading } = useSWR(`/api/permissions/${serverID}`, async () => {
+    return await hasPermission(serverID, PermissionKey.KickMember, await getToken())
+  }, { suspense: true })
+
+  const { data: hasBanMemberPerm, error: banMemberError, isLoading: banMemberLoading } = useSWR(`/api/permissions/${serverID}`, async () => {
+    return await hasPermission(serverID, PermissionKey.BanMember, await getToken())
+  }, { suspense: true })
 
   const { data: members, isLoading, mutate } = useSWR(
     `/api/members/${serverID}`,
@@ -242,10 +262,17 @@ export default function Members({ serverID, serverOwner }: { serverOwner: string
       roleFilter === "all" ||
       (roleFilter === "none" ? !m.role_id : m.role_id === roleFilter)
     return matchesQuery && matchesRole
+
+
   })
 
+
+  if (kickMemberError) return <p className="text-sm text-red-500">Failed to load permissions</p>
+  if (banMemberError) return <p className="text-sm text-red-500">Failed to load permissions</p>
+
+
   return (
-    <phantom-ui loading={isLoading}>
+    <phantom-ui loading={isLoading || kickMemberLoading || banMemberLoading}>
       <div className="flex flex-col h-screen text-white overflow-hidden">
         <div className="px-8 pt-8 pb-4 shrink-0 space-y-4">
           <div className="flex items-end justify-between">
@@ -335,6 +362,8 @@ export default function Members({ serverID, serverOwner }: { serverOwner: string
           ) : (
             filtered?.map((m) => (
               <MemberRow
+                hasBanMemberPerm={hasBanMemberPerm}
+                hasKickMemberPerm={hasKickMemberPerm}
                 serverOwner={serverOwner}
                 key={m.id}
                 member={m}

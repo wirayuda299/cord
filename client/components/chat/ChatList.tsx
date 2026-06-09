@@ -2,7 +2,7 @@
 
 import type { Message, ResponseMessage } from "@/lib/types/chat";
 import { useAppStore } from "@/stores/store";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { useShallow } from "zustand/react/shallow";
 import ChatItem from "./ChatItem";
 import ChatForm from "./ChatForm";
@@ -10,6 +10,10 @@ import MemberList from "@/components/members/MemberList";
 import ReplyBar from "./ReplyBar";
 import { useWebSocket } from "@/hooks/useWebsocket";
 import { MessageSquareText } from "lucide-react";
+import useSWR from "swr";
+import { hasPermission } from "@/lib/client/api/permissions";
+import { PermissionKey } from "@/constants/permissions";
+import { useAuth } from "@clerk/nextjs";
 
 type Props = {
   channel: {
@@ -40,6 +44,15 @@ export default function ChatList({
   thread_id,
   currentUser
 }: Props) {
+
+  const { getToken } = useAuth();
+  const { data: allowed, error, isLoading } = useSWR(
+    serverId ? ["/api/has-perm", serverId] : null,
+    async () => {
+      const token = await getToken();
+      return hasPermission(serverId, PermissionKey.ManageMessage, token);
+    }
+  );
   const currUser = currentUser ?? "";
   const [messages, setMessages] = useState<Message[]>(historyMessages);
   const [onlineIds, setOnlineIds] = useState<Set<string>>(new Set());
@@ -60,11 +73,21 @@ export default function ChatList({
   );
 
   const handleMessages = useCallback((msg: ResponseMessage) => {
+    // Filter messages that belong to this channel or thread
+    const relevantMessages = msg.messages.filter((m) => {
+      if (thread_id) {
+        return m.thread_id === thread_id;
+      }
+      return m.channel_id === channel.id && !m.thread_id;
+    });
+
+    if (relevantMessages.length === 0) return;
+
     setMessages((prev) => {
       const byId = new Map(prev.map((m) => [m.id, m]));
 
       // merge incoming messages: update existing or add new
-      for (const incoming of msg.messages) {
+      for (const incoming of relevantMessages) {
         if (byId.has(incoming.id)) {
           const existing = byId.get(incoming.id)!;
           byId.set(incoming.id, { ...existing, ...incoming });
@@ -83,7 +106,7 @@ export default function ChatList({
         }
       }
 
-      for (const incoming of msg.messages) {
+      for (const incoming of relevantMessages) {
         if (!seen.has(incoming.id)) {
           result.push(incoming);
           seen.add(incoming.id);
@@ -92,7 +115,7 @@ export default function ChatList({
 
       return result;
     });
-  }, []);
+  }, [channel.id, thread_id]);
 
   const handleDelete = useCallback((id: string) => {
     setMessages((prev) => prev.filter((m) => m.id !== id));
@@ -131,6 +154,7 @@ export default function ChatList({
   const { sendMessage, status } = useWebSocket(serverId, channel.id, {
     onMessage: handleMessages,
     onDelete: handleDelete,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     onEvent: (ev: any) => {
       if (ev && ev.type === "user_list") {
         setOnlineIds(new Set(ev.user_ids));
@@ -150,11 +174,11 @@ export default function ChatList({
     onError: (e) => console.error("ws error", e),
   });
 
-  useEffect(() => {
-    setMessages(historyMessages);
-  }, [historyMessages]);
 
   const isThread = Boolean(thread_id);
+
+  if (isLoading) return <p>loading permission</p>
+  if (error) return <p>{error}</p>
 
   return (
     <div className="flex h-full min-h-0 flex-1">
@@ -172,6 +196,7 @@ export default function ChatList({
           <div className="flex flex-col gap-5 px-4 py-4">
             {messages.map((m) => (
               <ChatItem
+                hasPermissionManageMessages={!!allowed}
                 currentUser={currUser}
                 variant="channel"
                 key={m.id}

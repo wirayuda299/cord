@@ -7,6 +7,7 @@ import (
 
 	"github.com/wirayuda299/backend/internal/databases"
 	"github.com/wirayuda299/backend/internal/httputil"
+	"github.com/wirayuda299/backend/internal/services/permissions"
 	"github.com/wirayuda299/backend/internal/utils"
 )
 
@@ -22,6 +23,20 @@ func CreateChannel(ctx context.Context, db *databases.Container, p *CreateChanne
 	if err != nil {
 		return &httputil.ErrorResponse{Err: err, Code: http.StatusUnauthorized}
 	}
+
+	hasPerm, err := permissions.HasPermission(&permissions.HasPermissionType{
+		Ctx:        ctx,
+		Db:         db,
+		ServerID:   p.ServerID,
+		Permission: "manage_channel",
+	})
+	if err != nil {
+		return &httputil.ErrorResponse{Err: err, Code: http.StatusInternalServerError}
+	}
+	if !hasPerm {
+		return &httputil.ErrorResponse{Err: errors.New("you not allowed to create channel"), Code: http.StatusUnauthorized}
+	}
+
 	if p.Name == "" {
 		return &httputil.ErrorResponse{Err: errors.New("Channel name is required"), Code: http.StatusBadRequest}
 	}

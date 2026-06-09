@@ -10,9 +10,15 @@ import (
 	"github.com/wirayuda299/backend/internal/databases"
 	"github.com/wirayuda299/backend/internal/httputil"
 	"github.com/wirayuda299/backend/internal/queue"
+	"github.com/wirayuda299/backend/internal/utils"
 )
 
-func JoinServerWithInvitationCode(ctx context.Context, db *databases.Container, code string, userId string) *httputil.ErrorResponse {
+func JoinServerWithInvitationCode(ctx context.Context, db *databases.Container, code string) *httputil.ErrorResponse {
+
+	userID, err := utils.GetSession(ctx)
+	if err != nil {
+		return &httputil.ErrorResponse{Err: errors.New("unauthorized"), Code: http.StatusUnauthorized}
+	}
 	var memberID, serverID string
 
 	tx, err := db.Postgres.Begin(ctx)
@@ -42,7 +48,7 @@ func JoinServerWithInvitationCode(ctx context.Context, db *databases.Container, 
 			RETURNING id, server_id
 		)
 		SELECT id, server_id FROM inserted;
-	`, code, userId).Scan(&memberID, &serverID)
+	`, code, userID).Scan(&memberID, &serverID)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return &httputil.ErrorResponse{
@@ -60,6 +66,7 @@ func JoinServerWithInvitationCode(ctx context.Context, db *databases.Container, 
 	if err := queue.PushJob(ctx, db.Redis, queue.CreateDefaultServerProfile, &queue.CreateDefaultServerProfilePayload{
 		ServerID: serverID,
 		MemberID: memberID,
+		UserID:   userID,
 	}); err != nil {
 		return &httputil.ErrorResponse{Err: err, Code: http.StatusInternalServerError}
 	}

@@ -43,6 +43,7 @@ type MessageMenuProps = {
   serverId: string;
   onDelete: (id: string) => void;
   currentUser: string;
+  hasPermissionManageMessages: boolean
 };
 
 function EmojiPicker({
@@ -176,6 +177,7 @@ function useMenuActions(
   serverId: string,
   userId: string,
   onDelete: (id: string) => void,
+  hasPermissionManageMessages: boolean,
   onEdit?: () => void,
   onReaction?: () => void,
   onBookmark?: () => void,
@@ -194,11 +196,14 @@ function useMenuActions(
         onClick: () => selectMessage(message),
       },
 
-      {
-        icon: <MessageCircle size={15} />,
-        label: "Create Thread",
-        onClick: () => { },
-      },
+      ...(hasPermissionManageMessages ? [
+        {
+          icon: <MessageCircle size={15} />,
+          label: "Create Thread",
+          onClick: () => { },
+        },
+      ] : []),
+
 
       ...(userId === message.user_id && onEdit
         ? [
@@ -214,26 +219,29 @@ function useMenuActions(
         label: "Forward Message",
         onClick: onForward,
       },
-      {
-        icon: <Pin size={15} />,
-        label: "Pin Message",
-        onClick: async () => {
-          try {
-            const res = await pinMessage(
-              message.id,
-              message.channel_id,
-            );
-            if (res?.error) {
-              alert(res.error)
-              return
-            };
+      ...(hasPermissionManageMessages ? [
+        {
+          icon: <Pin size={15} />,
+          label: "Pin Message",
+          onClick: async () => {
+            try {
+              const res = await pinMessage(
+                message.id,
+                message.channel_id,
+                serverId
+              );
+              if (res?.error) {
+                alert(res.error)
+                return
+              };
 
-            alert("message pinned")
-          } catch (e) {
-            console.error(e);
-          }
+              alert("message pinned")
+            } catch (e) {
+              alert(e)
+            }
+          },
         },
-      },
+      ] : []),
       {
         icon: <SmilePlus size={15} />,
         label: "Add Reaction",
@@ -252,40 +260,30 @@ function useMenuActions(
         onClick: onMore,
         dividerBefore: true,
       },
-      {
-        icon: <Trash2 size={15} />,
-        label: "Delete Message",
-        onClick: async () => {
-          try {
-            await deleteMessage({
-              id: message.id,
-              public_id: message.image_asset_id,
-              channel_id: message.channel_id,
-              server_id: serverId,
-              path: pathname,
-            });
-            onDelete(message.id);
-          } catch (e) {
-            alert(e)
-          }
+
+      ...(message.user_id === userId || hasPermissionManageMessages ? [
+        {
+          icon: <Trash2 size={15} />,
+          label: "Delete Message",
+          onClick: async () => {
+            try {
+              await deleteMessage({
+                id: message.id,
+                public_id: message.image_asset_id,
+                channel_id: message.channel_id,
+                server_id: serverId,
+                path: pathname,
+              });
+              onDelete(message.id);
+            } catch (e) {
+              alert(e)
+            }
+          },
+          danger: true,
         },
-        danger: true,
-      },
+      ] : [])
     ],
-    [
-      message,
-      userId,
-      onEdit,
-      onDelete,
-      onForward,
-      onReaction,
-      onBookmark,
-      onMore,
-      toggleEmojiPicker,
-      selectMessage,
-      pathname,
-      serverId,
-    ],
+    [hasPermissionManageMessages, userId, message, onEdit, onForward, toggleEmojiPicker, onBookmark, onMore, selectMessage, serverId, pathname, onDelete],
   );
 }
 
@@ -310,7 +308,8 @@ function MessageMenu(props: MessageMenuProps) {
     onMore,
     message,
     onDelete,
-    currentUser
+    currentUser,
+    hasPermissionManageMessages
   } = props;
 
   const menuRef = useRef<HTMLDivElement>(null);
@@ -323,6 +322,7 @@ function MessageMenu(props: MessageMenuProps) {
     serverId,
     currentUser,
     onDelete,
+    hasPermissionManageMessages,
     onEdit,
     onReaction,
     onBookmark,
@@ -373,7 +373,7 @@ function MessageMenu(props: MessageMenuProps) {
     <div
       ref={menuRef}
       className={`
-        absolute right-2 z-10 w-52 bg-overlay border border-white/6
+        absolute right-10 z-10 w-52 bg-overlay border border-white/6
         group-hover:flex hidden flex-col rounded-md shadow-xl shadow-black/40 overflow-hidden
         ${flipUp ? "bottom-full mb-1" : "top-0"}
       `}
@@ -387,8 +387,8 @@ function MessageMenu(props: MessageMenuProps) {
       </div>
       <div className="flex flex-col px-1.5 py-1.5 gap-px">
         {actions.map((action) => {
-          if (action.label === "Create Thread") {
-            return <CreateThreadForm key={action.label} channel_id={message.channel_id} messageId={message.id} />
+          if (action.label === "Create Thread" && hasPermissionManageMessages) {
+            return <CreateThreadForm server_id={serverId} key={action.label} channel_id={message.channel_id} messageId={message.id} />
           } else {
             return <ActionItem key={action.label} action={action} />
           }

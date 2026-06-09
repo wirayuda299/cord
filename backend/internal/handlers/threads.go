@@ -6,15 +6,41 @@ import (
 
 	"github.com/wirayuda299/backend/internal/databases"
 	"github.com/wirayuda299/backend/internal/httputil"
+	"github.com/wirayuda299/backend/internal/services"
+	"github.com/wirayuda299/backend/internal/services/messages"
 	"github.com/wirayuda299/backend/internal/services/threads"
 )
 
 type ThreadHandler struct {
-	db *databases.Container
+	db  *databases.Container
+	hub messages.BroadcastDeleter
 }
 
-func NewThreadHandler(db *databases.Container) *ThreadHandler {
-	return &ThreadHandler{db: db}
+func NewThreadHandler(db *databases.Container, hub messages.BroadcastDeleter) *ThreadHandler {
+	return &ThreadHandler{db: db, hub: hub}
+}
+
+func (th *ThreadHandler) DeleteThread(w http.ResponseWriter, r *http.Request) {
+	var p threads.DeleteThreadRequest
+
+	if err := json.NewDecoder(r.Body).Decode(&p); err != nil {
+		httputil.WriteErrorResponse(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	channelID, messageID, err := threads.DeleteThread(r.Context(), th.db, p)
+	if err != nil {
+		httputil.WriteErrorResponse(w, err.Err.Error(), err.Code)
+		return
+	}
+
+	// Fetch the updated message row to broadcast to other clients
+	updatedMsg, getErr := messages.GetMessageByID(r.Context(), th.db, messageID, channelID)
+	if getErr == nil && th.hub != nil {
+		th.hub.BroadcastMessages(p.ServerID, channelID, []services.MessageRow{*updatedMsg})
+	}
+
+	httputil.EncodeResponse(w, "thread deleted", http.StatusOK, nil)
 }
 
 func (th *ThreadHandler) FindThreadByID(w http.ResponseWriter, r *http.Request) {
@@ -48,6 +74,12 @@ func (th *ThreadHandler) CreateThread(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		httputil.WriteErrorResponse(w, err.Err.Error(), err.Code)
 		return
+	}
+
+	// Fetch the updated message row to broadcast to other clients
+	updatedMsg, getErr := messages.GetMessageByID(r.Context(), th.db, p.MessageID, p.ChannelID)
+	if getErr == nil && th.hub != nil {
+		th.hub.BroadcastMessages(p.ServerID, p.ChannelID, []services.MessageRow{*updatedMsg})
 	}
 
 	httputil.EncodeResponse(w, "thread created", http.StatusCreated, nil)

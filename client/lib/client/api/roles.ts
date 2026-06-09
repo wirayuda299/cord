@@ -72,7 +72,7 @@ export async function unassignRole(member_user_id: string, server_id: string, ro
   if (!res.ok) throw new Error("Failed to unassign role")
 }
 
-export async function deleteRole(role_id: string) {
+export async function deleteRole(role_id: string, server_id: string) {
 
   const token = await getToken()
   const res = await fetch(`${getPublicApiUrl()}/roles`, {
@@ -82,7 +82,7 @@ export async function deleteRole(role_id: string) {
       "Accept": "application/json",
       "Authorization": `Bearer ${token}`
     },
-    body: JSON.stringify({ role_id })
+    body: JSON.stringify({ role_id, server_id })
   })
   if (!res.ok) {
     throw new Error("Failed to delete role")

@@ -11,6 +11,7 @@ func RegisterThreadRoute(r *mux.Router, th *handlers.ThreadHandler, middleware .
 	tr := r.PathPrefix("/threads").Subrouter()
 	tr.Use(middleware...)
 	tr.HandleFunc("", th.FindThreadByID).Methods(http.MethodGet)
+	tr.HandleFunc("/delete", th.DeleteThread).Methods(http.MethodDelete)
 	tr.HandleFunc("/create", th.CreateThread).Methods(http.MethodPost)
 	tr.HandleFunc("/find-messages", th.FindAllThreadMessages).Methods(http.MethodGet)
 }

@@ -7,19 +7,22 @@ import { useCallback } from "react";
 
 export default function PinnedMessageItem({
   pinnedMessages,
+  canDelete,
+  serverId
 }: {
   pinnedMessages: PinnedMessage[];
+  canDelete: boolean
+  serverId: string
 }) {
 
   const handleDelete = useCallback(async (id: string) => {
     try {
-      const res = await deletePinnedMessage(id)
+      const res = await deletePinnedMessage(id, serverId)
       console.log(res)
     } catch (e) {
       alert(e)
     }
-
-  }, [])
+  }, [serverId])
 
   return (
     <>
@@ -43,9 +46,11 @@ export default function PinnedMessageItem({
                 {m.content}
               </p>
             </div>
-            <button className='cursor-pointer' onClick={() => handleDelete(m.id)}>
-              <X size={18} />
-            </button>
+            {canDelete && (
+              <button onClick={() => handleDelete(m.id)} className="p-1 rounded hover:bg-red-500/10">
+                <X className="text-red-500" size={16} />
+              </button>
+            )}
           </li>
         ))}
       </ul>

@@ -1,41 +1,9 @@
 import { Switch } from "@/components/ui/switch"
 import { UseFormReturn } from "react-hook-form"
 import { RoleFormValues } from "./role-form-view"
+import { PERMISSIONS } from "@/constants/permissions"
 
-const permissions = [
-  {
-    label: "view_channel",
-    desc: "Allows members to view channels and read messages",
-  },
-  {
-    label: "manage_channel",
-    desc: "Allows members to create, edit, and delete channels",
-  },
-  {
-    label: "manage_role",
-    desc: "Allows members to create, edit, and delete roles below their own",
-  },
-  {
-    label: "kick_member",
-    desc: "Allows members to remove other members from the server",
-  },
-  {
-    label: "ban_member",
-    desc: "Allows members to permanently ban other members from the server",
-  },
-  {
-    label: "attach_file",
-    desc: "Allows members to upload files and images in text channels",
-  },
-  {
-    label: "manage_thread",
-    desc: "Allows members to create, edit, and delete threads in channels",
-  },
-  {
-    label: "manage_message",
-    desc: "Allows members to delete and pin messages from other members",
-  },
-]
+
 
 export default function PermissionsTab({
   form,
@@ -62,7 +30,7 @@ export default function PermissionsTab({
       <p className="text-xs text-white/30">
         1 of 8 permissions enabled
       </p>
-      {permissions.map((perm) => (
+      {PERMISSIONS.map((perm) => (
         <div
           onClick={() => toggle(perm.label)}
           key={perm.label}

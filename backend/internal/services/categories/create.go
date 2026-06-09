@@ -7,6 +7,7 @@ import (
 
 	"github.com/wirayuda299/backend/internal/databases"
 	"github.com/wirayuda299/backend/internal/httputil"
+	"github.com/wirayuda299/backend/internal/services/permissions"
 	"github.com/wirayuda299/backend/internal/utils"
 )
 
@@ -19,6 +20,20 @@ func CreateCategory(ctx context.Context, db *databases.Container, payload *Creat
 	userID, err := utils.GetSession(ctx)
 	if err != nil {
 		return &httputil.ErrorResponse{Err: err, Code: http.StatusUnauthorized}
+	}
+
+	hasPerm, err := permissions.HasPermission(&permissions.HasPermissionType{
+		Ctx:        ctx,
+		Db:         db,
+		ServerID:   payload.ServerID,
+		Permission: "manage_channel",
+	})
+
+	if err != nil {
+		return &httputil.ErrorResponse{Err: err, Code: http.StatusInternalServerError}
+	}
+	if !hasPerm {
+		return &httputil.ErrorResponse{Err: errors.New("you not allowed to create category"), Code: http.StatusUnauthorized}
 	}
 	if payload.Name == "" {
 		return &httputil.ErrorResponse{Err: errors.New("name is required"), Code: http.StatusBadRequest}

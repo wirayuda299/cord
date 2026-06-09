@@ -69,7 +69,7 @@ func (s *Server) Run() {
 	uh := handlers.NewUserHandler(s.db)
 	fh := handlers.NewFriendHandler(s.db)
 	crh := handlers.NewConversationHandler(s.db)
-	th := handlers.NewThreadHandler(s.db)
+	th := handlers.NewThreadHandler(s.db, hub)
 
 	routes.RegisterThreadRoute(r, th, middleware.ClerkAuth())
 	routes.RegisterConversationRoute(r, crh, middleware.ClerkAuth())

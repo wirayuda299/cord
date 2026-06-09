@@ -12,4 +12,5 @@ func RegisterPermissionRoute(r *mux.Router, ph *handlers.PermissionHandler, midd
 	pr.Use(middleware...)
 
 	pr.HandleFunc("/find", ph.FindPermissionByID).Methods(http.MethodGet)
+	pr.HandleFunc("/has-permission", ph.HasPermission).Methods(http.MethodGet)
 }

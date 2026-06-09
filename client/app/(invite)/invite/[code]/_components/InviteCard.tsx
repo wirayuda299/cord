@@ -34,7 +34,7 @@ function ServerAvatar({ name, icon, color }: { name: string; icon: string | null
 }
 
 
-export default function InviteCard({ info, joined, code, user_id }: { user_id: string, info: Invitation, joined: boolean, code: string }) {
+export default function InviteCard({ info, joined, code }: { info: Invitation, joined: boolean, code: string }) {
   const router = useRouter()
 
   const full = info.uses >= info.max_users
@@ -43,10 +43,9 @@ export default function InviteCard({ info, joined, code, user_id }: { user_id: s
   const handleJoin = async () => {
     try {
 
-      const res = await joinServerByCode(code, user_id)
+      const res = await joinServerByCode(code)
       if (res && "error" in res) {
         alert(res.error)
-        router.push("/")
         return
       }
     } catch (e) {

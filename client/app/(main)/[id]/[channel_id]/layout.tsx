@@ -5,6 +5,9 @@ import PinnedMessages from "@/components/PinnedMessages";
 import MembersButton from "@/components/MemberButton";
 import SearchForm from "@/components/SearchForm";
 import { Suspense, type ReactNode } from "react";
+import { auth } from "@clerk/nextjs/server";
+import { hasPermission } from "@/lib/client/api/permissions";
+import { PermissionKey } from "@/constants/permissions";
 
 export default async function ChannelLayout({
   children,
@@ -13,7 +16,9 @@ export default async function ChannelLayout({
   children: ReactNode;
   params: Promise<{ channel_id: string; id: string }>;
 }) {
-  const { channel_id } = await params;
+  const { channel_id, id } = await params;
+  const { userId, getToken } = await auth()
+  const token = await getToken()
 
   const channel = await getChannelById(channel_id);
 
@@ -21,10 +26,13 @@ export default async function ChannelLayout({
     return "Failed to fetch channel";
   }
 
+  const hasPerm = await hasPermission(channel.server_id, PermissionKey.ManageMessage, token)
+
+  const canDelete = channel.created_by === userId || hasPerm
   const actions = (
     <>
       <Notification />
-      <PinnedMessages channelId={channel_id} />
+      <PinnedMessages channelId={channel_id} canDelete={canDelete} serverId={id} />
       <MembersButton />
       <SearchForm />
     </>

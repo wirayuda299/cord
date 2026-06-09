@@ -8,6 +8,7 @@ import (
 
 	"github.com/wirayuda299/backend/internal/databases"
 	"github.com/wirayuda299/backend/internal/httputil"
+	"github.com/wirayuda299/backend/internal/services/permissions"
 	"github.com/wirayuda299/backend/internal/utils"
 )
 
@@ -27,6 +28,22 @@ func CreateRole(ctx context.Context, db *databases.Container, p *CreateRolePaylo
 	if err != nil {
 		return &httputil.ErrorResponse{Err: err, Code: http.StatusUnauthorized}
 	}
+
+	hasPerm, err := permissions.HasPermission(&permissions.HasPermissionType{
+		Ctx:        ctx,
+		Db:         db,
+		ServerID:   p.ServerID,
+		Permission: "manage_role",
+	})
+
+	if err != nil {
+		return &httputil.ErrorResponse{Err: err, Code: http.StatusInternalServerError}
+	}
+
+	if !hasPerm {
+		return &httputil.ErrorResponse{Err: errors.New("you not allowed to create role"), Code: http.StatusUnauthorized}
+	}
+
 	if p.Name == "" {
 		return &httputil.ErrorResponse{Err: errors.New("role name is required"), Code: http.StatusBadRequest}
 	}
@@ -34,6 +51,7 @@ func CreateRole(ctx context.Context, db *databases.Container, p *CreateRolePaylo
 	if p.ServerID == "" {
 		return &httputil.ErrorResponse{Err: errors.New("server ID is required"), Code: http.StatusBadRequest}
 	}
+
 	if p.Color == "" {
 		return &httputil.ErrorResponse{Err: errors.New("color is required"), Code: http.StatusBadRequest}
 	}

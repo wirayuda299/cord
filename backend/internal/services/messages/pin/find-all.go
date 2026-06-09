@@ -17,6 +17,7 @@ type PinnedMessageResponse struct {
 }
 
 func GetAllPinnedMessage(ctx context.Context, channelID string, db *databases.Container) ([]PinnedMessageResponse, *httputil.ErrorResponse) {
+
 	if channelID == "" {
 		return nil, &httputil.ErrorResponse{
 			Err:  errors.New("channel ID is missing"),

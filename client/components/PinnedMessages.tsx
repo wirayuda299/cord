@@ -5,8 +5,12 @@ import PinnedMessageItem from "./PinnedMessageItem";
 
 export default async function PinnedMessages({
   channelId,
+  canDelete,
+  serverId
 }: {
   channelId: string;
+  canDelete: boolean
+  serverId: string
 }) {
   const pinnedMessages = await getAllPinnedMessages(channelId);
   return (
@@ -14,7 +18,7 @@ export default async function PinnedMessages({
       style="min-w-80 bg-sidebar-primary text-gray-400 p-0 max-h-[300px]"
       icon={<Pin className="text-muted-foreground text-sm hover:text-white" />}
     >
-      <PinnedMessageItem pinnedMessages={pinnedMessages || []} />
+      <PinnedMessageItem pinnedMessages={pinnedMessages || []} canDelete={canDelete} serverId={serverId} />
     </DropdownWrapper>
   );
 }

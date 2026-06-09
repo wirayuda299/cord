@@ -9,12 +9,14 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/wirayuda299/backend/internal/databases"
 	"github.com/wirayuda299/backend/internal/httputil"
+	"github.com/wirayuda299/backend/internal/services/permissions"
 	"github.com/wirayuda299/backend/internal/utils"
 )
 
 type DeleteRolePayload struct {
-	RoleId string `json:"role_id"`
-	UserId string `json:"user_id"`
+	RoleId   string `json:"role_id"`
+	UserId   string `json:"user_id"`
+	ServerID string `json:"server_id"`
 }
 
 type RoleRes struct {
@@ -26,17 +28,35 @@ func DeleteRole(ctx context.Context, db *databases.Container, p *DeleteRolePaylo
 	if err != nil {
 		return &httputil.ErrorResponse{Err: err, Code: http.StatusUnauthorized}
 	}
+
+	hasPerm, err := permissions.HasPermission(&permissions.HasPermissionType{
+		Ctx:        ctx,
+		Db:         db,
+		ServerID:   p.ServerID,
+		Permission: "manage_role",
+	})
+
+	if err != nil {
+		return &httputil.ErrorResponse{Err: err, Code: http.StatusInternalServerError}
+	}
+
+	if !hasPerm {
+		return &httputil.ErrorResponse{Err: errors.New("you not allowed to delete role"), Code: http.StatusUnauthorized}
+	}
+
 	var r RoleRes
 
 	tx, err := db.Postgres.Begin(ctx)
 	if err != nil {
 		return &httputil.ErrorResponse{Err: err, Code: http.StatusInternalServerError}
 	}
+
 	defer func() {
 		if err := tx.Rollback(ctx); err != nil {
 			log.Printf("Error rollback -> %s", err)
 		}
 	}()
+
 	err = tx.QueryRow(ctx, "SELECT id, created_by from roles where id = $1", p.RoleId).Scan(&r.RoleID, userID)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {

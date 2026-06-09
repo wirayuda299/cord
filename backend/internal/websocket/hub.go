@@ -144,7 +144,7 @@ func (h *Hub) Run() {
 			h.mu.Lock()
 			servers := h.clients[message.ServerId]
 			if servers != nil {
-				if clients, ok := servers[message.ChannelId]; ok {
+				for _, clients := range servers {
 					for client := range clients {
 						select {
 						case client.send <- b:
@@ -219,7 +219,7 @@ func (h *Hub) BroadcastDelete(serverId, channelId, messageId string) {
 
 	servers := h.clients[serverId]
 	if servers != nil {
-		if clients, ok := servers[channelId]; ok {
+		for _, clients := range servers {
 			for client := range clients {
 				select {
 				case client.send <- data:

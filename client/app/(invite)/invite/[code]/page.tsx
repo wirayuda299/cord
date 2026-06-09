@@ -3,25 +3,21 @@ import InviteCard from "./_components/InviteCard"
 import { InviteInvalid } from "./_components/InviteStates"
 import { redirect } from "next/navigation"
 import { findInvitationByCode } from "@/lib/server/data/invitations"
+import { auth } from "@clerk/nextjs/server"
 
 
 export default async function InvitePage({ params, searchParams }: { params: Promise<{ code: string }>, searchParams: Promise<{ server_id: string }> }) {
   const param = await params
   const { server_id } = await searchParams
+  const { userId } = await auth()
   const invite = await findInvitationByCode(param.code)
-  const userId = "usr_002"
-
-  if (!userId) {
-    redirect("/sign-in")
-  }
 
   if (invite && userId === invite.created_by) {
     redirect("/")
   }
-  const joined = await isUserJoin(server_id, userId)
+  const joined = await isUserJoin(server_id)
 
   if (joined) {
-    console.log("Joined")
     redirect("/")
   }
 
@@ -39,7 +35,7 @@ export default async function InvitePage({ params, searchParams }: { params: Pro
         {!invite ? (
           <InviteInvalid />
         ) : (
-          <InviteCard info={invite} joined={joined} code={param.code} user_id={userId} />
+          <InviteCard info={invite} joined={joined} code={param.code} />
         )}
       </div>
     </div>

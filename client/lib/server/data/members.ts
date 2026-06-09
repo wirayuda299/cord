@@ -1,7 +1,7 @@
 import { getPublicApiUrl } from "@/lib/env"
 import { auth } from "@clerk/nextjs/server"
 
-export async function isUserJoin(server_id: string, user_id: string): Promise<boolean> {
+export async function isUserJoin(server_id: string): Promise<boolean> {
   try {
     const { getToken } = await auth()
     const token = await getToken()
