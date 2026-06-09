@@ -65,6 +65,7 @@ func JoinServer(ctx context.Context, db *databases.Container, p *JoinServerPaylo
 	if err := queue.PushJob(ctx, db.Redis, queue.CreateDefaultServerProfile, &queue.CreateDefaultServerProfilePayload{
 		ServerID: p.ServerId,
 		MemberID: memberID,
+		UserID:   userID,
 	}); err != nil {
 		return &httputil.ErrorResponse{
 			Err:  err,

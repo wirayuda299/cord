@@ -18,6 +18,7 @@ export type Message = {
   parent_content: string | null;
   parent_username: string | null;
   reactions?: Reaction[];
+  thread_id?: string | null;
   threads?: {
     id: string
     name: string

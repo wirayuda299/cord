@@ -471,3 +471,13 @@ FOR EACH ROW EXECUTE FUNCTION set_updated_at();
 
   CREATE INDEX idx_reactions_message_id ON reactions(message_id);
   CREATE INDEX idx_reactions_user_id ON reactions(user_id);
+
+
+create table safety_setup(
+id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+level varchar(20) default 'low',
+created_by varchar(100) NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+server_id uuid NOT NULL REFERENCES servers(id) ON DELETE CASCADE,
+created_at timestamptz NOT NULL DEFAULT NOW(),
+updated_at timestamptz NOT NULL DEFAULT NOW()
+);

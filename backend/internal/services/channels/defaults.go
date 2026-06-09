@@ -20,6 +20,7 @@ func CreateDefaultChannel(ctx context.Context, db *databases.Container, payload 
 		{"text channels", "text"},
 		{"audio channels", "audio"},
 	}
+
 	for _, c := range categories {
 		var id string
 		err := db.Postgres.QueryRow(ctx, "INSERT INTO categories (name,server_id,created_by) values($1,$2,$3) returning id;", c.name, payload.ServerId, payload.CreatedBy).Scan(&id)
@@ -31,5 +32,6 @@ func CreateDefaultChannel(ctx context.Context, db *databases.Container, payload 
 			return err
 		}
 	}
+
 	return nil
 }

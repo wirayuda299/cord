@@ -159,6 +159,8 @@ export default function ServerProfile() {
     }
 
   }
+
+  if (error) return <p>{JSON.stringify(error)}</p>
   return (
     <div className="px-5 pt-5 overflow-y-auto max-h-screen text-white w-full flex justify-between gap-5">
       <div className="max-w-3xl h-max mx-auto">

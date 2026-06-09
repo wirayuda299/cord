@@ -18,7 +18,7 @@ export default async function InvitePage({ params, searchParams }: { params: Pro
   const joined = await isUserJoin(server_id)
 
   if (joined) {
-    redirect("/")
+    redirect("/direct-messages")
   }
 
 

@@ -67,6 +67,7 @@ export default async function DirectMessageDetail({
 
         <div className="flex-1 min-h-0 overflow-hidden">
           <ChatList
+            serverOwner=""
             currentUser={userId}
             variant="dm"
             channel={conversation}

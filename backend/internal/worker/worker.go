@@ -14,6 +14,7 @@ import (
 	"github.com/wirayuda299/backend/internal/services/images"
 	"github.com/wirayuda299/backend/internal/services/permissions"
 	"github.com/wirayuda299/backend/internal/services/servers"
+	"github.com/wirayuda299/backend/internal/services/servers/safety"
 )
 
 func StartWorker(ctx context.Context, db *databases.Container) {
@@ -75,6 +76,20 @@ func StartWorker(ctx context.Context, db *databases.Container) {
 
 func handleJob(ctx context.Context, db *databases.Container, job queue.Job) error {
 	switch job.Type {
+	case queue.CreateDefaultServerSafety:
+		log.Println("📦 Raw payload:", string(job.Payload))
+		var p queue.CreateDefaultServerSafetyPayload
+
+		if err := json.Unmarshal(job.Payload, &p); err != nil {
+			log.Println(err.Error())
+			return fmt.Errorf("failed to unmarshal payload: %s", err.Error())
+		}
+
+		err := safety.CreateDefaultServerSafety(ctx, db, p.ServerID, p.CreatedBy)
+		if err != nil {
+			return fmt.Errorf("error create default server safety :%s", err.Err.Error())
+		}
+		return nil
 	case queue.CreateDefaultServerProfile:
 		log.Println("📦 Raw payload:", string(job.Payload))
 		var p queue.CreateDefaultServerProfilePayload

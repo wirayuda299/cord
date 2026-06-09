@@ -3,7 +3,6 @@ package categories
 import (
 	"context"
 	"errors"
-	"log"
 	"net/http"
 
 	"github.com/wirayuda299/backend/internal/databases"
@@ -22,6 +21,7 @@ func FindAllCategories(ctx context.Context, db *databases.Container, serverID st
 	if serverID == "" {
 		return nil, &httputil.ErrorResponse{Err: errors.New("server ID is missing"), Code: http.StatusBadRequest}
 	}
+
 	categories := make([]Category, 0)
 
 	rows, err := db.Postgres.Query(ctx, `
@@ -33,16 +33,17 @@ func FindAllCategories(ctx context.Context, db *databases.Container, serverID st
 	if err != nil {
 		return nil, &httputil.ErrorResponse{Err: err, Code: http.StatusInternalServerError}
 	}
+
 	defer rows.Close()
 
 	for rows.Next() {
 		var c Category
 		if err := rows.Scan(&c.ID, &c.Name, &c.ServerID, &c.CreatedBy, &c.ServerName); err != nil {
-			log.Println(err.Error())
 			return nil, &httputil.ErrorResponse{Err: err, Code: http.StatusInternalServerError}
 		}
 		categories = append(categories, c)
 	}
+
 	if err := rows.Err(); err != nil {
 		return nil, &httputil.ErrorResponse{Err: err, Code: http.StatusInternalServerError}
 	}

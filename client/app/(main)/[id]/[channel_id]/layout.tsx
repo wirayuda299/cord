@@ -4,7 +4,7 @@ import Notification from "@/components/Notification";
 import PinnedMessages from "@/components/PinnedMessages";
 import MembersButton from "@/components/MemberButton";
 import SearchForm from "@/components/SearchForm";
-import { Suspense, type ReactNode } from "react";
+import { type ReactNode } from "react";
 import { auth } from "@clerk/nextjs/server";
 import { hasPermission } from "@/lib/client/api/permissions";
 import { PermissionKey } from "@/constants/permissions";
@@ -22,9 +22,7 @@ export default async function ChannelLayout({
 
   const channel = await getChannelById(channel_id);
 
-  if (channel && "error" in channel) {
-    return "Failed to fetch channel";
-  }
+  if (channel && "error" in channel) return "Failed to fetch channel";
 
   const hasPerm = await hasPermission(channel.server_id, PermissionKey.ManageMessage, token)
 
@@ -40,9 +38,7 @@ export default async function ChannelLayout({
 
   return (
     <div className="w-full bg-surface-content h-screen overflow-hidden flex flex-col">
-      <Suspense fallback={<p>loading channel header...</p>}>
-        <ChannelHeader channel={channel} actions={actions} />
-      </Suspense>
+      <ChannelHeader channel={channel} actions={actions} />
       {children}
     </div>
   );

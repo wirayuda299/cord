@@ -60,9 +60,11 @@ func FindAllChannelInServer(ctx context.Context, db *databases.Container, server
 	if err != nil {
 		return nil, &httputil.ErrorResponse{Err: err, Code: http.StatusInternalServerError}
 	}
+
 	defer catRows.Close()
 
 	categoryIndex := make(map[string]int)
+
 	for catRows.Next() {
 		var cat CategoryWithChannels
 		if err := catRows.Scan(&cat.Id, &cat.Name); err != nil {
@@ -72,6 +74,7 @@ func FindAllChannelInServer(ctx context.Context, db *databases.Container, server
 		categoryIndex[cat.Id] = len(result.Categories)
 		result.Categories = append(result.Categories, cat)
 	}
+
 	if err := catRows.Err(); err != nil {
 		return nil, &httputil.ErrorResponse{Err: err, Code: http.StatusInternalServerError}
 	}
@@ -90,6 +93,7 @@ func FindAllChannelInServer(ctx context.Context, db *databases.Container, server
 	if err != nil {
 		return nil, &httputil.ErrorResponse{Err: err, Code: http.StatusInternalServerError}
 	}
+
 	defer chRows.Close()
 
 	for chRows.Next() {
@@ -110,6 +114,7 @@ func FindAllChannelInServer(ctx context.Context, db *databases.Container, server
 		}
 		result.Categories[idx].Channels = append(result.Categories[idx].Channels, ch)
 	}
+
 	if err := chRows.Err(); err != nil {
 		return nil, &httputil.ErrorResponse{Err: err, Code: http.StatusInternalServerError}
 	}

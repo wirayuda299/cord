@@ -14,11 +14,12 @@ const (
 	CreateChannel              = "create_channel"
 	UpdateRolePermission       = "update_role_permission"
 	CreateDefaultServerProfile = "create_default_server_profile"
+	CreateDefaultServerSafety  = "create_default_server_safety"
 )
 
 type CreateChannelPayload struct {
-	ServerId  string
-	CreatedBy string
+	ServerId  string `json:"server_id"`
+	CreatedBy string `json:"created_by"`
 }
 
 const (
@@ -48,4 +49,9 @@ type CreateDefaultServerProfilePayload struct {
 	ServerID string `json:"server_id"`
 	MemberID string `json:"member_id"`
 	UserID   string `json:"user_id"`
+}
+
+type CreateDefaultServerSafetyPayload struct {
+	ServerID  string `json:"server_id,omitempty"`
+	CreatedBy string `json:"created_by,omitempty"`
 }

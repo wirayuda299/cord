@@ -22,6 +22,7 @@ type Props = {
     name: string
     topic: string
   }
+  serverOwner: string
   thread_id?: string | null
   serverId: string;
   historyMessages: Message[];
@@ -42,7 +43,8 @@ export default function ChatList({
   channel,
   recipient,
   thread_id,
-  currentUser
+  currentUser,
+  serverOwner
 }: Props) {
 
   const { getToken } = useAuth();
@@ -237,7 +239,7 @@ export default function ChatList({
         </div>
       </div>
 
-      {!isDirectMessage && <MemberList isOpen={isMemberOpen} serverId={serverId} onlineIds={onlineIds} />}
+      {!isDirectMessage && <MemberList serverOwner={serverOwner} isOpen={isMemberOpen} serverId={serverId} onlineIds={onlineIds} />}
     </div>
   );
 }

@@ -56,13 +56,13 @@ func GetAllThreadMessages(ctx context.Context, db *databases.Container, threadID
 
 	var threadExist bool
 
-	err = db.Postgres.QueryRow(ctx, "SELECT EXISTS(select 1 from threads where id = $1)", threadID).Scan(threadExist)
+	err = db.Postgres.QueryRow(ctx, "SELECT EXISTS(SELECT 1 FROM threads WHERE id = $1)", threadID).Scan(&threadExist)
 	if err != nil {
 		return nil, &httputil.ErrorResponse{Err: err, Code: http.StatusInternalServerError}
 	}
 
 	if !threadExist {
-		return nil, &httputil.ErrorResponse{Err: err, Code: http.StatusNotFound}
+		return nil, &httputil.ErrorResponse{Err: errors.New("thread not found"), Code: http.StatusNotFound}
 	}
 
 	rows, err := db.Postgres.Query(ctx, queryAllThreadMessages, threadID)

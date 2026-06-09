@@ -53,12 +53,14 @@ func CreateConversation(
 	dmKey := makeDMKey(userID, p.TargetedUserID)
 
 	tx, beginErr := db.Postgres.Begin(ctx)
+
 	if beginErr != nil {
 		return nil, &httputil.ErrorResponse{
 			Err:  beginErr,
 			Code: http.StatusInternalServerError,
 		}
 	}
+
 	defer tx.Rollback(ctx)
 
 	if _, err := tx.Exec(ctx, "SELECT pg_advisory_xact_lock(hashtext($1))", dmKey); err != nil {

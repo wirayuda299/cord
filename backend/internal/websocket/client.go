@@ -87,7 +87,8 @@ func (c *Client) ReadIncomingMessage(db *databases.Container) {
 			continue
 		}
 
-		row, err := messages.Send(c.ctx, m, db, c.ChannelID)
+		log.Println("Server ID -> ", c.ServerID)
+		row, err := messages.Send(c.ctx, m, db, c.ChannelID, c.ServerID)
 		if err != nil {
 			log.Println("error sending message", err.Error())
 			continue

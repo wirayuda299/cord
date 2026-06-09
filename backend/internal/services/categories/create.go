@@ -16,7 +16,7 @@ type CreateCategoryPayload struct {
 	ServerID string `json:"server_id"`
 }
 
-func CreateCategory(ctx context.Context, db *databases.Container, payload *CreateCategoryPayload) *httputil.ErrorResponse {
+func CreateCategory(ctx context.Context, db *databases.Container, p *CreateCategoryPayload) *httputil.ErrorResponse {
 	userID, err := utils.GetSession(ctx)
 	if err != nil {
 		return &httputil.ErrorResponse{Err: err, Code: http.StatusUnauthorized}
@@ -25,7 +25,7 @@ func CreateCategory(ctx context.Context, db *databases.Container, payload *Creat
 	hasPerm, err := permissions.HasPermission(&permissions.HasPermissionType{
 		Ctx:        ctx,
 		Db:         db,
-		ServerID:   payload.ServerID,
+		ServerID:   p.ServerID,
 		Permission: "manage_channel",
 	})
 
@@ -35,16 +35,16 @@ func CreateCategory(ctx context.Context, db *databases.Container, payload *Creat
 	if !hasPerm {
 		return &httputil.ErrorResponse{Err: errors.New("you not allowed to create category"), Code: http.StatusUnauthorized}
 	}
-	if payload.Name == "" {
+	if p.Name == "" {
 		return &httputil.ErrorResponse{Err: errors.New("name is required"), Code: http.StatusBadRequest}
 	}
-	if payload.ServerID == "" {
+	if p.ServerID == "" {
 		return &httputil.ErrorResponse{Err: errors.New("server_id is required"), Code: http.StatusBadRequest}
 	}
 
 	_, err = db.Postgres.Exec(ctx,
 		"INSERT INTO categories(name, server_id, created_by) VALUES($1, $2, $3)",
-		payload.Name, payload.ServerID, userID,
+		p.Name, p.ServerID, userID,
 	)
 	if err != nil {
 		return &httputil.ErrorResponse{Err: err, Code: http.StatusInternalServerError}

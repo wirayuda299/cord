@@ -71,6 +71,17 @@ func CreateServer(ctx context.Context, container *databases.Container, srv *Serv
 	if err := queue.PushJob(ctx, container.Redis, queue.CreateDefaultServerProfile, &queue.CreateDefaultServerProfilePayload{
 		ServerID: serverID,
 		MemberID: memberID,
+		UserID:   userID,
+	}); err != nil {
+		return &httputil.ErrorResponse{
+			Err:  err,
+			Code: http.StatusInternalServerError,
+		}
+	}
+
+	if err := queue.PushJob(ctx, container.Redis, queue.CreateDefaultServerSafety, &queue.CreateDefaultServerSafetyPayload{
+		ServerID:  serverID,
+		CreatedBy: userID,
 	}); err != nil {
 		return &httputil.ErrorResponse{
 			Err:  err,

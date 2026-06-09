@@ -30,9 +30,11 @@ func CreateChannel(ctx context.Context, db *databases.Container, p *CreateChanne
 		ServerID:   p.ServerID,
 		Permission: "manage_channel",
 	})
+
 	if err != nil {
 		return &httputil.ErrorResponse{Err: err, Code: http.StatusInternalServerError}
 	}
+
 	if !hasPerm {
 		return &httputil.ErrorResponse{Err: errors.New("you not allowed to create channel"), Code: http.StatusUnauthorized}
 	}
@@ -48,6 +50,7 @@ func CreateChannel(ctx context.Context, db *databases.Container, p *CreateChanne
 	if p.ServerID == "" {
 		return &httputil.ErrorResponse{Err: errors.New("server ID is required"), Code: http.StatusBadRequest}
 	}
+
 	if _, err := db.Postgres.Exec(ctx, "INSERT INTO channels(name,channel_type,created_by,category_id,server_id) values($1,$2,$3,$4,$5)", p.Name, p.Type, userID, p.CategoryID, p.ServerID); err != nil {
 		return &httputil.ErrorResponse{
 			Err:  err,

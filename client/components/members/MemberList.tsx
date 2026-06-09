@@ -31,7 +31,7 @@ const Avatar = memo(({ member, isOnline }: { member: Member; isOnline?: boolean 
 Avatar.displayName = "Avatar";
 
 
-const MemberRow = memo(({ member, isOnline }: { member: Member; isOnline?: boolean }) => {
+const MemberRow = memo(({ member, isOnline, isOwner }: { member: Member; isOnline?: boolean, isOwner: boolean }) => {
   const isOffline = !isOnline;
 
   return (
@@ -43,16 +43,20 @@ const MemberRow = memo(({ member, isOnline }: { member: Member; isOnline?: boole
             }`}
         >
           {member.username}
+          {member.role && !isOwner && (
+            <span
+              style={{
+                color: member.role_color ?? "#fff"
+              }}
+              className={`text-[10px] lowercase font-medium rounded-full shrink-0 block`}
+            >
+              {member.role.charAt(0).toUpperCase() + member.role.slice(1)}
+            </span>
+          )}
         </p>
 
       </div>
-      {member.role && (
-        <span
-          className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full shrink-0 `}
-        >
-          {member.role.charAt(0).toUpperCase() + member.role.slice(1)}
-        </span>
-      )}
+
     </div>
   );
 });
@@ -77,10 +81,11 @@ SectionLabel.displayName = "SectionLabel";
 type MemberListProps = {
   isOpen: boolean;
   serverId: string;
+  serverOwner: string
   onlineIds?: Set<string>;
 };
 
-function MemberList({ isOpen, serverId, onlineIds }: MemberListProps) {
+function MemberList({ isOpen, serverId, onlineIds, serverOwner }: MemberListProps) {
   const { data, error, isLoading } = useSWR(isOpen ? "/api/members" : null, () => getAllMembers(serverId));
 
   if (error) {
@@ -103,7 +108,12 @@ function MemberList({ isOpen, serverId, onlineIds }: MemberListProps) {
     >
       <SectionLabel label={`Online — ${onlineCount}`} />
       {data?.map((member) => (
-        <MemberRow key={member.id} member={member} isOnline={!!onlineIds?.has(member.user_id)} />
+        <MemberRow
+          key={member.id}
+          isOwner={member.user_id === serverOwner}
+          member={member}
+          isOnline={!!onlineIds?.has(member.user_id)}
+        />
       ))}
 
     </ScrollArea>

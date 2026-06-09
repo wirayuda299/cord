@@ -16,8 +16,8 @@ export default async function ChannelDetail({
   if (!userId) return unauthorized()
 
   const { channel_id, id } = await params
-  const channel = await getChannelById(channel_id)
 
+  const channel = await getChannelById(channel_id)
   if (channel && 'error' in channel) {
     return <p className="text-red-600 text-sm">failed to fetch channel</p>
   }
@@ -26,13 +26,14 @@ export default async function ChannelDetail({
     return <VideoCall room={channel.id} serverId={id} />
   } else {
     const messages = await getAllMessagesByChannelId(channel_id)
-
     if (messages && 'error' in messages) {
       return <p className="text-red-600 text-sm">failed to fetch messages</p>
     }
+
     return (
       <div className="flex-1 min-h-0 overflow-hidden">
         <ChatList
+          serverOwner={channel.created_by}
           currentUser={userId}
           thread_id={null}
           serverId={id}

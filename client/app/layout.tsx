@@ -1,8 +1,10 @@
 import "./globals.css"
+
 import { Noto_Sans } from "next/font/google"
 import type { Metadata } from "next"
 import { ClerkProvider } from '@clerk/nextjs'
 import Script from "next/script"
+import type { ReactNode } from "react"
 
 const notoSans = Noto_Sans({
   variable: "--font-noto-sans",
@@ -17,7 +19,7 @@ export const metadata: Metadata = {
 export default function RootLayout({
   children,
 }: Readonly<{
-  children: React.ReactNode
+  children: ReactNode
 }>) {
   return (
     <ClerkProvider>
@@ -28,7 +30,8 @@ export default function RootLayout({
         <body className="min-h-screen  max-h-svh bg-overlay overflow-hidden">
           {children}
         </body>
-        <Script src="https://cdn.jsdelivr.net/npm/@aejkatappaja/phantom-ui/dist/phantom-ui.cdn.js" />
+        <Script
+          src="https://cdn.jsdelivr.net/npm/@aejkatappaja/phantom-ui/dist/phantom-ui.cdn.js" />
       </html>
     </ClerkProvider>
   )

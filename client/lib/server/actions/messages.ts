@@ -4,30 +4,30 @@ import { getPublicApiUrl } from "@/lib/env";
 import { auth } from "@clerk/nextjs/server";
 import { refresh, revalidateTag, updateTag } from "next/cache";
 
-export async function createThread(params: {
+
+type CreateThreadProps = {
   channel_id: string;
   name: string;
   message_id: string;
   server_id: string;
-}) {
-  try {
-    const base = getPublicApiUrl();
-    const { getToken } = await auth()
-    const token = await getToken()
+}
 
-    const response = await fetch(`${base}/threads/create`, {
+export async function createThread(params: CreateThreadProps) {
+  try {
+
+    const response = await fetch(`${getPublicApiUrl()}/threads/create`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Accept: "application/json",
-        "Authorization": `Bearer ${token}`
+        "Accept": "application/json",
+        "Authorization": `Bearer ${await (await auth()).getToken()}`
       },
       body: JSON.stringify(params),
     });
     if (!response.ok) {
       return { error: "Failed to create thread" };
     }
-    revalidateTag("messages", "max")
+    updateTag("messages")
     refresh()
     return { success: true };
   } catch (e) {
@@ -38,16 +38,13 @@ export async function createThread(params: {
 
 export async function pinMessage(msg_id: string, channel_id: string, server_id: string) {
   try {
-    const base = getPublicApiUrl();
-    const { getToken } = await auth()
-    const token = await getToken()
 
-    const response = await fetch(`${base}/messages/pin`, {
+    const response = await fetch(`${getPublicApiUrl()}/messages/pin`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Accept: "application/json",
-        "Authorization": `Bearer ${token}`
+        "Accept": "application/json",
+        "Authorization": `Bearer ${await (await auth()).getToken()}`
       },
       body: JSON.stringify({
         msg_id,
@@ -68,16 +65,13 @@ export async function pinMessage(msg_id: string, channel_id: string, server_id: 
 
 export async function deletePinnedMessage(id: string, server_id: string) {
   try {
-    const base = getPublicApiUrl();
-    const { getToken } = await auth()
-    const token = await getToken()
 
-    const res = await fetch(`${base}/messages/pin`, {
+    const res = await fetch(`${getPublicApiUrl()}/messages/pin`, {
       method: "DELETE",
       headers: {
         "Content-Type": "application/json",
-        Accept: "application/json",
-        "Authorization": `Bearer ${token}`
+        "Accept": "application/json",
+        "Authorization": `Bearer ${await (await auth()).getToken()}`
       },
       body: JSON.stringify({
         message_id: id,
@@ -114,16 +108,13 @@ export async function deleteMessage({
   path,
 }: DeleteMessageParams) {
   try {
-    const base = getPublicApiUrl();
-    const { getToken } = await auth()
-    const token = await getToken()
 
-    const res = await fetch(`${base}/messages`, {
+    const res = await fetch(`${getPublicApiUrl()}/messages`, {
       method: "DELETE",
       headers: {
         "Content-Type": "application/json",
-        Accept: "application/json",
-        "Authorization": `Bearer ${token}`
+        "Accept": "application/json",
+        "Authorization": `Bearer ${await (await auth()).getToken()}`
       },
       body: JSON.stringify({
         id,

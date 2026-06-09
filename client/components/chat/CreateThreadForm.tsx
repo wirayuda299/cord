@@ -67,7 +67,7 @@ export default function CreateThreadForm({
   return (
     <Dialog>
       <DialogTrigger
-        className="w-full flex items-center gap-2.5 px-2 py-2 text-[13px] font-medium text-left rounded cursor-pointer transition-colors duration-100 text-text-secondary hover:bg-discord-blue hover:text-white"
+        className="w-full flex items-center text-white gap-2.5 px-2 py-2 text-[13px] font-medium text-left rounded cursor-pointer transition-colors duration-100  hover:bg-discord-blue "
       >
         <span className={"text-text-secondary"}>
           <MessageCircle size={15} />
