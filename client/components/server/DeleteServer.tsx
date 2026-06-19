@@ -43,7 +43,7 @@ export default function DeleteServer({ serverId, serverName }: DeleteServerProps
   };
 
   return (
-    <div className="flex flex-col w-full max-h-screen overflow-y-auto text-white p-8">
+    <div className="flex flex-col w-full max-h-screen overflow-y-auto text-white p-8 min-w-full">
       <div className="flex items-center gap-3 pb-4 border-b border-white/5 mb-8">
         <div className="flex items-center justify-center size-10 rounded-xl bg-destructive/15">
           <Trash2 size={20} className="text-destructive" />
@@ -56,7 +56,7 @@ export default function DeleteServer({ serverId, serverName }: DeleteServerProps
         </div>
       </div>
 
-      <div className="flex flex-col gap-6 max-w-lg">
+      <div className="flex flex-col gap-6 max-w-full">
         {/* Warning card */}
         <div className="flex items-start gap-3 p-4 rounded-xl border border-destructive/20 bg-destructive/10 text-destructive-foreground">
           <AlertTriangle size={18} className="text-red-400 shrink-0 mt-0.5" />

@@ -198,10 +198,11 @@ function SettingsSidebar({
 }
 
 
-function ServerSettingDialog({ serverId, serverOwner }: { serverId: string, serverOwner: string }) {
+type ServerSettingProps = { serverId: string, serverOwner: string, serverName: string }
+
+function ServerSettingDialog({ serverId, serverOwner, serverName }: ServerSettingProps) {
   const [active, setActive] = useState("server profile")
   const sp = useSearchParams()
-  const serverName = sp.get("name") ?? "Server"
 
   return (
     <Dialog>

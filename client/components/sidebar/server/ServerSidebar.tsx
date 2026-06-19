@@ -59,6 +59,7 @@ export default async function ServerSidebar({
               {user.id === channels.server.created_by && (
                 <ServerSettingDialog
                   serverId={serverId}
+                  serverName={channels.server.name}
                   serverOwner={channels.server.created_by}
                 />
               )}
