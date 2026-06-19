@@ -43,7 +43,8 @@ type MessageMenuProps = {
   serverId: string;
   onDelete: (id: string) => void;
   currentUser: string;
-  hasPermissionManageMessages: boolean
+  hasPermissionManageMessages: boolean;
+  isBanned?: boolean;
 };
 
 function EmojiPicker({
@@ -184,6 +185,7 @@ function useMenuActions(
   onForward?: () => void,
   onMore?: () => void,
   toggleEmojiPicker?: () => void,
+  isBanned?: boolean,
 ): MenuAction[] {
   const selectMessage = useAppStore((m) => m.setSelectedMsg);
   const pathname = usePathname();
@@ -196,7 +198,7 @@ function useMenuActions(
         onClick: () => selectMessage(message),
       },
 
-      ...(hasPermissionManageMessages ? [
+      ...(!isBanned && hasPermissionManageMessages ? [
         {
           icon: <MessageCircle size={15} />,
           label: "Create Thread",
@@ -205,7 +207,7 @@ function useMenuActions(
       ] : []),
 
 
-      ...(userId === message.user_id && onEdit
+      ...(!isBanned && userId === message.user_id && onEdit
         ? [
           {
             icon: <Edit size={15} />,
@@ -214,12 +216,14 @@ function useMenuActions(
           },
         ]
         : []),
-      {
-        icon: <Forward size={15} />,
-        label: "Forward Message",
-        onClick: onForward,
-      },
-      ...(hasPermissionManageMessages ? [
+      ...(!isBanned ? [
+        {
+          icon: <Forward size={15} />,
+          label: "Forward Message",
+          onClick: onForward,
+        },
+      ] : []),
+      ...(!isBanned && hasPermissionManageMessages ? [
         {
           icon: <Pin size={15} />,
           label: "Pin Message",
@@ -237,17 +241,21 @@ function useMenuActions(
 
               alert("message pinned")
             } catch (e) {
-              alert(e)
+               alert(e)
             }
           },
         },
       ] : []),
-      {
-        icon: <SmilePlus size={15} />,
-        label: "Add Reaction",
-        onClick: toggleEmojiPicker,
-      },
-      { icon: <Bookmark size={15} />, label: "Bookmark", onClick: onBookmark },
+      ...(!isBanned ? [
+         {
+           icon: <SmilePlus size={15} />,
+           label: "Add Reaction",
+           onClick: toggleEmojiPicker,
+         },
+      ] : []),
+      ...(!isBanned ? [
+        { icon: <Bookmark size={15} />, label: "Bookmark", onClick: onBookmark },
+      ] : []),
       {
         icon: <Copy size={15} />,
         label: "Copy Text",
@@ -261,7 +269,7 @@ function useMenuActions(
         dividerBefore: true,
       },
 
-      ...(message.user_id === userId || hasPermissionManageMessages ? [
+      ...(!isBanned && (message.user_id === userId || hasPermissionManageMessages) ? [
         {
           icon: <Trash2 size={15} />,
           label: "Delete Message",
@@ -283,7 +291,7 @@ function useMenuActions(
         },
       ] : [])
     ],
-    [hasPermissionManageMessages, userId, message, onEdit, onForward, toggleEmojiPicker, onBookmark, onMore, selectMessage, serverId, pathname, onDelete],
+    [hasPermissionManageMessages, userId, message, onEdit, onForward, toggleEmojiPicker, onBookmark, onMore, selectMessage, serverId, pathname, onDelete, isBanned],
   );
 }
 
@@ -329,6 +337,7 @@ function MessageMenu(props: MessageMenuProps) {
     onForward,
     onMore,
     toggleEmojiPicker,
+    props.isBanned,
   );
 
   const checkFlip = useCallback(() => {
@@ -378,13 +387,15 @@ function MessageMenu(props: MessageMenuProps) {
         ${flipUp ? "bottom-full mb-1" : "top-0"}
       `}
     >
-      <div className="relative">
-        <EmojiRow
-          onSelectEmoji={handleEmojiSelect}
-          showPicker={showPicker}
-          setShowPicker={setShowPicker}
-        />
-      </div>
+      {!props.isBanned && (
+         <div className="relative">
+           <EmojiRow
+             onSelectEmoji={handleEmojiSelect}
+             showPicker={showPicker}
+             setShowPicker={setShowPicker}
+           />
+         </div>
+      )}
       <div className="flex flex-col px-1.5 py-1.5 gap-px">
         {actions.map((action) => {
           if (action.label === "Create Thread" && hasPermissionManageMessages) {

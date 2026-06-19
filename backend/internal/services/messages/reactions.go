@@ -20,6 +20,33 @@ type ReactionPayload struct {
 	Emoji     string `json:"emoji"`
 }
 
+func checkUserBanForMessage(ctx context.Context, db *databases.Container, messageID string, userID string) *httputil.ErrorResponse {
+	var serverID *string
+	err := db.Postgres.QueryRow(ctx, `
+		SELECT COALESCE(
+			(SELECT server_id::text FROM channels WHERE id = m.channel_id),
+			(SELECT c.server_id::text FROM threads t JOIN channels c ON t.channel_id = c.id WHERE t.id = m.thread_id)
+		)
+		FROM messages m
+		WHERE m.id = $1
+	`, messageID).Scan(&serverID)
+	if err != nil {
+		return &httputil.ErrorResponse{Err: err, Code: http.StatusInternalServerError}
+	}
+
+	if serverID != nil && *serverID != "" {
+		var isBanned bool
+		err = db.Postgres.QueryRow(ctx, "SELECT EXISTS(SELECT 1 FROM bans WHERE server_id = $1 AND user_id = $2)", *serverID, userID).Scan(&isBanned)
+		if err != nil {
+			return &httputil.ErrorResponse{Err: err, Code: http.StatusInternalServerError}
+		}
+		if isBanned {
+			return &httputil.ErrorResponse{Err: errors.New("you are banned from this server"), Code: http.StatusForbidden}
+		}
+	}
+	return nil
+}
+
 func AddReaction(ctx context.Context, db *databases.Container, p *ReactionPayload) *httputil.ErrorResponse {
 	userID, err := utils.GetSession(ctx)
 	if err != nil {
@@ -33,6 +60,10 @@ func AddReaction(ctx context.Context, db *databases.Container, p *ReactionPayloa
 	}
 	if p.Emoji == "" {
 		return &httputil.ErrorResponse{Err: errors.New("emoji is missing"), Code: http.StatusBadRequest}
+	}
+
+	if errRes := checkUserBanForMessage(ctx, db, p.MessageID, userID); errRes != nil {
+		return errRes
 	}
 
 	var exists bool
@@ -69,6 +100,10 @@ func RemoveReaction(ctx context.Context, db *databases.Container, p *ReactionPay
 	}
 	if p.Emoji == "" {
 		return &httputil.ErrorResponse{Err: errors.New("emoji is missing"), Code: http.StatusBadRequest}
+	}
+
+	if errRes := checkUserBanForMessage(ctx, db, p.MessageID, userID); errRes != nil {
+		return errRes
 	}
 
 	_, err = db.Postgres.Exec(ctx, `

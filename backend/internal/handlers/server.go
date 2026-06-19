@@ -9,6 +9,7 @@ import (
 	"github.com/wirayuda299/backend/internal/databases"
 	"github.com/wirayuda299/backend/internal/httputil"
 	"github.com/wirayuda299/backend/internal/services/servers"
+	"github.com/wirayuda299/backend/internal/services/servers/audit"
 )
 
 type JoinServerWithCode struct {
@@ -16,11 +17,36 @@ type JoinServerWithCode struct {
 }
 
 type ServerHandler struct {
-	db *databases.Container
+	db      *databases.Container
+	evictor servers.ServerEvictor
 }
 
-func NewServerHandler(db *databases.Container) *ServerHandler {
-	return &ServerHandler{db}
+func NewServerHandler(db *databases.Container, evictor servers.ServerEvictor) *ServerHandler {
+	return &ServerHandler{db: db, evictor: evictor}
+}
+
+func (sh *ServerHandler) DeleteServer(w http.ResponseWriter, r *http.Request) {
+	serverID := r.URL.Query().Get("serverID")
+
+	errRes := servers.DeleteServer(r.Context(), sh.db, sh.evictor, serverID)
+	if errRes != nil {
+		httputil.WriteErrorResponse(w, errRes.Err.Error(), errRes.Code)
+		return
+	}
+
+	httputil.EncodeResponse(w, "Server deleted successfully", http.StatusOK, nil)
+}
+
+func (sh *ServerHandler) GetAuditLogs(w http.ResponseWriter, r *http.Request) {
+	serverID := r.URL.Query().Get("serverID")
+
+	res, errRes := audit.FindAuditLogs(r.Context(), sh.db, serverID)
+	if errRes != nil {
+		httputil.WriteErrorResponse(w, errRes.Err.Error(), errRes.Code)
+		return
+	}
+
+	httputil.EncodeResponse(w, "Audit logs fetched", http.StatusOK, res)
 }
 
 func (sh *ServerHandler) JoinServer(w http.ResponseWriter, r *http.Request) {

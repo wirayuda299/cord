@@ -10,7 +10,7 @@ import (
 	"github.com/wirayuda299/backend/internal/httputil"
 )
 
-type CreateUserPayload struct {
+type UpdateUserPayload struct {
 	ID            string `json:"id"`
 	Username      string `json:"username"`
 	AvatarURL     string `json:"avatar_url"`
@@ -19,7 +19,7 @@ type CreateUserPayload struct {
 	EmailVerified string `json:"email_verified"`
 }
 
-func CreateUser(ctx context.Context, db *databases.Container, p *CreateUserPayload) *httputil.ErrorResponse {
+func UpdateUser(ctx context.Context, db *databases.Container, p *UpdateUserPayload) *httputil.ErrorResponse {
 	if p.ID == "" {
 		return &httputil.ErrorResponse{Err: errors.New("user ID is missing"), Code: http.StatusBadRequest}
 	}
@@ -28,10 +28,10 @@ func CreateUser(ctx context.Context, db *databases.Container, p *CreateUserPaylo
 		return &httputil.ErrorResponse{Err: errors.New("username is missing"), Code: http.StatusBadRequest}
 	}
 
-	_, err := db.Postgres.Exec(ctx, `INSERT INTO users(id,username,avatar_url,avatar_id,bio,email_verified)
-		values($1,$2,$3,$4,$5,$6) ON CONFLICT (id) DO NOTHING;`, p.ID, p.Username, p.AvatarURL, p.AvatarID, p.Bio, p.EmailVerified)
+	_, err := db.Postgres.Exec(ctx, `UPDATE users SET username = $2, avatar_url = $3, avatar_id = $4, bio = $5, email_verified = $6, updated_at = NOW() WHERE id = $1;`,
+		p.ID, p.Username, p.AvatarURL, p.AvatarID, p.Bio, p.EmailVerified)
 	if err != nil {
-		log.Println("Failed to create user -> ", err.Error())
+		log.Println("Failed to update user -> ", err.Error())
 		return &httputil.ErrorResponse{Err: err, Code: http.StatusInternalServerError}
 	}
 	return nil

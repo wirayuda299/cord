@@ -21,6 +21,11 @@ func HasPermission(p *HasPermissionType) (bool, error) {
 	if err != nil {
 		return hasPerm, err
 	}
+	var isBanned bool
+	err = p.Db.Postgres.QueryRow(p.Ctx, "SELECT EXISTS(SELECT 1 FROM bans WHERE server_id = $1 AND user_id = $2)", p.ServerID, userID).Scan(&isBanned)
+	if err == nil && isBanned {
+		return false, nil
+	}
 	query := `
             SELECT EXISTS (
                 -- Check if user is the server owner

@@ -17,8 +17,10 @@ func MessagesRoutes(r *mux.Router, mh *handlers.MessageHandler, hub *websocket.H
 	s.HandleFunc("", mh.DeleteMessage).Methods(http.MethodDelete)
 	s.HandleFunc("/reactions", mh.AddReaction).Methods(http.MethodPost)
 	s.HandleFunc("/reactions", mh.RemoveReaction).Methods(http.MethodDelete)
+	s.HandleFunc("/search", mh.SearchMessage).Methods(http.MethodGet)
 
 	p := s.PathPrefix("/pin").Subrouter()
+
 	p.HandleFunc("/find-all", mh.FindAllPinnedMessages).Methods(http.MethodGet)
 	p.HandleFunc("", mh.DeletePinnedMessage).Methods(http.MethodDelete)
 	p.HandleFunc("", mh.PinMessage).Methods(http.MethodPost)

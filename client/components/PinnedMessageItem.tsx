@@ -26,26 +26,46 @@ export default function PinnedMessageItem({
   }, [serverId])
 
   const handleJumpToMessage = useCallback((messageId: string) => {
-    // Wait a brief moment for the dropdown menu to close so layout is stable
-    setTimeout(() => {
-      const element = document.getElementById(messageId);
-      if (element) {
-        element.scrollIntoView({ behavior: "smooth", block: "center" });
-
-        // Remove animation class if present, then force reflow to restart animation on multiple clicks
-        element.classList.remove("animate-flash-message");
-        void element.offsetWidth;
-
-        // Visual feedback: briefly highlight the target message
-        element.classList.add("animate-flash-message");
-        setTimeout(() => {
-          element.classList.remove("animate-flash-message");
-        }, 3000);
-
+    const element = document.getElementById(messageId);
+    if (element) {
+      // Scroll to element (fallback-equipped manual centering)
+      const container = element.closest(".overflow-y-auto");
+      if (container) {
+        const containerRect = container.getBoundingClientRect();
+        const elementRect = element.getBoundingClientRect();
+        const targetTop =
+          container.scrollTop +
+          (elementRect.top - containerRect.top) -
+          containerRect.height / 2 +
+          elementRect.height / 2;
+        container.scrollTo({ top: targetTop, behavior: "smooth" });
       } else {
-        console.warn(`Message with ID ${messageId} not found in DOM`);
+        element.scrollIntoView({ behavior: "smooth", block: "center" });
       }
-    }, 100);
+
+      // Visual feedback: briefly highlight the target message (CSS Class + Inline style backup)
+      element.classList.remove("animate-flash-message");
+      void element.offsetWidth;
+
+      element.classList.add("animate-flash-message");
+
+      const originalBg = element.style.backgroundColor;
+      const originalTransition = element.style.transition;
+      element.style.transition = "background-color 0.15s ease-out";
+      element.style.backgroundColor = "rgba(88, 101, 242, 0.35)";
+
+      setTimeout(() => {
+        element.style.transition = "background-color 1s ease-in-out";
+        element.style.backgroundColor = originalBg;
+        setTimeout(() => {
+          element.style.transition = originalTransition;
+          element.classList.remove("animate-flash-message");
+        }, 1000);
+      }, 2000);
+
+    } else {
+      console.warn(`Message with ID ${messageId} not found in DOM`);
+    }
   }, []);
 
   return (

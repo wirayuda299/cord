@@ -1,42 +1,28 @@
 'use client'
 
-import { useState, useMemo } from "react"
+import { useState, useMemo, useEffect } from "react"
 import { Ban, Search, ShieldOff, RotateCcw } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { getBans, unbanMember } from "@/lib/server/actions/servers"
+import { format } from "date-fns"
 
 
 type BannedMember = {
-  id: number
+  id: string
   name: string
   initials: string
   color: string
   reason: string | null
-  bannedAt: Date
+  bannedAt: Date | string
   bannedBy: string
 }
 
-const d = (daysAgo: number) => {
-  const t = new Date("2026-04-13T12:00:00Z")
-  t.setDate(t.getDate() - daysAgo)
-  return t
-}
-
-const BANNED: BannedMember[] = [
-  { id: 1, name: "draven_x", initials: "DX", color: "bg-orange-500/20 text-orange-400", reason: "Repeated harassment of members", bannedAt: d(1), bannedBy: "alexknight" },
-  { id: 2, name: "wraithmode", initials: "WM", color: "bg-zinc-500/20 text-zinc-400", reason: "Spamming invite links", bannedAt: d(3), bannedBy: "frost_byte" },
-  { id: 3, name: "cipher_k", initials: "CK", color: "bg-zinc-500/20 text-zinc-400", reason: "Sharing explicit content", bannedAt: d(7), bannedBy: "alexknight" },
-  { id: 4, name: "solaris_7", initials: "S7", color: "bg-zinc-500/20 text-zinc-400", reason: null, bannedAt: d(12), bannedBy: "sakura_r" },
-  { id: 5, name: "riptide99", initials: "RT", color: "bg-zinc-500/20 text-zinc-400", reason: "Doxxing attempt", bannedAt: d(18), bannedBy: "alexknight" },
-  { id: 6, name: "ironclad", initials: "IC", color: "bg-zinc-500/20 text-zinc-400", reason: "Bot / automated account", bannedAt: d(24), bannedBy: "frost_byte" },
-  { id: 7, name: "shadowvex", initials: "SV", color: "bg-red-500/20 text-red-400", reason: "Threatening other members", bannedAt: d(30), bannedBy: "alexknight" },
-  { id: 8, name: "nullptr", initials: "NP", color: "bg-gray-500/20 text-gray-400", reason: "Evading a previous ban", bannedAt: d(35), bannedBy: "sakura_r" },
-  { id: 9, name: "xpl0it", initials: "XP", color: "bg-red-500/20 text-red-400", reason: "Posting malware / phishing links", bannedAt: d(42), bannedBy: "alexknight" },
-  { id: 10, name: "void_runner", initials: "VR", color: "bg-gray-500/20 text-gray-400", reason: null, bannedAt: d(60), bannedBy: "frost_byte" },
-]
 
 
-function formatDate(date: Date) {
-  return date.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
+
+function formatDate(dateInput: Date | string) {
+  const date = typeof dateInput === "string" ? new Date(dateInput) : dateInput
+  return format(date, "MMM d, yyyy")
 }
 
 
@@ -127,10 +113,20 @@ function BanRow({ member, onUnban }: { member: BannedMember; onUnban: () => void
 
 // ─── root ─────────────────────────────────────────────────────────────────────
 
-export default function Bans() {
-  const [bans, setBans] = useState(BANNED)
+export default function Bans({ serverId }: { serverId: string }) {
+  const [bans, setBans] = useState<BannedMember[]>([])
   const [query, setQuery] = useState("")
-  const [confirmId, setConfirmId] = useState<number | null>(null)
+  const [confirmId, setConfirmId] = useState<string | null>(null)
+
+  useEffect(() => {
+    async function loadBans() {
+      const { error, data } = await getBans(serverId)
+      if (!error && data) {
+        setBans(data)
+      }
+    }
+    loadBans()
+  }, [serverId])
 
   const filtered = useMemo(() =>
     bans.filter((b) => b.name.toLowerCase().includes(query.toLowerCase())),
@@ -139,10 +135,12 @@ export default function Bans() {
 
   const confirmTarget = bans.find((b) => b.id === confirmId)
 
-  const handleUnban = () => {
+  const handleUnban = async () => {
     if (confirmId === null) return
-    setBans((prev) => prev.filter((b) => b.id !== confirmId))
-    // TODO: call unban server action
+    const { error } = await unbanMember(serverId, confirmId)
+    if (!error) {
+      setBans((prev) => prev.filter((b) => b.id !== confirmId))
+    }
     setConfirmId(null)
   }
 

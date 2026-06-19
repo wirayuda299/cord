@@ -13,6 +13,7 @@ import (
 	"github.com/gorilla/websocket"
 	"github.com/wirayuda299/backend/internal/databases"
 	"github.com/wirayuda299/backend/internal/services"
+	"github.com/wirayuda299/backend/internal/services/members"
 	"github.com/wirayuda299/backend/internal/services/messages"
 )
 
@@ -172,7 +173,39 @@ func ServeWs(hub *Hub, db *databases.Container, w http.ResponseWriter, r *http.R
 		return
 	}
 
-	// Upgrade only after successful auth
+	authCtx := clerk.ContextWithSessionClaims(r.Context(), claims)
+	serverID := r.URL.Query().Get("serverId")
+	channelID := r.URL.Query().Get("channelId")
+	userID := claims.Subject
+
+	if serverID != "" && serverID != "dm" {
+		joined, memberErr := members.IsUserJoinedServer(authCtx, db, serverID)
+		if memberErr != nil {
+			log.Printf("ws auth error: fail to verify membership: %v", memberErr.Err)
+			http.Error(w, "internal server error", http.StatusInternalServerError)
+			return
+		}
+		if !joined {
+			log.Printf("ws auth error: user %s is not joined to server %s", userID, serverID)
+			http.Error(w, "unauthorized: not a member of the server", http.StatusForbidden)
+			return
+		}
+	} else if channelID != "" {
+		var exists bool
+		err = db.Postgres.QueryRow(authCtx, "SELECT EXISTS(SELECT 1 FROM channel_members WHERE channel_id = $1 AND user_id = $2)", channelID, userID).Scan(&exists)
+		if err != nil {
+			log.Printf("ws auth error: fail to verify channel membership: %v", err)
+			http.Error(w, "internal server error", http.StatusInternalServerError)
+			return
+		}
+		if !exists {
+			log.Printf("ws auth error: user %s is not a member of DM channel %s", userID, channelID)
+			http.Error(w, "unauthorized: not a member of the channel", http.StatusForbidden)
+			return
+		}
+	}
+
+	// Upgrade only after successful auth and validation
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		log.Printf("upgrade error: %v", err)
@@ -184,9 +217,6 @@ func ServeWs(hub *Hub, db *databases.Container, w http.ResponseWriter, r *http.R
 	// is canceled when the HTTP handler returns (right after the upgrade), which would
 	// immediately cancel all DB calls in ReadIncomingMessage.
 	ctx, cancel := context.WithCancel(clerk.ContextWithSessionClaims(context.Background(), claims))
-	serverID := r.URL.Query().Get("serverId")
-	channelID := r.URL.Query().Get("channelId")
-	userID := claims.Subject
 
 	client := &Client{
 		hub:       hub,

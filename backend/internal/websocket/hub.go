@@ -144,13 +144,25 @@ func (h *Hub) Run() {
 			h.mu.Lock()
 			servers := h.clients[message.ServerId]
 			if servers != nil {
-				for _, clients := range servers {
+				if message.ServerId == "dm" || message.ServerId == "" {
+					clients := servers[message.ChannelId]
 					for client := range clients {
 						select {
 						case client.send <- b:
 						default:
 							close(client.send)
 							delete(clients, client)
+						}
+					}
+				} else {
+					for _, clients := range servers {
+						for client := range clients {
+							select {
+							case client.send <- b:
+							default:
+								close(client.send)
+								delete(clients, client)
+							}
 						}
 					}
 				}
@@ -219,13 +231,25 @@ func (h *Hub) BroadcastDelete(serverId, channelId, messageId string) {
 
 	servers := h.clients[serverId]
 	if servers != nil {
-		for _, clients := range servers {
+		if serverId == "dm" || serverId == "" {
+			clients := servers[channelId]
 			for client := range clients {
 				select {
 				case client.send <- data:
 				default:
 					close(client.send)
 					delete(clients, client)
+				}
+			}
+		} else {
+			for _, clients := range servers {
+				for client := range clients {
+					select {
+					case client.send <- data:
+					default:
+						close(client.send)
+						delete(clients, client)
+					}
 				}
 			}
 		}
@@ -271,3 +295,40 @@ func (h *Hub) BroadcastMessages(serverId, channelId string, messages []services.
 		Messages:  messages,
 	}
 }
+
+func (h *Hub) EvictUser(serverId, userId string) {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+
+	servers, ok := h.clients[serverId]
+	if !ok {
+		return
+	}
+
+	for _, channels := range servers {
+		for client := range channels {
+			if client.UserID == userId {
+				// Close connection. This triggers an error on client.Conn.ReadMessage()
+				// which cleans up and unregisters the client automatically.
+				_ = client.Conn.Close()
+			}
+		}
+	}
+}
+
+func (h *Hub) EvictServer(serverId string) {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+
+	servers, ok := h.clients[serverId]
+	if !ok {
+		return
+	}
+
+	for _, channels := range servers {
+		for client := range channels {
+			_ = client.Conn.Close()
+		}
+	}
+}
+

@@ -2,7 +2,6 @@ package servers
 
 import (
 	"context"
-	"log"
 	"net/http"
 
 	"github.com/wirayuda299/backend/internal/databases"
@@ -24,8 +23,10 @@ func BrowseServers(ctx context.Context, db *databases.Container) ([]BrowsableSer
 	}
 
 	rows, err := db.Postgres.Query(ctx, `
-		SELECT s.id, s.name, COALESCE(s.logo, '') as logo,
-		       (SELECT COUNT(*) FROM members WHERE server_id = s.id) as member_count
+		SELECT s.id,
+		s.name,
+		COALESCE(s.logo, '') as logo,
+		(SELECT COUNT(*) FROM members WHERE server_id = s.id) as member_count
 		FROM servers s
 		WHERE s.private = false
 		  AND s.created_by != $1
@@ -41,7 +42,6 @@ func BrowseServers(ctx context.Context, db *databases.Container) ([]BrowsableSer
 	for rows.Next() {
 		var s BrowsableServer
 		if err := rows.Scan(&s.Id, &s.Name, &s.Logo, &s.MemberCount); err != nil {
-			log.Println(err)
 			return nil, &httputil.ErrorResponse{Err: err, Code: http.StatusInternalServerError}
 		}
 		list = append(list, s)

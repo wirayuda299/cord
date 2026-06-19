@@ -17,6 +17,7 @@ export type ActionType =
   | "invite_deleted"
   | "message_deleted"
   | "message_pinned"
+  | "safety_setup_updated"
 
 export type AuditActor = {
   id: number
@@ -66,6 +67,7 @@ export const ACTION_META: Record<ActionType, ActionMeta> = {
   invite_deleted:      { label: "Invite Deleted",        verb: "deleted invite",       color: "text-orange-400",  bg: "bg-orange-500/15",  dot: "#e67e22" },
   message_deleted:     { label: "Message Deleted",       verb: "deleted a message in", color: "text-red-400",     bg: "bg-red-500/15",     dot: "#ed4245" },
   message_pinned:      { label: "Message Pinned",        verb: "pinned a message in",  color: "text-yellow-400",  bg: "bg-yellow-500/15",  dot: "#f1c40f" },
+  safety_setup_updated: { label: "Safety Setup Updated",  verb: "updated safety settings for", color: "text-green-400", bg: "bg-green-500/15", dot: "#57f287" },
 }
 
 export const CATEGORY_LABELS: Record<ActionCategory, string> = {

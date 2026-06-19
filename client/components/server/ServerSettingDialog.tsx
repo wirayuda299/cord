@@ -22,6 +22,11 @@ const Bans = dynamic(() => import("./Bans"), {
     return loader("Bans")
   },
 })
+const DeleteServer = dynamic(() => import("./DeleteServer"), {
+  ssr: false, loading(loadingProps) {
+    return loader("Delete Server")
+  },
+})
 const AuditLog = dynamic(() => import("./AuditLog"), {
   ssr: false, loading(loadingProps) {
     return loader("Audit Log")
@@ -228,13 +233,11 @@ function ServerSettingDialog({ serverId, serverOwner }: { serverId: string, serv
             {active === "members" && <Members serverID={serverId} serverOwner={serverOwner} />}
             {active === "roles" && <ServerRolesSettings serverOwner={serverOwner} serverID={serverId} />}
             {active === "invites" && <Invites serverID={serverId} />}
-            {active === "safety setup" && <SafetySetup />}
-            {active === "audit log" && <AuditLog />}
-            {active === "bans" && <Bans />}
+            {active === "safety setup" && <SafetySetup serverId={serverId} />}
+            {active === "audit log" && <AuditLog serverId={serverId} />}
+            {active === "bans" && <Bans serverId={serverId} />}
             {active === "delete server" && (
-              <div className="flex items-center justify-center h-full text-text-muted">
-                <p className="text-sm">Delete server panel</p>
-              </div>
+              <DeleteServer serverId={serverId} serverName={serverName} />
             )}
           </main>
         </div>

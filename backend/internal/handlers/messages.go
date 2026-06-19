@@ -9,6 +9,7 @@ import (
 	"github.com/wirayuda299/backend/internal/queue"
 	"github.com/wirayuda299/backend/internal/services"
 
+	"github.com/wirayuda299/backend/internal/services/members"
 	"github.com/wirayuda299/backend/internal/services/messages"
 	"github.com/wirayuda299/backend/internal/services/messages/pin"
 )
@@ -25,8 +26,34 @@ func NewMessageHandler(db *databases.Container, hub messages.BroadcastDeleter) *
 	}
 }
 
+func (mh *MessageHandler) SearchMessage(w http.ResponseWriter, r *http.Request) {
+	query := r.URL.Query().Get("query")
+	serverID := r.URL.Query().Get("serverID")
+	channelID := r.URL.Query().Get("channelID")
+	msgs, err := messages.SearchMessage(r.Context(), mh.db, query, serverID, channelID)
+
+	if err != nil {
+		httputil.WriteErrorResponse(w, err.Err.Error(), err.Code)
+		return
+	}
+
+	httputil.EncodeResponse(w, "messages found", http.StatusOK, msgs)
+
+}
+
 func (mh *MessageHandler) FindAllPinnedMessages(w http.ResponseWriter, r *http.Request) {
 	channelID := r.URL.Query().Get("channelID")
+
+	allowed, verifyErr := members.VerifyChannelAccess(r.Context(), mh.db, channelID)
+	if verifyErr != nil {
+		httputil.WriteErrorResponse(w, verifyErr.Error(), http.StatusInternalServerError)
+		return
+	}
+	if !allowed {
+		httputil.WriteErrorResponse(w, "forbidden: you do not have access to this channel", http.StatusForbidden)
+		return
+	}
+
 	res, err := pin.GetAllPinnedMessage(r.Context(), channelID, mh.db)
 	if err != nil {
 		httputil.WriteErrorResponse(w, err.Err.Error(), err.Code)
@@ -143,6 +170,16 @@ func (mh *MessageHandler) DeleteMessage(w http.ResponseWriter, r *http.Request) 
 
 func (mh *MessageHandler) FindAllMessages(w http.ResponseWriter, r *http.Request) {
 	channelID := r.URL.Query().Get("channelId")
+
+	allowed, verifyErr := members.VerifyChannelAccess(r.Context(), mh.db, channelID)
+	if verifyErr != nil {
+		httputil.WriteErrorResponse(w, verifyErr.Error(), http.StatusInternalServerError)
+		return
+	}
+	if !allowed {
+		httputil.WriteErrorResponse(w, "forbidden: you do not have access to this channel", http.StatusForbidden)
+		return
+	}
 
 	allMessages, err := messages.GetAllMessages(r.Context(), mh.db, channelID)
 	if err != nil {

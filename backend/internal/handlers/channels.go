@@ -7,6 +7,7 @@ import (
 	"github.com/wirayuda299/backend/internal/databases"
 	"github.com/wirayuda299/backend/internal/httputil"
 	"github.com/wirayuda299/backend/internal/services/channels"
+	"github.com/wirayuda299/backend/internal/services/members"
 )
 
 type ChannelHandler struct {
@@ -37,6 +38,16 @@ func (ch *ChannelHandler) FindAllChannelsInAServer(w http.ResponseWriter, r *htt
 	serverID := r.URL.Query().Get("serverID")
 	if serverID == "" {
 		httputil.WriteErrorResponse(w, "Server ID is required", http.StatusBadRequest)
+		return
+	}
+
+	joined, errRes := members.IsUserJoinedServer(r.Context(), ch.db, serverID)
+	if errRes != nil {
+		httputil.WriteErrorResponse(w, errRes.Err.Error(), errRes.Code)
+		return
+	}
+	if !joined {
+		httputil.WriteErrorResponse(w, "forbidden: you are not a member of this server", http.StatusForbidden)
 		return
 	}
 

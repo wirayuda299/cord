@@ -107,3 +107,172 @@ export async function createServer(name: string) {
   updateTag("servers")
   return { error: null }
 }
+
+export async function updateSafetySetup(serverId: string, data: {
+  verificationLevel: string
+  contentFilter: string
+  require2FA: boolean
+  dmSpamFilter: boolean
+  defaultNotifications: string
+}) {
+  const base = getPublicApiUrl()
+  const { getToken } = await auth()
+  const token = await getToken()
+
+  const res = await fetch(`${base}/server/safety`, {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+      Accept: "application/json",
+      "Authorization": `Bearer ${token}`
+    },
+    body: JSON.stringify({
+      server_id: serverId,
+      verification_level: data.verificationLevel,
+      require_2_fa: data.require2FA,
+      content_filter: data.contentFilter,
+      default_notification: data.defaultNotifications,
+      dm_spam_filter: data.dmSpamFilter,
+    }),
+  })
+
+  if (!res.ok) {
+    return { error: (await res.json()).message }
+  }
+
+  return { error: null }
+}
+
+export async function getSafetySetup(serverId: string) {
+  const base = getPublicApiUrl()
+  const { getToken } = await auth()
+  const token = await getToken()
+
+  const res = await fetch(`${base}/server/safety?serverID=${serverId}`, {
+    method: "GET",
+    headers: {
+      Accept: "application/json",
+      "Authorization": `Bearer ${token}`
+    },
+  })
+
+  if (!res.ok) {
+    return { error: (await res.json()).message, data: null }
+  }
+
+  const result = await res.json()
+  return { error: null, data: result.data }
+}
+
+export async function getBans(serverId: string) {
+  const base = getPublicApiUrl()
+  const { getToken } = await auth()
+  const token = await getToken()
+
+  const res = await fetch(`${base}/server/bans?serverID=${serverId}`, {
+    method: "GET",
+    headers: {
+      Accept: "application/json",
+      "Authorization": `Bearer ${token}`
+    },
+  })
+
+  if (!res.ok) {
+    return { error: (await res.json()).message, data: [] }
+  }
+
+  const result = await res.json()
+  return { error: null, data: result.data }
+}
+
+export async function banMember(serverId: string, memberId: string, reason: string) {
+  const base = getPublicApiUrl()
+  const { getToken } = await auth()
+  const token = await getToken()
+
+  const res = await fetch(`${base}/server/bans`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Accept: "application/json",
+      "Authorization": `Bearer ${token}`
+    },
+    body: JSON.stringify({
+      server_id: serverId,
+      member_id: memberId,
+      reason,
+    }),
+  })
+
+  if (!res.ok) {
+    return { error: (await res.json()).message }
+  }
+
+  return { error: null }
+}
+
+export async function unbanMember(serverId: string, memberId: string) {
+  const base = getPublicApiUrl()
+  const { getToken } = await auth()
+  const token = await getToken()
+
+  const res = await fetch(`${base}/server/bans?serverID=${serverId}&memberID=${memberId}`, {
+    method: "DELETE",
+    headers: {
+      Accept: "application/json",
+      "Authorization": `Bearer ${token}`
+    },
+  })
+
+  if (!res.ok) {
+    return { error: (await res.json()).message }
+  }
+
+  return { error: null }
+}
+
+export async function deleteServer(serverId: string) {
+  const base = getPublicApiUrl()
+  const { getToken } = await auth()
+  const token = await getToken()
+
+  const res = await fetch(`${base}/server?serverID=${serverId}`, {
+    method: "DELETE",
+    headers: {
+      Accept: "application/json",
+      "Authorization": `Bearer ${token}`
+    },
+  })
+
+  if (!res.ok) {
+    return { error: (await res.json()).message }
+  }
+
+  updateTag("servers")
+  return { error: null }
+}
+
+export async function getAuditLogs(serverId: string) {
+  const base = getPublicApiUrl()
+  const { getToken } = await auth()
+  const token = await getToken()
+
+  const res = await fetch(`${base}/server/audit-logs?serverID=${serverId}`, {
+    method: "GET",
+    headers: {
+      Accept: "application/json",
+      "Authorization": `Bearer ${token}`
+    },
+  })
+
+  if (!res.ok) {
+    return { error: (await res.json()).message, data: [] }
+  }
+
+  const result = await res.json()
+  return { error: null, data: result.data }
+}
+
+
+
+

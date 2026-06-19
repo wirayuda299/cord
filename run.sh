@@ -185,8 +185,21 @@ log_ok "redis started"
 # --- Services ---
 log_section "⚙️  Services"
 
-start_service "Backend API    " "backend" "$LOG_DIR/backend-api.log"    go run cmd/api/main.go
-start_service "Backend Worker " "backend" "$LOG_DIR/backend-worker.log" go run cmd/worker/main.go
+# Ensure typical Go installation bin paths are in PATH
+export PATH="$PATH:$HOME/go/bin:/usr/local/go/bin"
+
+# Determine Go runner (use gow if available, fallback to go)
+if command -v gow >/dev/null 2>&1; then
+    GO_RUNNER="gow"
+    log_ok "Using ${BOLD}gow${RESET} for hot-reloading backend services"
+else
+    log_warn "${BOLD}gow${RESET} not found. Running with standard ${BOLD}go${RESET} (no auto-reload)."
+    log_step "To enable auto-reload, run: ${CYAN}go install github.com/mitranim/gow@latest${RESET}"
+    GO_RUNNER="go"
+fi
+
+start_service "Backend API    " "backend" "$LOG_DIR/backend-api.log"    $GO_RUNNER run cmd/api/main.go
+start_service "Backend Worker " "backend" "$LOG_DIR/backend-worker.log" $GO_RUNNER run cmd/worker/main.go
 start_service "Frontend Client" "client"  "$LOG_DIR/frontend.log"        pnpm run dev
 
 # --- ngrok ---

@@ -15,11 +15,26 @@ const (
 	UpdateRolePermission       = "update_role_permission"
 	CreateDefaultServerProfile = "create_default_server_profile"
 	CreateDefaultServerSafety  = "create_default_server_safety"
+	RecordAuditLogEntry        = "record_audit_log_entry"
 )
 
 type CreateChannelPayload struct {
 	ServerId  string `json:"server_id"`
 	CreatedBy string `json:"created_by"`
+}
+
+type AuditChange struct {
+	Field  string `json:"field"`
+	Before string `json:"before"`
+	After  string `json:"after"`
+}
+
+type RecordAuditLogEntryPayload struct {
+	ServerID   string        `json:"server_id"`
+	ActorID    string        `json:"actor_id"`
+	ActionType string        `json:"action_type"`
+	Target     string        `json:"target"`
+	Changes    []AuditChange `json:"changes"`
 }
 
 const (

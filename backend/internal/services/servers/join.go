@@ -46,6 +46,15 @@ func JoinServer(ctx context.Context, db *databases.Container, p *JoinServerPaylo
 		return &httputil.ErrorResponse{Err: errors.New("you are own the server"), Code: http.StatusBadRequest}
 	}
 
+	var isBanned bool
+	err = tx.QueryRow(ctx, "SELECT EXISTS(SELECT 1 FROM bans WHERE server_id = $1 AND user_id = $2)", p.ServerId, userID).Scan(&isBanned)
+	if err != nil {
+		return &httputil.ErrorResponse{Err: err, Code: http.StatusInternalServerError}
+	}
+	if isBanned {
+		return &httputil.ErrorResponse{Err: errors.New("you are banned from this server"), Code: http.StatusForbidden}
+	}
+
 	var userExist bool
 	err = tx.QueryRow(ctx, "SELECT EXISTS(SELECT 1 FROM users where id = $1)", userID).Scan(&userExist)
 	if err != nil {

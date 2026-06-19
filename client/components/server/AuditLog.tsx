@@ -1,34 +1,37 @@
 'use client'
 
-import { useState, useMemo } from "react"
+import { useState, useMemo, useEffect } from "react"
 import { ChevronDown, ChevronRight, ClipboardList, Search } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { formatDistanceToNow, format, isToday, isYesterday } from "date-fns"
 import {
-  AUDIT_LOG,
   ACTION_META,
   CATEGORY_LABELS,
   AuditEntry,
   ActionCategory,
+  ActionType,
 } from "@/constants/auditLog"
+import { getAuditLogs } from "@/lib/server/actions/servers"
+
+function mapActionTypeToCategory(type: string): ActionCategory {
+  if (type.startsWith("member_")) return "member";
+  if (type.startsWith("channel_")) return "channel";
+  if (type.startsWith("role_")) return "role";
+  if (type.startsWith("server_") || type.startsWith("safety_setup_")) return "server";
+  if (type.startsWith("invite_")) return "invite";
+  if (type.startsWith("message_")) return "message";
+  return "server";
+}
 
 
 function relativeTime(date: Date): string {
-  const diff = Math.floor((Date.now() - date.getTime()) / 1000)
-  if (diff < 60) return "just now"
-  if (diff < 3600) return `${Math.floor(diff / 60)}m ago`
-  if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`
-  if (diff < 86400 * 7) return `${Math.floor(diff / 86400)}d ago`
-  return date.toLocaleDateString("en-US", { month: "short", day: "numeric" })
+  return formatDistanceToNow(date, { addSuffix: true })
 }
 
 function dateLabel(date: Date): string {
-  const now = new Date()
-  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
-  const d = new Date(date.getFullYear(), date.getMonth(), date.getDate())
-  const diff = Math.floor((today.getTime() - d.getTime()) / 86400000)
-  if (diff === 0) return "Today"
-  if (diff === 1) return "Yesterday"
-  return date.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })
+  if (isToday(date)) return "Today"
+  if (isYesterday(date)) return "Yesterday"
+  return format(date, "EEEE, MMMM d")
 }
 
 function groupByDate(entries: AuditEntry[]): { label: string; entries: AuditEntry[] }[] {
@@ -194,17 +197,49 @@ function FilterBar({
 
 // ─── root ─────────────────────────────────────────────────────────────────────
 
-export default function AuditLog() {
+export default function AuditLog({ serverId }: { serverId: string }) {
+  const [logs, setLogs] = useState<AuditEntry[]>([])
   const [query, setQuery] = useState("")
   const [category, setCategory] = useState<ActionCategory | "all">("all")
 
+  useEffect(() => {
+    async function loadLogs() {
+      const { error, data } = await getAuditLogs(serverId)
+      if (!error && data) {
+        const mapped: AuditEntry[] = data.map((entry: any) => {
+          const name = entry.actor_name || "Unknown User";
+          return {
+            id: entry.id,
+            type: entry.action_type as ActionType,
+            category: mapActionTypeToCategory(entry.action_type),
+            actor: {
+              id: entry.actor_id,
+              name: name,
+              initials: name.slice(0, 2).toUpperCase(),
+              color: "bg-indigo-500/20 text-indigo-400",
+            },
+            target: entry.target,
+            timestamp: new Date(entry.created_at),
+            changes: entry.changes?.map((c: any) => ({
+              field: c.field,
+              before: c.before || "",
+              after: c.after || "",
+            })),
+          }
+        })
+        setLogs(mapped)
+      }
+    }
+    loadLogs()
+  }, [serverId])
+
   const filtered = useMemo(() => {
-    return AUDIT_LOG.filter((e) => {
+    return logs.filter((e) => {
       const matchesQuery = query === "" || e.actor.name.toLowerCase().includes(query.toLowerCase())
       const matchesCategory = category === "all" || e.category === category
       return matchesQuery && matchesCategory
     })
-  }, [query, category])
+  }, [logs, query, category])
 
   const groups = useMemo(() => groupByDate(filtered), [filtered])
 
@@ -220,7 +255,7 @@ export default function AuditLog() {
           <div>
             <h2 className="font-semibold text-xl">Audit Log</h2>
             <p className="text-sm text-white/40 mt-0.5">
-              {filtered.length} of {AUDIT_LOG.length} action{AUDIT_LOG.length !== 1 ? "s" : ""}
+              {filtered.length} of {logs.length} action{logs.length !== 1 ? "s" : ""}
             </p>
           </div>
         </div>

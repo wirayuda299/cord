@@ -12,5 +12,7 @@ func RegisterMemberRoutes(r *mux.Router, mh *handlers.MemberHandler, middleware 
 	mr.Use(middleware...)
 
 	mr.HandleFunc("/is-join", mh.IsUserJoined).Methods(http.MethodGet)
+	mr.HandleFunc("/is-banned", mh.IsUserBanned).Methods(http.MethodGet)
 	mr.HandleFunc("/find-all", mh.FindAllMemberInServer).Methods(http.MethodGet)
+	mr.HandleFunc("/kick", mh.KickMember).Methods(http.MethodDelete)
 }

@@ -31,7 +31,7 @@ END $$;
 
 CREATE TABLE users (
   id varchar(100) PRIMARY KEY,
-  username varchar(50) NOT NULL,
+  username varchar(50) NOT NULL UNIQUE,
   avatar_url text NOT NULL DEFAULT '',
   avatar_id varchar(100) NOT NULL DEFAULT '',
   bio text NOT NULL DEFAULT '',
@@ -41,8 +41,8 @@ CREATE TABLE users (
 );
 
 CREATE INDEX idx_users_username ON users(username);
+
 create extension if not exists pg_trgm;
-CREATE EXTENSION
 create index username_trgm_idx on users using gin (username gin_trgm_ops);
  set pg_trgm.similarity_threshold = 0.2;
 
@@ -474,10 +474,55 @@ FOR EACH ROW EXECUTE FUNCTION set_updated_at();
 
 
 create table safety_setup(
-id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
-level varchar(20) default 'low',
-created_by varchar(100) NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-server_id uuid NOT NULL REFERENCES servers(id) ON DELETE CASCADE,
-created_at timestamptz NOT NULL DEFAULT NOW(),
-updated_at timestamptz NOT NULL DEFAULT NOW()
+   id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+   level varchar(20) default 'low',
+   created_by varchar(100) NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+   server_id uuid NOT NULL REFERENCES servers(id) ON DELETE CASCADE,
+   created_at timestamptz NOT NULL DEFAULT NOW(),
+   updated_at timestamptz NOT NULL DEFAULT NOW()
 );
+
+
+alter table safety_setup
+add column content_filter varchar(10) default 'no_role',
+add column default_notifications varchar(20) default 'only_mentions',
+add column dm_spam_filter boolean default false,
+add column require2FA boolean default false;
+
+
+-- =========================================================
+-- bans
+-- =========================================================
+
+CREATE TABLE bans (
+  id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+  server_id uuid NOT NULL REFERENCES servers(id) ON DELETE CASCADE,
+  user_id varchar(100) NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  reason text,
+  banned_by varchar(100) NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  banned_at timestamptz NOT NULL DEFAULT NOW(),
+
+  CONSTRAINT unique_server_ban UNIQUE (server_id, user_id)
+);
+
+CREATE INDEX idx_bans_server_id ON bans(server_id);
+CREATE INDEX idx_bans_user_id ON bans(user_id);
+
+ALTER TABLE safety_setup ADD CONSTRAINT unique_safety_setup_server UNIQUE (server_id);
+
+-- =========================================================
+-- audit logs
+-- =========================================================
+
+CREATE TABLE audit_logs (
+  id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+  server_id uuid NOT NULL REFERENCES servers(id) ON DELETE CASCADE,
+  actor_id varchar(100) NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  action_type varchar(50) NOT NULL,
+  target varchar(255) NOT NULL,
+  changes jsonb DEFAULT '[]'::jsonb,
+  created_at timestamptz NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX idx_audit_logs_server_id ON audit_logs(server_id);
+

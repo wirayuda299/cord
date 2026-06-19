@@ -8,6 +8,7 @@ import (
 
 	"github.com/wirayuda299/backend/internal/databases"
 	"github.com/wirayuda299/backend/internal/httputil"
+	"github.com/wirayuda299/backend/internal/utils"
 )
 
 type User struct {
@@ -21,7 +22,11 @@ type User struct {
 }
 
 func FindUsersByName(ctx context.Context, db *databases.Container, username string) ([]User, *httputil.ErrorResponse) {
-	const currentUser = "usr_001"
+
+	userID, err := utils.GetSession(ctx)
+	if err != nil {
+		return nil, &httputil.ErrorResponse{Err: err, Code: http.StatusUnauthorized}
+	}
 
 	if username == "" {
 		return nil, &httputil.ErrorResponse{
@@ -33,7 +38,7 @@ func FindUsersByName(ctx context.Context, db *databases.Container, username stri
 	users := make([]User, 0)
 
 	rows, err := db.Postgres.Query(ctx, `
-	SELECT 
+	SELECT
 		u.id,
 		u.username,
 		COALESCE(u.avatar_url, ''),
@@ -42,7 +47,7 @@ func FindUsersByName(ctx context.Context, db *databases.Container, username stri
 		u.updated_at,
 		COALESCE(f.status, '') as friendship_status
 	FROM users u
-	LEFT JOIN friends f 
+	LEFT JOIN friends f
 		ON (
 			(f.requester_id = $2 AND f.addressee_id = u.id)
 			OR
@@ -51,7 +56,7 @@ func FindUsersByName(ctx context.Context, db *databases.Container, username stri
 	WHERE similarity(u.username, $1) > 0.3
 		AND u.id <> $2
 	ORDER BY similarity(u.username, $1) DESC
-`, username, currentUser)
+`, username, userID)
 	if err != nil {
 		return nil, &httputil.ErrorResponse{Err: err, Code: http.StatusInternalServerError}
 	}

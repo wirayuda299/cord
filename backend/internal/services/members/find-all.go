@@ -21,6 +21,7 @@ type Member struct {
 	RoleID    *string   `json:"role_id"`
 	RoleColor *string   `json:"role_color"`
 	ServerID  string    `json:"server_id"`
+	IsBanned  bool      `json:"is_banned"`
 }
 
 func FindMembersInServer(ctx context.Context, db *databases.Container, serverID string) ([]Member, *httputil.ErrorResponse) {
@@ -51,7 +52,8 @@ func FindMembersInServer(ctx context.Context, db *databases.Container, serverID 
 			r.name,
 			r.id as role_id,
 			r.color,
-			m.joined_at
+			m.joined_at,
+			EXISTS(SELECT 1 FROM bans WHERE server_id = m.server_id AND user_id = m.user_id) as is_banned
 			from members as m
 			left join server_profile as sp on sp.user_id = m.user_id and sp.server_id = m.server_id
 			left join user_roles as ur on ur.user_id = m.user_id
@@ -66,7 +68,7 @@ func FindMembersInServer(ctx context.Context, db *databases.Container, serverID 
 	for rows.Next() {
 		var m Member
 
-		if err := rows.Scan(&m.ID, &m.UserID, &m.ServerID, &m.Username, &m.AvatarURL, &m.AvatarID, &m.Role, &m.RoleID, &m.RoleColor, &m.JoinedAt); err != nil {
+		if err := rows.Scan(&m.ID, &m.UserID, &m.ServerID, &m.Username, &m.AvatarURL, &m.AvatarID, &m.Role, &m.RoleID, &m.RoleColor, &m.JoinedAt, &m.IsBanned); err != nil {
 			return nil, &httputil.ErrorResponse{Err: err, Code: http.StatusInternalServerError}
 		}
 

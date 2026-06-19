@@ -14,6 +14,7 @@ import (
 	"github.com/wirayuda299/backend/internal/services/images"
 	"github.com/wirayuda299/backend/internal/services/permissions"
 	"github.com/wirayuda299/backend/internal/services/servers"
+	"github.com/wirayuda299/backend/internal/services/servers/audit"
 	"github.com/wirayuda299/backend/internal/services/servers/safety"
 )
 
@@ -130,6 +131,27 @@ func handleJob(ctx context.Context, db *databases.Container, job queue.Job) erro
 			return fmt.Errorf("Error create channel :%w", err)
 		}
 		log.Println("Channel created")
+		return nil
+	case queue.RecordAuditLogEntry:
+		log.Println("📦 Raw payload:", string(job.Payload))
+		var p queue.RecordAuditLogEntryPayload
+		if err := json.Unmarshal(job.Payload, &p); err != nil {
+			return fmt.Errorf("failed to unmarshal payload: %s", err.Error())
+		}
+
+		changes := make([]audit.AuditChange, 0, len(p.Changes))
+		for _, change := range p.Changes {
+			changes = append(changes, audit.AuditChange{
+				Field:  change.Field,
+				Before: change.Before,
+				After:  change.After,
+			})
+		}
+
+		if err := audit.RecordAuditEntry(ctx, db, p.ServerID, p.ActorID, p.ActionType, p.Target, changes); err != nil {
+			return fmt.Errorf("error record audit entry: %w", err)
+		}
+
 		return nil
 	case queue.DeleteImage:
 
