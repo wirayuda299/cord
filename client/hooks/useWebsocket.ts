@@ -38,6 +38,9 @@ export function useWebSocket(
 
    useEffect(() => {
       let active = true;
+      let reconnectAttempts = 0;
+      const MAX_RECONNECT_ATTEMPTS = 5;
+      const BASE_RECONNECT_DELAY = 1000; // ms
 
       async function connect() {
          setStatus("connecting");
@@ -65,24 +68,7 @@ export function useWebSocket(
          ws.onopen = () => {
             if (!active || wsRef.current !== ws) return;
             setStatus("connected");
-         };
-
-         ws.onmessage = (e) => {
-            if (!active || wsRef.current !== ws) return;
-
-            try {
-               const data = JSON.parse(e.data);
-               if (data.type === "message_deleted") {
-                  optionsRef.current.onDelete?.(data.id);
-               } else if (data.type !== undefined) {
-                  optionsRef.current.onEvent?.(data);
-                  console.log(data);
-               } else {
-                  optionsRef.current.onMessage(data);
-               }
-            } catch (e) {
-               console.log(e);
-            }
+            reconnectAttempts = 0; // Reset on successful connection
          };
 
          ws.onmessage = (e) => {
@@ -110,6 +96,30 @@ export function useWebSocket(
                }
             }
          };
+
+         ws.onerror = (event) => {
+            if (!active || wsRef.current !== ws) return;
+            console.error("ws: error", event);
+            setStatus("error");
+            optionsRef.current.onError?.(event);
+         };
+
+         ws.onclose = () => {
+            if (!active || wsRef.current !== ws) return;
+            setStatus("disconnected");
+            optionsRef.current.onClose?.();
+
+            // Attempt reconnection with exponential backoff
+            if (reconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
+               const delay = BASE_RECONNECT_DELAY * Math.pow(2, reconnectAttempts);
+               reconnectTimeout.current = setTimeout(() => {
+                  if (active) {
+                     reconnectAttempts++;
+                     connect();
+                  }
+               }, delay);
+            }
+         };
       }
 
       connect();
@@ -123,7 +133,7 @@ export function useWebSocket(
          wsRef.current = null;
          ws?.close(1000, "cleanup");
       };
-   }, [serverId, channelId]);
+   }, [serverId, channelId, getToken]);
 
    const sendMessage = useCallback((msg: object): boolean => {
       if (wsRef.current?.readyState !== WebSocket.OPEN) return false;
