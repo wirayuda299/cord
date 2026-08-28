@@ -70,24 +70,6 @@ export function useWebSocket(
          ws.onmessage = (e) => {
             if (!active || wsRef.current !== ws) return;
 
-            try {
-               const data = JSON.parse(e.data);
-               if (data.type === "message_deleted") {
-                  optionsRef.current.onDelete?.(data.id);
-               } else if (data.type !== undefined) {
-                  optionsRef.current.onEvent?.(data);
-                  console.log(data);
-               } else {
-                  optionsRef.current.onMessage(data);
-               }
-            } catch (e) {
-               console.log(e);
-            }
-         };
-
-         ws.onmessage = (e) => {
-            if (!active || wsRef.current !== ws) return;
-
             const raw = typeof e.data === "string" ? e.data : "";
             // server may send multiple JSON objects separated by newlines
             const parts = raw

@@ -44,4 +44,6 @@ func main() {
 	log.Println("Shutting down...")
 
 	cancel()
+	wg.Wait()
+	log.Println("Workers exited cleanly")
 }

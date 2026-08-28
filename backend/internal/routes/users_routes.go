@@ -13,6 +13,4 @@ func RegisterUserRoutes(r *mux.Router, uh *handlers.UserHandler) {
 
 	ur.Handle("/find-by-name", clerkhttp.WithHeaderAuthorization()(http.HandlerFunc(uh.FindUsersByName))).Methods(http.MethodGet)
 	ur.HandleFunc("/create", uh.CreateUser).Methods(http.MethodPost)
-	ur.HandleFunc("/update", uh.UpdateUser).Methods(http.MethodPut, http.MethodPatch)
-	ur.HandleFunc("/delete", uh.DeleteUser).Methods(http.MethodDelete)
 }

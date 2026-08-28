@@ -8,6 +8,7 @@ import (
 
 	"github.com/wirayuda299/backend/internal/databases"
 	"github.com/wirayuda299/backend/internal/httputil"
+	"github.com/wirayuda299/backend/internal/services/permissions"
 	"github.com/wirayuda299/backend/internal/services/servers/audit"
 	"github.com/wirayuda299/backend/internal/utils"
 )
@@ -32,15 +33,18 @@ func UpdateServerSafetySettings(ctx context.Context, db *databases.Container, p 
 	}
 
 	// Verify the caller is the server owner or has manage_server permission
-	var ownerID string
-	err = db.Postgres.QueryRow(ctx, "SELECT created_by FROM servers WHERE id = $1", p.ServerID).Scan(&ownerID)
+	hasPerm, err := permissions.HasPermission(&permissions.HasPermissionType{
+		Ctx:        ctx,
+		Db:         db,
+		ServerID:   p.ServerID,
+		Permission: "manage_server",
+	})
 	if err != nil {
-		return &httputil.ErrorResponse{Err: err, Code: http.StatusNotFound}
+		return &httputil.ErrorResponse{Err: err, Code: http.StatusInternalServerError}
 	}
 
-	if ownerID != userID {
+	if !hasPerm {
 		return &httputil.ErrorResponse{Err: errors.New("you not allowed to make this changes"), Code: http.StatusForbidden}
-
 	}
 
 	// Get current settings

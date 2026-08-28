@@ -1,9 +1,17 @@
 import { AccessToken } from "livekit-server-sdk";
 import { NextRequest, NextResponse } from "next/server";
+import { auth } from "@clerk/nextjs/server";
+import { getPublicApiUrl } from "@/lib/env";
 
 export async function GET(req: NextRequest) {
+  const { userId, getToken } = await auth();
+  if (!userId) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   const room = req.nextUrl.searchParams.get("room");
   const username = req.nextUrl.searchParams.get("username");
+  const serverId = req.nextUrl.searchParams.get("serverId");
 
   if (!room) {
     return NextResponse.json(
@@ -15,6 +23,36 @@ export async function GET(req: NextRequest) {
       { error: 'Missing "username" query parameter' },
       { status: 400 },
     );
+  } else if (!serverId) {
+    return NextResponse.json(
+      { error: 'Missing "serverId" query parameter' },
+      { status: 400 },
+    );
+  }
+
+  const token = await getToken();
+  try {
+    const membershipRes = await fetch(
+      `${getPublicApiUrl()}/channel?channelId=${room}`,
+      {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        cache: "no-store",
+      },
+    );
+    if (!membershipRes.ok) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+    const { data: channel } = await membershipRes.json();
+    if (channel?.server_id && channel.server_id !== serverId) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+  } catch {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
   const apiKey = process.env.LIVEKIT_API_KEY;

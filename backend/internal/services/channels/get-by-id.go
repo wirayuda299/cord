@@ -7,6 +7,7 @@ import (
 
 	"github.com/wirayuda299/backend/internal/databases"
 	"github.com/wirayuda299/backend/internal/httputil"
+	"github.com/wirayuda299/backend/internal/services/members"
 )
 
 type ChannelResponse struct {
@@ -43,5 +44,14 @@ func GetChannelById(ctx context.Context, db *databases.Container, channelId stri
 			Code: http.StatusInternalServerError,
 		}
 	}
+
+	joined, joinErr := members.IsUserJoinedServer(ctx, db, channel.ServerID)
+	if joinErr != nil {
+		return nil, joinErr
+	}
+	if !joined {
+		return nil, &httputil.ErrorResponse{Err: errors.New("forbidden: you are not a member of this server"), Code: http.StatusForbidden}
+	}
+
 	return &channel, nil
 }

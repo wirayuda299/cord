@@ -108,7 +108,7 @@ func (rh *RoleHandler) UpdateRole(w http.ResponseWriter, r *http.Request) {
 	log.Println("Payload => ", p)
 	err := roles.UpdateRole(r.Context(), rh.db, p)
 	if err != nil {
-		httputil.WriteErrorResponse(w, err.Err.Error(), http.StatusInternalServerError)
+		httputil.WriteErrorResponse(w, err.Err.Error(), err.Code)
 		return
 	}
 

@@ -29,6 +29,14 @@ func FindMembersInServer(ctx context.Context, db *databases.Container, serverID 
 		return nil, &httputil.ErrorResponse{Err: errors.New("server ID is missing"), Code: http.StatusBadRequest}
 	}
 
+	joined, joinErr := IsUserJoinedServer(ctx, db, serverID)
+	if joinErr != nil {
+		return nil, joinErr
+	}
+	if !joined {
+		return nil, &httputil.ErrorResponse{Err: errors.New("forbidden: you are not a member of this server"), Code: http.StatusForbidden}
+	}
+
 	var isServerExists bool
 	err := db.Postgres.QueryRow(ctx, "SELECT EXISTS(SELECT 1 FROM servers where id = $1)", serverID).Scan(&isServerExists)
 	if err != nil {

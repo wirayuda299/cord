@@ -34,11 +34,9 @@ func JoinServerWithInvitationCode(ctx context.Context, db *databases.Container, 
 
 	err = tx.QueryRow(ctx, `
 		WITH invite AS (
-			UPDATE invitations
-			SET uses = uses + 1
-			WHERE code = $1
-			  AND uses < max_users
-			RETURNING server_id
+			SELECT server_id FROM invitations
+			WHERE code = $1 AND uses < max_users
+			FOR UPDATE
 		),
 		inserted AS (
 			INSERT INTO members (user_id, server_id)
@@ -46,6 +44,12 @@ func JoinServerWithInvitationCode(ctx context.Context, db *databases.Container, 
 			FROM invite
 			ON CONFLICT (server_id, user_id) DO NOTHING
 			RETURNING id, server_id
+		),
+		updated AS (
+			UPDATE invitations
+			SET uses = uses + 1
+			WHERE code = $1 AND EXISTS (SELECT 1 FROM inserted)
+			RETURNING 1
 		)
 		SELECT id, server_id FROM inserted;
 	`, code, userID).Scan(&memberID, &serverID)

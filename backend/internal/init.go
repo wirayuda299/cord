@@ -98,11 +98,11 @@ func (s *Server) Run() {
 
 	fmt.Println("Listening on port 8080...")
 
+	go gracefulShutdown(server, done)
+
 	if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 		log.Fatal("server failed to start:", err)
 	}
-
-	go gracefulShutdown(server, done)
 
 	// Wait for the graceful shutdown to complete
 	<-done

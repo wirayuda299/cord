@@ -43,3 +43,33 @@ func (ch *CategoryHandler) CreateCategory(w http.ResponseWriter, r *http.Request
 
 	httputil.EncodeResponse(w, "Category created successfully", http.StatusCreated, nil)
 }
+
+func (ch *CategoryHandler) UpdateCategory(w http.ResponseWriter, r *http.Request) {
+	var payload categories.UpdateCategoryPayload
+	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
+		httputil.WriteErrorResponse(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	if err := categories.UpdateCategory(r.Context(), ch.db, &payload); err != nil {
+		httputil.WriteErrorResponse(w, err.Err.Error(), err.Code)
+		return
+	}
+
+	httputil.EncodeResponse(w, "Category updated successfully", http.StatusOK, nil)
+}
+
+func (ch *CategoryHandler) DeleteCategory(w http.ResponseWriter, r *http.Request) {
+	var payload categories.DeleteCategoryPayload
+	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
+		httputil.WriteErrorResponse(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	if err := categories.DeleteCategory(r.Context(), ch.db, &payload); err != nil {
+		httputil.WriteErrorResponse(w, err.Err.Error(), err.Code)
+		return
+	}
+
+	httputil.EncodeResponse(w, "Category deleted successfully", http.StatusOK, nil)
+}

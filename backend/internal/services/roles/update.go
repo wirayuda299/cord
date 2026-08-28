@@ -10,6 +10,8 @@ import (
 	"github.com/wirayuda299/backend/internal/databases"
 	"github.com/wirayuda299/backend/internal/httputil"
 	"github.com/wirayuda299/backend/internal/queue"
+	"github.com/wirayuda299/backend/internal/services/permissions"
+	"github.com/wirayuda299/backend/internal/utils"
 )
 
 type UpdatePayload struct {
@@ -24,6 +26,26 @@ type UpdatePayload struct {
 }
 
 func UpdateRole(ctx context.Context, db *databases.Container, p UpdatePayload) *httputil.ErrorResponse {
+	_, err := utils.GetSession(ctx)
+	if err != nil {
+		return &httputil.ErrorResponse{Err: err, Code: http.StatusUnauthorized}
+	}
+
+	hasPerm, err := permissions.HasPermission(&permissions.HasPermissionType{
+		Ctx:        ctx,
+		Db:         db,
+		ServerID:   p.ServerID,
+		Permission: "manage_role",
+	})
+
+	if err != nil {
+		return &httputil.ErrorResponse{Err: err, Code: http.StatusInternalServerError}
+	}
+
+	if !hasPerm {
+		return &httputil.ErrorResponse{Err: errors.New("you not allowed to update role"), Code: http.StatusUnauthorized}
+	}
+
 	if p.RoleID == "" {
 		return &httputil.ErrorResponse{Err: errors.New("role ID is required"), Code: http.StatusBadRequest}
 	}

@@ -2,7 +2,7 @@
 
 import type { Message, ResponseMessage } from "@/lib/types/chat";
 import { useAppStore } from "@/stores/store";
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useShallow } from "zustand/react/shallow";
 import ChatItem from "./ChatItem";
 import ChatForm from "./ChatForm";
@@ -195,6 +195,10 @@ export default function ChatList({
    });
 
    const isThread = Boolean(thread_id);
+
+   useEffect(() => {
+      bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
+   }, [messages]);
 
    if (isLoading) return <p>loading permission</p>;
    if (error) return <p>{error}</p>;

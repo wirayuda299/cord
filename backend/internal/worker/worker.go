@@ -21,11 +21,22 @@ import (
 func StartWorker(ctx context.Context, db *databases.Container) {
 	log.Println("Starting worker...")
 	for {
+		select {
+		case <-ctx.Done():
+			log.Println("Worker shutting down...")
+			return
+		default:
+		}
+
 		res, err := db.Redis.BRPop(ctx, 5*time.Second, "jobs").Result()
 		if err == redis.Nil {
 			continue
 		}
 		if err != nil {
+			if ctx.Err() != nil {
+				log.Println("Worker shutting down...")
+				return
+			}
 			log.Println("Error getting job from redis:", err)
 			continue
 		}
@@ -42,13 +53,17 @@ func StartWorker(ctx context.Context, db *databases.Container) {
 
 		log.Printf("📥 Got job: %s", job.Type)
 
-		if err := handleJob(ctx, db, job); err != nil {
+		if err := safeHandleJob(ctx, db, job); err != nil {
 			log.Printf("❌ Error handling job: %s", err)
 			job.Attempts++
 
 			if job.Attempts < job.MaxRetry {
 				delay := time.Duration(job.Attempts) * 5 * time.Second
-				time.Sleep(delay)
+				select {
+				case <-time.After(delay):
+				case <-ctx.Done():
+					return
+				}
 				data, err := json.Marshal(job)
 				if err != nil {
 					log.Printf("❌ Failed to marshal job %s for retry: %v", job.Type, err)
@@ -73,6 +88,16 @@ func StartWorker(ctx context.Context, db *databases.Container) {
 
 		log.Printf("✅ Job %s completed successfully", job.Type)
 	}
+}
+
+func safeHandleJob(ctx context.Context, db *databases.Container, job queue.Job) (err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			log.Printf("recovered panic while handling job %s: %v", job.Type, r)
+			err = fmt.Errorf("panic while handling job %s: %v", job.Type, r)
+		}
+	}()
+	return handleJob(ctx, db, job)
 }
 
 func handleJob(ctx context.Context, db *databases.Container, job queue.Job) error {

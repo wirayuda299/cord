@@ -24,7 +24,7 @@ export default function VideoCall({ room, serverId }: { room: string; serverId: 
     (async () => {
       try {
         const resp = await fetch(
-          `/api/get-participant-token?room=${room}&username=${session?.user.username}`
+          `/api/get-participant-token?room=${room}&username=${session?.user.username}&serverId=${serverId}`
         );
         const data = await resp.json();
         setToken(data.token);

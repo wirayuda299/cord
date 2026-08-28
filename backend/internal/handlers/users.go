@@ -42,33 +42,4 @@ func (uh *UserHandler) CreateUser(w http.ResponseWriter, r *http.Request) {
 	httputil.EncodeResponse(w, "User created", http.StatusCreated, nil)
 }
 
-func (uh *UserHandler) UpdateUser(w http.ResponseWriter, r *http.Request) {
-	var p users.UpdateUserPayload
-
-	if err := json.NewDecoder(r.Body).Decode(&p); err != nil {
-		httputil.WriteErrorResponse(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-	if err := users.UpdateUser(r.Context(), uh.db, &p); err != nil {
-		httputil.WriteErrorResponse(w, err.Err.Error(), err.Code)
-		return
-	}
-
-	httputil.EncodeResponse(w, "User updated", http.StatusOK, nil)
-}
-
-func (uh *UserHandler) DeleteUser(w http.ResponseWriter, r *http.Request) {
-	var p users.DeleteUserPayload
-
-	if err := json.NewDecoder(r.Body).Decode(&p); err != nil {
-		httputil.WriteErrorResponse(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-	if err := users.DeleteUser(r.Context(), uh.db, &p); err != nil {
-		httputil.WriteErrorResponse(w, err.Err.Error(), err.Code)
-		return
-	}
-
-	httputil.EncodeResponse(w, "User deleted", http.StatusOK, nil)
-}
 

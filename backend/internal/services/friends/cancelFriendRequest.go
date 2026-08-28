@@ -13,7 +13,8 @@ import (
 )
 
 type PendingRequests struct {
-	ID string `json:"id"`
+	ID          string `json:"id"`
+	RequesterID string `json:"requester_id"`
 }
 
 func CancelFriendRequest(ctx context.Context, db *databases.Container, id string, currentUserID string) *httputil.ErrorResponse {
@@ -26,12 +27,16 @@ func CancelFriendRequest(ctx context.Context, db *databases.Container, id string
 	}
 
 	var p PendingRequests
-	err = db.Postgres.QueryRow(ctx, `SELECT id,requester_id from friends where id = $1`, id).Scan(&p.ID, userID)
+	err = db.Postgres.QueryRow(ctx, `SELECT id,requester_id from friends where id = $1`, id).Scan(&p.ID, &p.RequesterID)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return &httputil.ErrorResponse{Err: err, Code: http.StatusNotFound}
 		}
 		return &httputil.ErrorResponse{Err: err, Code: http.StatusBadRequest}
+	}
+
+	if p.RequesterID != userID {
+		return &httputil.ErrorResponse{Err: errors.New("unauthorized"), Code: http.StatusUnauthorized}
 	}
 
 	tx, err := db.Postgres.Begin(ctx)

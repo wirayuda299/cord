@@ -13,4 +13,6 @@ func RegisterCategoriesRoute(r *mux.Router, ch *handlers.CategoryHandler, middle
 
 	cr.HandleFunc("", ch.FindAllCategories).Methods(http.MethodGet)
 	cr.HandleFunc("", ch.CreateCategory).Methods(http.MethodPost)
+	cr.HandleFunc("", ch.UpdateCategory).Methods(http.MethodPatch)
+	cr.HandleFunc("", ch.DeleteCategory).Methods(http.MethodDelete)
 }

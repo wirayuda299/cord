@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
+	"log"
 	"net/http"
 
 	"github.com/wirayuda299/backend/internal/databases"
@@ -110,8 +111,15 @@ func (mh *MessageHandler) EditMessage(w http.ResponseWriter, r *http.Request) {
 
 	// Fetch the updated message row to broadcast to other clients
 	updatedMsg, getErr := messages.GetMessageByID(r.Context(), mh.db, p.ID, p.ChannelID)
-	if getErr == nil && mh.hub != nil {
-		mh.hub.BroadcastMessages(p.ServerID, p.ChannelID, []services.MessageRow{*updatedMsg})
+	if getErr != nil {
+		log.Println("failed to fetch updated message for broadcast:", getErr.Err)
+	} else if mh.hub != nil {
+		serverID, sidErr := messages.GetServerIDByChannelID(r.Context(), mh.db, p.ChannelID)
+		if sidErr != nil {
+			log.Println("failed to resolve server id for broadcast:", sidErr)
+		} else {
+			mh.hub.BroadcastMessages(serverID, p.ChannelID, []services.MessageRow{*updatedMsg})
+		}
 	}
 
 	httputil.EncodeResponse(w, "Message edited", http.StatusOK, nil)

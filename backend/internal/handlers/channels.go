@@ -54,6 +54,7 @@ func (ch *ChannelHandler) FindAllChannelsInAServer(w http.ResponseWriter, r *htt
 	grouped, err := channels.FindAllChannelInServer(r.Context(), ch.db, serverID)
 	if err != nil {
 		httputil.WriteErrorResponse(w, err.Err.Error(), err.Code)
+		return
 	}
 	httputil.EncodeResponse(w, "Channels found", http.StatusOK, grouped)
 }
@@ -70,4 +71,36 @@ func (ch *ChannelHandler) GetChannelByID(w http.ResponseWriter, r *http.Request)
 		return
 	}
 	httputil.EncodeResponse(w, "Channel found", http.StatusOK, &channel)
+}
+
+func (ch *ChannelHandler) UpdateChannel(w http.ResponseWriter, r *http.Request) {
+	var p channels.UpdateChannelPayload
+
+	if err := json.NewDecoder(r.Body).Decode(&p); err != nil {
+		httputil.WriteErrorResponse(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	if err := channels.UpdateChannel(r.Context(), ch.db, &p); err != nil {
+		httputil.WriteErrorResponse(w, err.Err.Error(), err.Code)
+		return
+	}
+
+	httputil.EncodeResponse(w, "Channel updated", http.StatusOK, nil)
+}
+
+func (ch *ChannelHandler) DeleteChannel(w http.ResponseWriter, r *http.Request) {
+	var p channels.DeleteChannelPayload
+
+	if err := json.NewDecoder(r.Body).Decode(&p); err != nil {
+		httputil.WriteErrorResponse(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	if err := channels.DeleteChannel(r.Context(), ch.db, &p); err != nil {
+		httputil.WriteErrorResponse(w, err.Err.Error(), err.Code)
+		return
+	}
+
+	httputil.EncodeResponse(w, "Channel deleted", http.StatusOK, nil)
 }

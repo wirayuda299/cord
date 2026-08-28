@@ -51,7 +51,7 @@ export default async function ServerSidebar({
             </DropdownMenuTrigger>
             <DropdownMenuContent className="w-52 p-2 bg-sidebar-secondary shadow backdrop-blur-lg text-white space-y-3">
               {user.id === channels.server.created_by && (
-                <InviteFriendDialog />
+                <InviteFriendDialog serverId={serverId} />
               )}
               {(user.id === channels.server.created_by || hasPermManageChannel) && (
                 <CreateChannel serverID={serverId} />

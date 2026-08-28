@@ -355,7 +355,7 @@ function ChatItem({
                />
             ) : (
                <div className="mt-0.5 flex size-9 shrink-0 select-none items-center justify-center rounded-full bg-indigo-600 text-sm font-semibold text-white">
-                  {message.username.charAt(0).toUpperCase()}
+                  {(message.username?.charAt(0) ?? "?").toUpperCase()}
                </div>
             )}
 

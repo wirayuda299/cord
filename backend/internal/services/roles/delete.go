@@ -20,7 +20,8 @@ type DeleteRolePayload struct {
 }
 
 type RoleRes struct {
-	RoleID string
+	RoleID    string
+	CreatedBy string
 }
 
 func DeleteRole(ctx context.Context, db *databases.Container, p *DeleteRolePayload) *httputil.ErrorResponse {
@@ -57,7 +58,7 @@ func DeleteRole(ctx context.Context, db *databases.Container, p *DeleteRolePaylo
 		}
 	}()
 
-	err = tx.QueryRow(ctx, "SELECT id, created_by from roles where id = $1", p.RoleId).Scan(&r.RoleID, userID)
+	err = tx.QueryRow(ctx, "SELECT id, created_by from roles where id = $1", p.RoleId).Scan(&r.RoleID, &r.CreatedBy)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return &httputil.ErrorResponse{Err: errors.New("Role not found"), Code: http.StatusNotFound}
@@ -65,7 +66,7 @@ func DeleteRole(ctx context.Context, db *databases.Container, p *DeleteRolePaylo
 		return &httputil.ErrorResponse{Err: err, Code: http.StatusInternalServerError}
 	}
 
-	if p.UserId != userID {
+	if r.CreatedBy != userID {
 		return &httputil.ErrorResponse{Err: errors.New("unauthorized"), Code: http.StatusUnauthorized}
 	}
 	_, err = tx.Exec(ctx, "DELETE FROM roles where id = $1", p.RoleId)

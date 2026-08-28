@@ -8,6 +8,7 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/wirayuda299/backend/internal/databases"
 	"github.com/wirayuda299/backend/internal/httputil"
+	"github.com/wirayuda299/backend/internal/services/members"
 	"github.com/wirayuda299/backend/internal/utils"
 )
 
@@ -32,6 +33,14 @@ func GetServerByID(db *databases.Container, ctx context.Context, serverID string
 
 	if serverID == "" {
 		return nil, &httputil.ErrorResponse{Err: errors.New("Server ID is missing"), Code: http.StatusBadRequest}
+	}
+
+	joined, joinErr := members.IsUserJoinedServer(ctx, db, serverID)
+	if joinErr != nil {
+		return nil, joinErr
+	}
+	if !joined {
+		return nil, &httputil.ErrorResponse{Err: errors.New("forbidden: you are not a member of this server"), Code: http.StatusForbidden}
 	}
 
 	var server Server

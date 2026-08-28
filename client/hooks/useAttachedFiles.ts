@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { validateFiles, MAX_FILES } from "@/lib/shared/file-validation";
 
 type AttachedFile = {
+  id: string;
   file: File;
   preview: string;
 };
@@ -34,6 +35,7 @@ export function useAttachedFiles() {
     if (valid.length === 0) return;
 
     const newFiles = valid.map((file) => ({
+      id: crypto.randomUUID(),
       file,
       preview: URL.createObjectURL(file),
     }));
