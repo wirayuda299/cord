@@ -1,3 +1,5 @@
+import "client-only";
+
 import { getPublicApiUrl } from "@/lib/env";
 import { Invitation } from "@/types/invitation";
 import { apiFetcher } from "@/lib/fetcher"

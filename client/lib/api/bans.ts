@@ -1,3 +1,5 @@
+import "client-only";
+
 import { apiFetcher } from "@/lib/fetcher"
 import { BannedMemberRow } from "@/types/bans"
 

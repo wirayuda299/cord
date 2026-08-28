@@ -1,3 +1,5 @@
+import "client-only";
+
 import { getPublicApiUrl } from "@/lib/env";
 import { apiFetcher } from "@/lib/fetcher"
 import { getToken } from "@clerk/nextjs";

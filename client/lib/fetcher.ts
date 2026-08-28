@@ -1,3 +1,5 @@
+import "client-only";
+
 import { getPublicApiUrl } from "./env";
 import { APIResponse } from "@/types/response";
 import { getToken } from "@clerk/nextjs"

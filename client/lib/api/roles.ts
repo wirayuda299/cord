@@ -1,3 +1,5 @@
+import "client-only";
+
 import { getPublicApiUrl } from "@/lib/env"
 import { Role } from "@/types/role"
 import { apiFetcher } from "@/lib/fetcher"

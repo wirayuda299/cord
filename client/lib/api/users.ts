@@ -1,3 +1,5 @@
+import "client-only";
+
 import { User } from "@/types/user";
 import { apiFetcher } from "@/lib/fetcher"
 
