@@ -1,22 +1,21 @@
 import DropdownWrapper from "@/components/shared/DropdownWrapper";
-import { getAllPinnedMessages } from "@/lib/server/data/messages";
 import { Pin } from "lucide-react";
 import PinnedMessageItem from "./PinnedMessageItem";
+import { PinnedMessage } from "@/lib/types/chat";
 
-export default async function PinnedMessages({
-  channelId,
+export default function PinnedMessages({
   canDelete,
-  serverId
+  serverId,
+  pinnedMessages
 }: {
-  channelId: string;
   canDelete: boolean
   serverId: string
+    pinnedMessages:PinnedMessage[]
 }) {
-  const pinnedMessages = await getAllPinnedMessages(channelId);
   return (
     <DropdownWrapper
       style="min-w-80 bg-sidebar-primary text-gray-400 p-0 max-h-[300px]"
-      icon={<Pin className="text-muted-foreground text-sm hover:text-white" />}
+      icon={<Pin size={18} className="text-muted-foreground hover:text-white" />}
     >
       <PinnedMessageItem pinnedMessages={pinnedMessages || []} canDelete={canDelete} serverId={serverId} />
     </DropdownWrapper>

@@ -35,7 +35,6 @@ func DeleteRole(ctx context.Context, db *databases.Container, p *DeleteRolePaylo
 		ServerID:   p.ServerID,
 		Permission: "manage_role",
 	})
-
 	if err != nil {
 		return &httputil.ErrorResponse{Err: err, Code: http.StatusInternalServerError}
 	}
@@ -57,7 +56,7 @@ func DeleteRole(ctx context.Context, db *databases.Container, p *DeleteRolePaylo
 		}
 	}()
 
-	err = tx.QueryRow(ctx, "SELECT id, created_by from roles where id = $1", p.RoleId).Scan(&r.RoleID, userID)
+	err = tx.QueryRow(ctx, "SELECT id, created_by from roles where id = $1", p.RoleId).Scan(&r.RoleID, &userID)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return &httputil.ErrorResponse{Err: errors.New("Role not found"), Code: http.StatusNotFound}

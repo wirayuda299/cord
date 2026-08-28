@@ -1,4 +1,5 @@
 import { getPublicApiUrl } from "@/lib/env";
+import { apiFetcher } from "@/lib/utils";
 import { getToken } from "@clerk/nextjs";
 
 type FriendRequestStatus = "pending" | "accepted" | "rejected";
@@ -16,20 +17,7 @@ export type FriendRequest = {
 };
 
 export async function getAllPendingRequest() {
-  const token = await getToken()
-  const res = await fetch(`${getPublicApiUrl()}/friends/pending`, {
-    method: "GET",
-    headers: {
-      "Content-Type": "application/json",
-      "Accept": "application/json",
-      "Authorization": `Bearer ${token}`
-    }
-  })
-  if (!res.ok) {
-    throw new Error("Failed to fetch pending request")
-  }
-
-  return await res.json().then(d => d.data as FriendRequest[])
+  return apiFetcher<FriendRequest[]>("friends/pending")
 }
 
 

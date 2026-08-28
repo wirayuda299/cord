@@ -12,7 +12,7 @@ const notoSans = Noto_Sans({
 })
 
 export const metadata: Metadata = {
-  title: "ChatFusion",
+  title: "Cord",
   description: "A modern Discord-like chat application",
 }
 
@@ -27,7 +27,7 @@ export default function RootLayout({
         lang="en"
         className={`${notoSans.variable} h-full antialiased`}
       >
-        <body className="min-h-screen  max-h-svh bg-overlay overflow-hidden">
+        <body className="min-h-screen max-h-svh bg-overlay overflow-hidden">
           {children}
         </body>
         <Script

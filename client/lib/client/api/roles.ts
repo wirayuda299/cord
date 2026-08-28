@@ -1,23 +1,10 @@
 import { getPublicApiUrl } from "@/lib/env"
 import { Role } from "@/lib/types/role"
+import { apiFetcher } from "@/lib/utils"
 import { getToken } from "@clerk/nextjs"
 
 export async function getAllRoles(serverID: string): Promise<Role[]> {
-
-  const base = getPublicApiUrl()
-  const token = await getToken()
-
-  const res = await fetch(`${base}/roles/find-all?serverID=${serverID}`, {
-    method: "GET",
-    headers: {
-      "Content-Type": "application/json",
-      "Accept": "application/json",
-      "Authorization": `Bearer ${token}`
-    }
-  })
-  if (!res.ok) throw new Error("Failed to fetch all role")
-
-  return await res.json().then(d => d.data as Role[])
+  return apiFetcher<Role[]>(`roles/find-all?serverID=${serverID}`)
 }
 
 
@@ -29,19 +16,7 @@ export type UserRole = {
 }
 
 export async function getAllMemberByRole(roleID: string): Promise<UserRole[]> {
-
-  const token = await getToken()
-  const res = await fetch(`${getPublicApiUrl()}/roles/find-all-members?role_id=${roleID}`, {
-    method: "GET",
-    headers: {
-      "Content-Type": "application/json",
-      "Accept": "application/json",
-      "Authorization": `Bearer ${token}`
-    }
-
-  })
-  if (!res.ok) throw new Error("Failed to fetch member role")
-  return await res.json().then(d => d.data as UserRole[])
+  return apiFetcher<UserRole[]>(`roles/find-all-members?role_id=${roleID}`)
 }
 
 export async function assignRole(member_user_id: string, server_id: string, role_id: string) {
@@ -84,6 +59,7 @@ export async function deleteRole(role_id: string, server_id: string) {
     },
     body: JSON.stringify({ role_id, server_id })
   })
+  console.log(await res.json())
   if (!res.ok) {
     throw new Error("Failed to delete role")
   }

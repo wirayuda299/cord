@@ -5,8 +5,11 @@ import type { Category } from "@/lib/types/category"
 import { auth } from "@clerk/nextjs/server"
 
 export async function getAllCategories(serverID: string) {
+  const { getToken, userId } = await auth()
   try {
-    const { getToken } = await auth()
+    if (!userId) {
+      return { error: "unauthenticated" }
+    }
     const token = await getToken()
 
     const res = await fetch(`${getPublicApiUrl()}/categories?serverID=${serverID}`, {

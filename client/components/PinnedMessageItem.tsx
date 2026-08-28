@@ -17,12 +17,13 @@ export default function PinnedMessageItem({
 
   const handleDelete = useCallback(async (e: React.MouseEvent, id: string) => {
     e.stopPropagation();
-    try {
-      const res = await deletePinnedMessage(id, serverId)
-      console.log(res)
-    } catch (e) {
-      alert(e)
+    const res = await deletePinnedMessage(id, serverId)
+    if (res && !res.success) {
+      alert(res.message)
+      return
     }
+
+    alert(res.message)
   }, [serverId])
 
   const handleJumpToMessage = useCallback((messageId: string) => {

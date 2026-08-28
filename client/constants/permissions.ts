@@ -1,4 +1,3 @@
-
 export const PERMISSIONS = [
   {
     label: "view_channel",

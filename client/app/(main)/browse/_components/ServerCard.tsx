@@ -39,8 +39,8 @@ export default function ServerCard({ server }: { server: BrowsableServer }) {
 
     startTransition(async () => {
       const res = await joinServer(server.id, userId)
-      if (res?.error) {
-        alert(res.error)
+      if (res && !res.success) {
+        alert(res.message)
         return
       }
       setJoined(true)

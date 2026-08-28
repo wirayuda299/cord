@@ -32,16 +32,13 @@ export default function CreateServerForm() {
 
   const handleSubmit = async (data: CreateServerSchemaType) => {
     if (!data.name.trim()) return
-    try {
-      const res = await createServer(data.name)
-      if (res.error) {
-        alert(res.error)
-        return
-      }
-      alert("Server created")
-    } catch (e) {
-      alert(e)
+
+    const res = await createServer(data.name)
+    if (res && !res.success) {
+      alert(res.message)
+      return
     }
+    alert("Server created")
   }
 
   return (

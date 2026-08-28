@@ -12,10 +12,12 @@ export default async function InvitePage({
    params: Promise<{ code: string }>;
    searchParams: Promise<{ server_id: string }>;
 }) {
-   const param = await params;
+   await auth.protect();
+   const { code } = await params;
    const { server_id } = await searchParams;
    const { userId } = await auth();
-   const invite = await findInvitationByCode(param.code);
+
+   const invite = await findInvitationByCode(code);
    const joined = await isUserJoin(server_id);
 
    if ((invite && userId === invite.created_by) || joined) {
@@ -35,7 +37,7 @@ export default async function InvitePage({
             {!invite ? (
                <InviteInvalid />
             ) : (
-               <InviteCard info={invite} joined={joined} code={param.code} />
+               <InviteCard info={invite} joined={joined} code={code} />
             )}
          </div>
       </div>

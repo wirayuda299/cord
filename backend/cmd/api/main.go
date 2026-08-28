@@ -23,6 +23,7 @@ func main() {
 	container, err := databases.NewContainer(ctx)
 	if err != nil {
 		log.Println("Failed to init databases", err.Error())
+
 		panic(err)
 	}
 
@@ -32,4 +33,3 @@ func main() {
 
 	srv.Run()
 }
-

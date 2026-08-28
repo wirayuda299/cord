@@ -1,8 +1,10 @@
+import { auth } from '@clerk/nextjs/server';
 import { Compass } from 'lucide-react'
 import { browseServers } from '@/lib/server/data/servers'
 import ServerCard from './_components/ServerCard'
 
 export default async function BrowsePage() {
+  await auth.protect();
   const servers = await browseServers()
 
   return (

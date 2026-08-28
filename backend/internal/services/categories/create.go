@@ -33,7 +33,10 @@ func CreateCategory(ctx context.Context, db *databases.Container, p *CreateCateg
 		return &httputil.ErrorResponse{Err: err, Code: http.StatusInternalServerError}
 	}
 	if !hasPerm {
-		return &httputil.ErrorResponse{Err: errors.New("you not allowed to create category"), Code: http.StatusUnauthorized}
+		return &httputil.ErrorResponse{
+			Err:  errors.New("you not allowed to create category"),
+			Code: http.StatusUnauthorized,
+		}
 	}
 	if p.Name == "" {
 		return &httputil.ErrorResponse{Err: errors.New("name is required"), Code: http.StatusBadRequest}

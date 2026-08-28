@@ -1,17 +1,28 @@
+"use client"
+
 import { useState } from "react"
 import { Role } from "@/lib/types/role"
 import RoleList from "./list"
 import RoleDetailView from "./role-detail-view"
 import RoleFormView from "./role-form-view"
 
-
 type View = "list" | "create" | "detail" | "edit"
 
-export default function RolesSettings({ serverOwner, serverID }: { serverOwner: string, serverID: string }) {
+export default function RolesSettings({
+  serverOwner,
+  serverID,
+}: {
+  serverOwner: string
+  serverID: string
+}) {
   const [view, setView] = useState<View>("list")
   const [selectedRole, setSelectedRole] = useState<Role | null>(null)
   const [editPermissions, setEditPermissions] = useState<string[]>([])
-  const [memberCounts] = useState<Record<string, number>>({})
+
+  // Placeholder until member counts are wired to a real endpoint (e.g. a
+  // /api/roles/member-counts fetch). Kept as a constant rather than state
+  // since nothing currently updates it.
+  const memberCounts: Record<string, number> = {}
 
   if (view === "create") {
     return <RoleFormView mode="create" onBack={() => setView("list")} />
@@ -30,37 +41,37 @@ export default function RolesSettings({ serverOwner, serverID }: { serverOwner: 
 
   if (view === "detail" && selectedRole) {
     return (
-      <div className="w-full">
-        <RoleDetailView
-          serverID={serverID}
-          serverOwner={serverOwner}
-          role={selectedRole}
-          onBack={() => {
-            setView("list")
-            setSelectedRole(null)
-          }}
-          onEdit={(permissions) => {
-            setEditPermissions(permissions)
-            setView("edit")
-          }}
-        />
-      </div>
+      <RoleDetailView
+        serverID={serverID}
+        serverOwner={serverOwner}
+        role={selectedRole}
+        onBack={() => {
+          setView("list")
+          setSelectedRole(null)
+        }}
+        onEdit={(permissions) => {
+          setEditPermissions(permissions)
+          setView("edit")
+        }}
+        onDeleted={() => {
+          setView("list")
+          setSelectedRole(null)
+        }}
+      />
     )
   }
 
   return (
-    <div className="flex w-full text-white gap-3 bg-surface-chat">
-      <aside className="min-h-screen">
-        <RoleList
-          selectedId={selectedRole?.id ?? null}
-          onSelect={(_, role) => {
-            setSelectedRole(role)
-            setView("detail")
-          }}
-          memberCounts={memberCounts}
-          onCreateClick={() => setView("create")}
-        />
-      </aside>
+    <div className="w-full h-full bg-surface-chat">
+      <RoleList
+        selectedId={selectedRole?.id ?? null}
+        onSelect={(_, role) => {
+          setSelectedRole(role)
+          setView("detail")
+        }}
+        memberCounts={memberCounts}
+        onCreateClick={() => setView("create")}
+      />
     </div>
   )
 }

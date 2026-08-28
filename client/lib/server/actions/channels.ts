@@ -6,30 +6,39 @@ import {
   type CreateChannelServer,
 } from "@/lib/validation/channel"
 import { updateTag } from "next/cache"
-import { ZodError } from "zod"
 import { auth } from "@clerk/nextjs/server"
+import { APIResponse } from "@/lib/types/response"
 
-export async function createChannel(data: CreateChannelServer) {
+export async function createChannel(data: CreateChannelServer): Promise<APIResponse> {
+  const { getToken, userId } = await auth.protect();
   try {
+
+    if (!userId) {
+      return {
+        message: "unauthenticated",
+        success: false
+      }
+    }
+
     const parsed = createChannelSchema.safeParse({
       name: data.name,
       type: data.type,
     })
     if (!parsed.success) {
-      return { error: parsed.error.message }
+      return {
+        message: parsed.error.message,
+        success: false
+      }
     }
-    const { getToken } = await auth()
     const token = await getToken()
 
-    const base = getPublicApiUrl()
-    const res = await fetch(`${base}/channel/create`, {
+    const res = await fetch(`${getPublicApiUrl()}/channel/create`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         Accept: "application/json",
         "Authorization": `Bearer ${token}`
       },
-
       body: JSON.stringify({
         name: parsed.data.name,
         type: parsed.data.type,
@@ -37,16 +46,24 @@ export async function createChannel(data: CreateChannelServer) {
         server_id: data.serverID
       }),
     })
-    if (!res.ok) {
-      const result = await res.json()
-      return { error: result.message }
+    const result: APIResponse = await res.json().catch(() => null)
+    if (res.ok && result.success) {
+      updateTag("channels")
+      return {
+        message: result.message,
+        success: false
+      }
     }
-    updateTag("channels")
-    return { error: null }
+
+    return {
+      message: result.message,
+      success: true
+    }
   } catch (e) {
-    if (e instanceof ZodError) {
-      return { error: e.message }
+
+    return {
+      message: "failed to create channel",
+      success: false
     }
-    return { error: (e as Error).message }
   }
 }

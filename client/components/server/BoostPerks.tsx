@@ -56,8 +56,6 @@ export default function BoostPerks() {
 
   return (
     <div className="overflow-y-auto max-h-screen w-full text-white">
-
-      {/* Hero banner */}
       <div
         className="relative flex flex-col items-center justify-center gap-3 py-12"
         style={{ background: "linear-gradient(145deg, #2a0a4a 0%, #6c3483 50%, #9b59b6 100%)" }}
@@ -120,8 +118,7 @@ export default function BoostPerks() {
         </div>
       </div>
 
-      {/* Level sections */}
-      <div className="px-8 py-6 flex flex-col gap-10">
+      <div className="px-2 md:px-8 py-6 flex flex-col gap-10">
         {LEVELS.map(({ level: lvl, required, perks }) => {
           const unlocked = level >= lvl
           return (
@@ -155,7 +152,6 @@ export default function BoostPerks() {
                 )}
               </div>
 
-              {/* Perk list */}
               <div className="flex flex-col gap-1.5 pl-12">
                 {perks.map((perk) => (
                   <div
@@ -192,7 +188,6 @@ export default function BoostPerks() {
         })}
       </div>
 
-      {/* CTA */}
       <div className="px-8 pb-10">
         <button
           className="w-full py-3 rounded-xl font-semibold text-sm text-white transition-opacity hover:opacity-90 active:scale-[0.99] flex items-center justify-center gap-2"

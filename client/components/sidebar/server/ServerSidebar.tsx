@@ -14,7 +14,7 @@ import { getAllChannel } from "@/lib/server/data/channels";
 import CopyServerIDButton from "@/components/server/CopyServerIDButton";
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import Invites from "@/components/server/Invites";
-import { auth, currentUser } from "@clerk/nextjs/server";
+import { currentUser } from "@clerk/nextjs/server";
 import { unauthorized } from "next/navigation";
 import Image from "next/image";
 import { hasPermission } from "@/lib/client/api/permissions";
@@ -30,9 +30,10 @@ export default async function ServerSidebar({
   if (!user) unauthorized()
 
 
-  const { getToken } = await auth()
-
-  const [hasPermManageChannel, channels] = await Promise.all([hasPermission(serverId, PermissionKey.ManageChannel, await getToken()), getAllChannel(serverId)])
+  const [hasPermManageChannel, channels] = await Promise.all([
+    hasPermission(serverId, PermissionKey.ManageChannel),
+    getAllChannel(serverId)
+  ])
 
 
   return (
@@ -82,7 +83,7 @@ export default async function ServerSidebar({
       </header>
 
       <div className="flex flex-col overflow-y-auto h-full">
-        <ChannelList channels={channels} />
+        <ChannelList channels={channels} hasPerm={hasPermManageChannel} />
       </div>
 
       <div className="sticky bottom-0 p-2 flex items-center gap-2 border-t border-sidebar-secondary">

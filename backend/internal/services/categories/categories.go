@@ -19,13 +19,21 @@ type Category struct {
 
 func FindAllCategories(ctx context.Context, db *databases.Container, serverID string) ([]Category, *httputil.ErrorResponse) {
 	if serverID == "" {
-		return nil, &httputil.ErrorResponse{Err: errors.New("server ID is missing"), Code: http.StatusBadRequest}
+		return nil, &httputil.ErrorResponse{
+			Err:  errors.New("server ID is missing"),
+			Code: http.StatusBadRequest,
+		}
 	}
 
 	categories := make([]Category, 0)
 
 	rows, err := db.Postgres.Query(ctx, `
-	SELECT c.id, c.name, c.server_id, c.created_by, s.name
+	SELECT 
+		c.id, 
+		c.name, 
+		c.server_id, 
+		c.created_by, 
+		s.name
 	FROM category as c
 	JOIN servers as s ON c.server_id = s.id
 	WHERE c.server_id = $1

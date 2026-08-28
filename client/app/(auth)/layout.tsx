@@ -1,3 +1,4 @@
+import { auth } from "@clerk/nextjs/server";
 import Image from "next/image"
 import type { Metadata } from "next"
 
@@ -24,7 +25,7 @@ const FEATURES = [
   },
 ]
 
-export default function AuthLayout({
+export default async function AuthLayout({
   children,
 }: {
   children: React.ReactNode
@@ -34,14 +35,14 @@ export default function AuthLayout({
       <div
         aria-hidden="true"
         className="absolute rounded-full pointer-events-none z-0 blur-[100px]
-          w-[600px] h-[600px] -top-[200px] -left-[150px]
+          w-150 h-150 -top-50 -left-37.5
           bg-[radial-gradient(circle,rgba(88,101,242,0.25)_0%,transparent_70%)]
           animate-[blobFloat1_12s_ease-in-out_infinite_alternate]"
       />
       <div
         aria-hidden="true"
         className="absolute rounded-full pointer-events-none z-0 blur-[100px]
-          w-[500px] h-[500px] -bottom-[100px] -right-[100px]
+          w-125 h-125 -bottom-25 -right-25
           bg-[radial-gradient(circle,rgba(124,58,237,0.2)_0%,transparent_70%)]
           animate-[blobFloat2_15s_ease-in-out_infinite_alternate]"
       />

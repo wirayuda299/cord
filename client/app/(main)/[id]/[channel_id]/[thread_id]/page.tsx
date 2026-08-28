@@ -9,16 +9,19 @@ export default async function ThreadDetail({
 }: {
   params: Promise<{ id: string; channel_id: string; thread_id: string }>
 }) {
+  await auth.protect();
   const { thread_id, id, channel_id } = await params;
-  const { userId } = await auth()
 
+  const { userId } = await auth()
   if (!userId) return null
 
-  const messages = await getAllThreadMessages(thread_id)
-  const channel = await getChannelById(channel_id)
+  const [messages,channel]=await Promise.all([
+     getAllThreadMessages(thread_id),
+     getChannelById(channel_id)
+  ])
 
-  if (channel && 'error' in channel) {
-    return <p className="text-red-600 text-sm">failed to fetch channel</p>
+  if ((channel && 'error' in channel) || (messages && 'error' in messages)) {
+    return <p className="text-red-600 text-sm">something when wrong!</p>
   }
 
 
