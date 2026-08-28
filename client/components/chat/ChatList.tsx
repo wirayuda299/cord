@@ -194,12 +194,12 @@ export default function ChatList({
 
   const isThread = Boolean(thread_id);
 
-  if (isLoading) return <p>loading permission</p>;
-  if (error) return <p>{error}</p>;
-
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
   }, [messages]);
+
+  if (isLoading) return <p>loading permission</p>;
+  if (error) return <p>{error}</p>;
 
   return (
     <div className="flex h-full min-h-0 flex-1">
