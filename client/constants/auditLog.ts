@@ -51,41 +51,39 @@ export type ActionMeta = {
 }
 
 export const ACTION_META: Record<ActionType, ActionMeta> = {
-  member_kicked:       { label: "Member Kicked",         verb: "kicked",               color: "text-orange-400",  bg: "bg-orange-500/15",  dot: "#e67e22" },
-  member_banned:       { label: "Member Banned",         verb: "banned",               color: "text-red-400",     bg: "bg-red-500/15",     dot: "#ed4245" },
-  member_unbanned:     { label: "Member Unbanned",       verb: "unbanned",             color: "text-green-400",   bg: "bg-green-500/15",   dot: "#57f287" },
-  member_timeout:      { label: "Member Timed Out",      verb: "timed out",            color: "text-yellow-400",  bg: "bg-yellow-500/15",  dot: "#f1c40f" },
-  member_role_updated: { label: "Member Roles Updated",  verb: "updated roles for",    color: "text-blue-400",    bg: "bg-blue-500/15",    dot: "#5865f2" },
-  channel_created:     { label: "Channel Created",       verb: "created channel",      color: "text-green-400",   bg: "bg-green-500/15",   dot: "#57f287" },
-  channel_deleted:     { label: "Channel Deleted",       verb: "deleted channel",      color: "text-red-400",     bg: "bg-red-500/15",     dot: "#ed4245" },
-  channel_updated:     { label: "Channel Updated",       verb: "updated channel",      color: "text-blue-400",    bg: "bg-blue-500/15",    dot: "#5865f2" },
-  role_created:        { label: "Role Created",          verb: "created role",         color: "text-green-400",   bg: "bg-green-500/15",   dot: "#57f287" },
-  role_deleted:        { label: "Role Deleted",          verb: "deleted role",         color: "text-red-400",     bg: "bg-red-500/15",     dot: "#ed4245" },
-  role_updated:        { label: "Role Updated",          verb: "updated role",         color: "text-purple-400",  bg: "bg-purple-500/15",  dot: "#9b59b6" },
-  server_updated:      { label: "Server Updated",        verb: "updated server",       color: "text-indigo-400",  bg: "bg-indigo-500/15",  dot: "#5865f2" },
-  invite_created:      { label: "Invite Created",        verb: "created invite",       color: "text-teal-400",    bg: "bg-teal-500/15",    dot: "#1abc9c" },
-  invite_deleted:      { label: "Invite Deleted",        verb: "deleted invite",       color: "text-orange-400",  bg: "bg-orange-500/15",  dot: "#e67e22" },
-  message_deleted:     { label: "Message Deleted",       verb: "deleted a message in", color: "text-red-400",     bg: "bg-red-500/15",     dot: "#ed4245" },
-  message_pinned:      { label: "Message Pinned",        verb: "pinned a message in",  color: "text-yellow-400",  bg: "bg-yellow-500/15",  dot: "#f1c40f" },
-  safety_setup_updated: { label: "Safety Setup Updated",  verb: "updated safety settings for", color: "text-green-400", bg: "bg-green-500/15", dot: "#57f287" },
+  member_kicked: { label: "Member Kicked", verb: "kicked", color: "text-orange-400", bg: "bg-orange-500/15", dot: "#e67e22" },
+  member_banned: { label: "Member Banned", verb: "banned", color: "text-red-400", bg: "bg-red-500/15", dot: "#ed4245" },
+  member_unbanned: { label: "Member Unbanned", verb: "unbanned", color: "text-green-400", bg: "bg-green-500/15", dot: "#57f287" },
+  member_timeout: { label: "Member Timed Out", verb: "timed out", color: "text-yellow-400", bg: "bg-yellow-500/15", dot: "#f1c40f" },
+  member_role_updated: { label: "Member Roles Updated", verb: "updated roles for", color: "text-blue-400", bg: "bg-blue-500/15", dot: "#5865f2" },
+  channel_created: { label: "Channel Created", verb: "created channel", color: "text-green-400", bg: "bg-green-500/15", dot: "#57f287" },
+  channel_deleted: { label: "Channel Deleted", verb: "deleted channel", color: "text-red-400", bg: "bg-red-500/15", dot: "#ed4245" },
+  channel_updated: { label: "Channel Updated", verb: "updated channel", color: "text-blue-400", bg: "bg-blue-500/15", dot: "#5865f2" },
+  role_created: { label: "Role Created", verb: "created role", color: "text-green-400", bg: "bg-green-500/15", dot: "#57f287" },
+  role_deleted: { label: "Role Deleted", verb: "deleted role", color: "text-red-400", bg: "bg-red-500/15", dot: "#ed4245" },
+  role_updated: { label: "Role Updated", verb: "updated role", color: "text-purple-400", bg: "bg-purple-500/15", dot: "#9b59b6" },
+  server_updated: { label: "Server Updated", verb: "updated server", color: "text-indigo-400", bg: "bg-indigo-500/15", dot: "#5865f2" },
+  invite_created: { label: "Invite Created", verb: "created invite", color: "text-teal-400", bg: "bg-teal-500/15", dot: "#1abc9c" },
+  invite_deleted: { label: "Invite Deleted", verb: "deleted invite", color: "text-orange-400", bg: "bg-orange-500/15", dot: "#e67e22" },
+  message_deleted: { label: "Message Deleted", verb: "deleted a message in", color: "text-red-400", bg: "bg-red-500/15", dot: "#ed4245" },
+  message_pinned: { label: "Message Pinned", verb: "pinned a message in", color: "text-yellow-400", bg: "bg-yellow-500/15", dot: "#f1c40f" },
+  safety_setup_updated: { label: "Safety Setup Updated", verb: "updated safety settings for", color: "text-green-400", bg: "bg-green-500/15", dot: "#57f287" },
 }
 
 export const CATEGORY_LABELS: Record<ActionCategory, string> = {
-  member:  "Member",
+  member: "Member",
   channel: "Channel",
-  role:    "Role",
-  server:  "Server",
-  invite:  "Invite",
+  role: "Role",
+  server: "Server",
+  invite: "Invite",
   message: "Message",
 }
 
-// ─── mock actors ──────────────────────────────────────────────────────────────
 
-const alexknight: AuditActor = { id: 1,  name: "alexknight",  initials: "AK", color: "bg-indigo-500/20 text-indigo-400" }
-const sakura:     AuditActor = { id: 2,  name: "sakura_r",    initials: "SR", color: "bg-yellow-500/20 text-yellow-400" }
-const frostbyte:  AuditActor = { id: 11, name: "frost_byte",  initials: "FB", color: "bg-sky-500/20 text-sky-400" }
+const alexknight: AuditActor = { id: 1, name: "alexknight", initials: "AK", color: "bg-indigo-500/20 text-indigo-400" }
+const sakura: AuditActor = { id: 2, name: "sakura_r", initials: "SR", color: "bg-yellow-500/20 text-yellow-400" }
+const frostbyte: AuditActor = { id: 11, name: "frost_byte", initials: "FB", color: "bg-sky-500/20 text-sky-400" }
 
-// ─── mock data ────────────────────────────────────────────────────────────────
 
 const d = (daysAgo: number, hoursAgo = 0) => {
   const t = new Date("2026-04-13T12:00:00Z")
@@ -111,9 +109,9 @@ export const AUDIT_LOG: AuditEntry[] = [
     target: "@Moderator",
     timestamp: d(0, 2),
     changes: [
-      { field: "Kick Members",   before: "false", after: "true" },
-      { field: "Ban Members",    before: "false", after: "true" },
-      { field: "Manage Messages",before: "true",  after: "true" },
+      { field: "Kick Members", before: "false", after: "true" },
+      { field: "Ban Members", before: "false", after: "true" },
+      { field: "Manage Messages", before: "true", after: "true" },
     ],
   },
   {
@@ -148,8 +146,8 @@ export const AUDIT_LOG: AuditEntry[] = [
     target: "server settings",
     timestamp: d(1, 0),
     changes: [
-      { field: "Verification Level",  before: "None",   after: "Low" },
-      { field: "Content Filter",      before: "Disabled", after: "Scan roleless members" },
+      { field: "Verification Level", before: "None", after: "Low" },
+      { field: "Content Filter", before: "Disabled", after: "Scan roleless members" },
     ],
   },
   {
@@ -161,7 +159,7 @@ export const AUDIT_LOG: AuditEntry[] = [
     timestamp: d(1, 2),
     changes: [
       { field: "Topic", before: "", after: "Welcome to the server! Read #rules first." },
-      { field: "NSFW",  before: "false", after: "false" },
+      { field: "NSFW", before: "false", after: "false" },
     ],
   },
   {
@@ -196,7 +194,7 @@ export const AUDIT_LOG: AuditEntry[] = [
     target: "frost_byte",
     timestamp: d(2, 5),
     changes: [
-      { field: "Added role",   before: "", after: "@Moderator" },
+      { field: "Added role", before: "", after: "@Moderator" },
     ],
   },
   {

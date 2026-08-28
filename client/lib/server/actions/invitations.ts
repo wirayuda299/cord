@@ -1,60 +1,87 @@
 "use server"
 
 import { getPublicApiUrl } from "@/lib/env"
+import { APIResponse } from "@/lib/types/response";
 import { auth } from "@clerk/nextjs/server"
 
-export async function createInvitationCode(server_id: string, max_users: number = 10) {
+export async function createInvitationCode(server_id: string, max_users: number = 10): Promise<APIResponse> {
 
-  if (!server_id) return { error: "Server ID is missing" }
+  const { getToken } = await auth.protect();
 
-  const base = getPublicApiUrl()
+  if (!server_id) return { message: "Server ID is missing", success: false }
 
-  const { getToken } = await auth()
-  const token = await getToken()
+  try {
+    const token = await getToken()
 
-  const res = await fetch(`${base}/invitation/create`, {
-    headers: {
-      "Content-Type": "application/json",
-      Accept: "application/json",
-      "Authorization": `Bearer ${token}`
-    },
-    method: "POST",
-    body: JSON.stringify({
-      server_id,
-      max_users,
+    const res = await fetch(`${getPublicApiUrl()}/invitation/create`, {
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+        "Authorization": `Bearer ${token}`
+      },
+      method: "POST",
+      body: JSON.stringify({
+        server_id,
+        max_users,
+      })
     })
-  })
 
-  if (!res.ok) {
+    const response: APIResponse = await res.json().catch(() => null)
+
+    if (!res.ok) {
+      return {
+        message: response.message,
+        success: false
+      }
+    }
     return {
-      error: await res.json().then(d => d.message)
+      data: response.data,
+      message: "invitation created",
+      success: true
+    }
+  } catch (e) {
+    return {
+      message: "failed to create invitation",
+      success: false
     }
   }
-  return await res.json().then(c => c.data)
 }
 
-export async function joinServerByCode(code: string) {
-  if (!code) return { error: "Invitation code is missing" }
+export async function joinServerByCode(code: string): Promise<APIResponse> {
+  const { getToken } = await auth.protect();
+  try {
 
+    if (!code) return { message: "Invitation code is missing", success: false }
 
-  const { getToken } = await auth()
-  const token = await getToken()
+    const token = await getToken()
 
-  const res = await fetch(`${getPublicApiUrl()}/invitation/join`, {
-    headers: {
-      "Content-Type": "application/json",
-      Accept: "application/json",
-      "Authorization": `Bearer ${token}`
-    },
-    method: "POST",
-    body: JSON.stringify({
-      code,
+    const res = await fetch(`${getPublicApiUrl()}/invitation/join`, {
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+        "Authorization": `Bearer ${token}`
+      },
+      method: "POST",
+      body: JSON.stringify({
+        code,
+      })
     })
-  })
 
-  if (!res.ok) {
+    const response: APIResponse = await res.json().catch(() => null)
+    if (!res.ok) {
+      return {
+        message: response.message,
+        success: false
+      }
+    }
     return {
-      error: await res.json().then((r) => r.message)
+      message: "successfully join a server",
+      success: true
+    }
+  } catch (e) {
+    return {
+      message: "failed to join server",
+      success: false
     }
   }
 }

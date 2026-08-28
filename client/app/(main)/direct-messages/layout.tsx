@@ -1,3 +1,4 @@
+import { auth } from "@clerk/nextjs/server";
 import { MessageSquare, Users } from "lucide-react"
 import Image from "next/image"
 import Link from "next/link"
@@ -7,6 +8,7 @@ import { getAllConversations } from "@/lib/server/data/conversations"
 
 
 export default async function DirectMessagesLayout({ children }: { children: ReactNode }) {
+  await auth.protect();
   const conversations = await getAllConversations()
 
   return (

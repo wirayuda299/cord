@@ -3,14 +3,16 @@
 import { isUserJoin } from "@/lib/server/data/members";
 import { getPublicApiUrl } from "@/lib/env";
 import { auth } from "@clerk/nextjs/server";
+import { APIResponse } from "@/lib/types/response";
 
 export async function isMemberJoined(serverId: string): Promise<boolean> {
+  await auth.protect();
   return await isUserJoin(serverId);
 }
 
-export async function isMemberBanned(serverId: string): Promise<boolean> {
+export async function isMemberBanned(serverId: string): Promise<APIResponse<boolean>> {
+  const { getToken } = await auth.protect();
   try {
-    const { getToken } = await auth();
     const token = await getToken();
 
     const res = await fetch(`${getPublicApiUrl()}/members/is-banned?server_id=${serverId}`, {
@@ -21,13 +23,23 @@ export async function isMemberBanned(serverId: string): Promise<boolean> {
         "Authorization": `Bearer ${token}`
       },
     });
-
+    const response = await res.json().catch(() => null)
     if (!res.ok) {
-      throw new Error("failed to check ban status");
+      return {
+        message: response.message,
+        success: false
+      }
     }
 
-    return await res.json().then(d => d.data);
+    return {
+      message: "success",
+      data: response.data,
+      success: true
+    };
   } catch (e) {
-    throw e;
+    return {
+      message: "failed to get member status",
+      success: false
+    }
   }
 }

@@ -41,6 +41,7 @@ export default function VideoCall({ room, serverId }: { room: string; serverId: 
       onDisconnected={() => {
         router.push(`/${serverId}`);
       }}
+
       video={true}
       audio={true}
       token={token}

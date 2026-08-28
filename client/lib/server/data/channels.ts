@@ -21,8 +21,11 @@ export type GroupedChannels = {
   categories: CategoryWithChannels[]
 }
 export async function getAllChannel(serverID: string): Promise<GroupedChannels> {
+  const { getToken, userId } = await auth()
   try {
-    const { getToken } = await auth()
+    if (!userId) {
+      throw new Error("unauthenticated")
+    }
     const token = await getToken()
 
     const res = await fetch(`${getPublicApiUrl()}/channel/find-all?serverID=${serverID}`, {
@@ -32,10 +35,10 @@ export async function getAllChannel(serverID: string): Promise<GroupedChannels> 
         Accept: "application/json",
         "Authorization": `Bearer ${token}`
       },
-      next: { tags: ["channels"] }
+      next: { tags: ["channels", "servers"] }
     })
     return await res.json().then((d) => d.data)
   } catch (e) {
-    throw e
+    return [] as unknown as Promise<GroupedChannels>
   }
 }

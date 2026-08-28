@@ -1,4 +1,5 @@
 import { getPublicApiUrl } from "@/lib/env";
+import { apiFetcher } from "@/lib/utils";
 import { getToken } from "@clerk/nextjs";
 
 export type Member = {
@@ -15,25 +16,7 @@ export type Member = {
    is_banned?: boolean;
 };
 export async function getAllMembers(serverID: string): Promise<Member[]> {
-   const token = await getToken();
-
-   const res = await fetch(
-      `${getPublicApiUrl()}/members/find-all?serverID=${serverID}`,
-      {
-         method: "GET",
-         headers: {
-            "Content-Type": "application/json",
-            Accept: "application/json",
-            Authorization: `Bearer ${token}`,
-         },
-      },
-   );
-
-   if (!res.ok) {
-      throw new Error("Failed to fetch members");
-   }
-
-   return (await res.json().then((d) => d.data)) as Member[];
+   return apiFetcher<Member[]>(`members/find-all?serverID=${serverID}`);
 }
 
 export async function kickMember(member_id: string, server_id: string) {

@@ -29,6 +29,7 @@ PIDS=()
 SPINNER_PID=""
 LOG_DIR="/tmp/cord-logs"
 mkdir -p "$LOG_DIR"
+rm -f "$LOG_DIR"/*.log   # start every run with clean logs, not last run's leftovers
 
 # ─────────────────────────────────────────────
 #  Helpers
@@ -141,6 +142,31 @@ kill_port() {
 }
 
 # ─────────────────────────────────────────────
+#  Readiness check
+# ─────────────────────────────────────────────
+# Polls a TCP port until something is actually accepting connections.
+# `podman start` returns as soon as the container process launches,
+# not once the app inside (e.g. Redis replaying its AOF file) is
+# actually ready to accept connections — this closes that gap so the
+# Go services don't race the containers on startup.
+wait_for_port() {
+    local host="$1"
+    local port="$2"
+    local name="$3"
+    local timeout="${4:-15}"
+
+    for ((i = 1; i <= timeout; i++)); do
+        if timeout 1 bash -c "</dev/tcp/${host}/${port}" 2>/dev/null; then
+            return 0
+        fi
+        sleep 1
+    done
+
+    log_warn "${name} did not become ready within ${timeout}s — continuing anyway"
+    return 1
+}
+
+# ─────────────────────────────────────────────
 #  Service launcher
 # ─────────────────────────────────────────────
 start_service() {
@@ -179,8 +205,15 @@ start_spinner "Restarting postgres & redis..."
 podman stop postgres redis >/dev/null 2>&1 || true
 podman start postgres redis >/dev/null 2>&1
 stop_spinner
-log_ok "postgres started"
-log_ok "redis started"
+log_ok "postgres container started"
+log_ok "redis container started"
+
+start_spinner "Waiting for postgres & redis to accept connections..."
+wait_for_port 127.0.0.1 5432 "postgres" 20 || true
+wait_for_port 127.0.0.1 6379 "redis" 20 || true
+stop_spinner
+log_ok "postgres ready"
+log_ok "redis ready"
 
 # --- Services ---
 log_section "⚙️  Services"

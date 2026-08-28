@@ -18,7 +18,7 @@ export default async function InviteFriendDialog({
 
    return (
       <Dialog>
-         <DialogTrigger className="w-full p-1.5 text-sm rounded flex justify-between items-center hover:bg-sidebar-primary/15">
+         <DialogTrigger className="w-full p-1.5 text-xs font-medium md:font-normal md:text-sm rounded flex justify-between items-center hover:bg-sidebar-primary/15">
             <p>Invite user</p>
             <Users size={20} />
          </DialogTrigger>

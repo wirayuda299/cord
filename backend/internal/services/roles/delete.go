@@ -36,7 +36,6 @@ func DeleteRole(ctx context.Context, db *databases.Container, p *DeleteRolePaylo
 		ServerID:   p.ServerID,
 		Permission: "manage_role",
 	})
-
 	if err != nil {
 		return &httputil.ErrorResponse{Err: err, Code: http.StatusInternalServerError}
 	}

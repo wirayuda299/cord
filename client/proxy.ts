@@ -1,6 +1,17 @@
-import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server'
+import { clerkMiddleware } from '@clerk/nextjs/server'
+import type { NextRequest } from 'next/server'
 
-const isPublicRoute = createRouteMatcher(['/sign-in(.*)', '/sign-up(.*)', "/", "/api/webhook"])
+// createRouteMatcher is deprecated (path-based auth in middleware can diverge
+// from actual routing); matching the same public paths by hand instead.
+function isPublicRoute(req: NextRequest) {
+  const { pathname } = req.nextUrl
+  return (
+    pathname === "/" ||
+    pathname.startsWith("/sign-in") ||
+    pathname.startsWith("/sign-up") ||
+    pathname.startsWith("/api/webhook")
+  )
+}
 
 export default clerkMiddleware(async (auth, req) => {
   if (!isPublicRoute(req)) {

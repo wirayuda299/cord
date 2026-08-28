@@ -25,39 +25,32 @@ export default function DeleteServer({ serverId, serverName }: DeleteServerProps
     setLoading(true);
     setError(null);
 
-    try {
-      const { error: deleteErr } = await deleteServer(serverId);
-      if (deleteErr) {
-        setError(deleteErr);
-        setLoading(false);
-        return;
-      }
-
-      // Successful deletion - redirect to direct messages
-      router.push("/direct-messages");
-      router.refresh();
-    } catch (err) {
-      setError("An unexpected error occurred. Please try again.");
+    const res = await deleteServer(serverId);
+    if (res && !res.success) {
+      setError(res.message);
       setLoading(false);
+      return;
     }
+
+    router.push("/direct-messages");
+    router.refresh();
   };
 
   return (
-    <div className="flex flex-col w-full max-h-screen overflow-y-auto text-white p-8 min-w-full">
+    <div className="flex flex-col w-full max-h-screen overflow-y-auto text-white p-3 lg:p-8 min-w-full">
       <div className="flex items-center gap-3 pb-4 border-b border-white/5 mb-8">
         <div className="flex items-center justify-center size-10 rounded-xl bg-destructive/15">
           <Trash2 size={20} className="text-destructive" />
         </div>
         <div>
           <h2 className="font-semibold text-xl">Delete '{serverName}'</h2>
-          <p className="text-sm text-text-dim mt-0.5">
+          <p className="text-xs md:text-sm text-text-dim mt-0.5">
             Permanently delete this server and all its contents
           </p>
         </div>
       </div>
 
       <div className="flex flex-col gap-6 max-w-full">
-        {/* Warning card */}
         <div className="flex items-start gap-3 p-4 rounded-xl border border-destructive/20 bg-destructive/10 text-destructive-foreground">
           <AlertTriangle size={18} className="text-red-400 shrink-0 mt-0.5" />
           <div className="text-xs leading-relaxed text-red-300">
@@ -93,7 +86,7 @@ export default function DeleteServer({ serverId, serverName }: DeleteServerProps
             <button
               type="submit"
               disabled={!isMatched || loading}
-              className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold bg-destructive hover:bg-destructive-hover disabled:opacity-50 disabled:hover:bg-destructive text-white transition-all min-w-32"
+              className="flex items-center justify-center gap-2 cursor-pointer md:px-4 px-2.5 py-2.5 rounded-lg text-xs md:text-sm font-semibold bg-destructive hover:bg-destructive-hover disabled:opacity-50 disabled:hover:bg-destructive text-white transition-all min-w-32"
             >
               {loading ? (
                 <Loader2 size={16} className="animate-spin" />

@@ -29,8 +29,11 @@ func main() {
 	}
 
 	defer db.Close()
+
 	var wg sync.WaitGroup
+
 	clerk.SetKey(os.Getenv("CLERK_SECRET_KEY"))
+
 	for range 5 {
 		wg.Go(func() {
 			worker.StartWorker(ctx, db)

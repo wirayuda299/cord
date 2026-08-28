@@ -1,4 +1,4 @@
-'use client'
+"use client"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -10,13 +10,12 @@ import { useState } from "react"
 import { Controller, useForm } from "react-hook-form"
 import { z } from "zod"
 import SaveBar from "./save-bar"
-import { createRole } from "@/lib/server/actions/role"
-import { updateRole } from "@/lib/server/actions/role"
+import { createRole, updateRole } from "@/lib/server/actions/role"
 import { Role } from "@/lib/types/role"
 import { useParams } from "next/navigation"
 import { PERMISSIONS } from "@/constants/permissions"
 import { ROLE_COLORS } from "@/constants/role"
-
+import Image from "next/image";
 
 const roleFormSchema = z.object({
   name: z.string().min(1, "Name is required").max(50, "Max 50 characters"),
@@ -28,7 +27,6 @@ const roleFormSchema = z.object({
 })
 
 export type RoleFormValues = z.infer<typeof roleFormSchema>
-
 
 type CreateProps = {
   mode: "create"
@@ -44,7 +42,6 @@ type EditProps = {
 
 type Props = CreateProps | EditProps
 
-
 export default function RoleFormView(props: Props) {
   const { mode, onBack } = props
   const params = useParams()
@@ -54,23 +51,24 @@ export default function RoleFormView(props: Props) {
 
   const form = useForm<RoleFormValues>({
     resolver: zodResolver(roleFormSchema),
-    defaultValues: mode === "edit"
-      ? {
-        name: props.role.name,
-        role_color: props.role.color ?? "#99aab5",
-        icon: props.role.icon || null,
-        hoist: props.role.hoist,
-        mentionable: props.role.mentionable,
-        permissions: props.initialPermissions,
-      }
-      : {
-        name: "",
-        role_color: "#99aab5",
-        icon: null,
-        hoist: false,
-        mentionable: false,
-        permissions: [],
-      },
+    defaultValues:
+      mode === "edit"
+        ? {
+          name: props.role.name,
+          role_color: props.role.color ?? "#99aab5",
+          icon: props.role.icon || null,
+          hoist: props.role.hoist,
+          mentionable: props.role.mentionable,
+          permissions: props.initialPermissions,
+        }
+        : {
+          name: "",
+          role_color: "#99aab5",
+          icon: null,
+          hoist: false,
+          mentionable: false,
+          permissions: [],
+        },
     mode: "onChange",
   })
 
@@ -91,42 +89,53 @@ export default function RoleFormView(props: Props) {
     setStatus(null)
 
     if (mode === "create") {
-      try {
-        await createRole({
-          name: values.name,
-          server_id: params.id as string,
-          color: values.role_color,
-          icon: values.icon ?? "",
-          hoist: values.hoist,
-          mentionable: values.mentionable,
-          permission_ids: values.permissions,
+      const res = await createRole({
+        name: values.name,
+        server_id: params.id as string,
+        color: values.role_color,
+        icon: values.icon ?? "",
+        hoist: values.hoist,
+        mentionable: values.mentionable,
+        permission_ids: values.permissions,
+      })
+
+      if (res && !res.success) {
+        setStatus({
+          type: "error",
+          message: res.message ?? "Failed to create role. Please try again.",
         })
+        return
+      }
+
+      if (res && res.success) {
+        alert("role created")
         form.reset()
         onBack()
-      } catch (e) {
-        setStatus({ type: "error", message: String(e) })
       }
       return
-    }
-
-    const dirty = form.formState.dirtyFields
-    const payload: Parameters<typeof updateRole>[0] = {
-      server_id: params.id as string,
-      role_id: props.role.id,
-    }
-    if (dirty.name) payload.name = values.name
-    if (dirty.role_color) payload.color = values.role_color
-    if (dirty.icon) payload.icon = values.icon ?? ""
-    if (dirty.hoist) payload.hoist = values.hoist
-    if (dirty.mentionable) payload.mentionable = values.mentionable
-    if (dirty.permissions) payload.permission_ids = values.permissions
-
-    const res = await updateRole(payload)
-    if (res?.error) {
-      setStatus({ type: "error", message: res.error })
     } else {
-      setStatus({ type: "success", message: "Role updated!" })
-      form.reset(values)
+      const dirty = form.formState.dirtyFields
+      const payload: Parameters<typeof updateRole>[0] = {
+        server_id: params.id as string,
+        role_id: props.role.id,
+      }
+      if (dirty.name) payload.name = values.name
+      if (dirty.role_color) payload.color = values.role_color
+      if (dirty.icon) payload.icon = values.icon ?? ""
+      if (dirty.hoist) payload.hoist = values.hoist
+      if (dirty.mentionable) payload.mentionable = values.mentionable
+      if (dirty.permissions) payload.permission_ids = values.permissions
+
+      const res = await updateRole(payload)
+      if (res && !res.success) {
+        setStatus({ type: "error", message: res.message })
+        return
+      }
+      if (res && res.success) {
+        setStatus({ type: "success", message: "Role updated!" })
+        form.reset(values)
+      }
+
     }
   }
 
@@ -136,8 +145,8 @@ export default function RoleFormView(props: Props) {
   ]
 
   return (
-    <div className="flex flex-col w-full max-h-screen overflow-hidden text-white">
-      <div className="px-8 pt-6 pb-0 shrink-0 border-b border-white/5">
+    <div className="flex flex-col w-full h-full max-h-full overflow-hidden text-white">
+      <div className="px-4 sm:px-6 lg:px-8 pt-6 pb-0 shrink-0 border-b border-white/5">
         <button
           type="button"
           onClick={onBack}
@@ -148,37 +157,48 @@ export default function RoleFormView(props: Props) {
         </button>
 
         {mode === "edit" ? (
-          <div className="flex items-center gap-3 mb-4">
+          <div className="flex items-center gap-3 mb-4 min-w-0">
             {icon ? (
-              <img src={icon} alt="" className="size-8 rounded-full object-cover border border-white/10 shrink-0" />
+              <Image
+                width={32}
+                height={32}
+                src={icon}
+                alt=""
+                className="size-8 rounded-full object-cover border border-white/10 shrink-0"
+              />
             ) : (
               <span
                 className="size-8 rounded-full shrink-0 border-2 border-white/10"
                 style={{ backgroundColor: color }}
               />
             )}
-            <div>
-              <h1 className="text-xl font-semibold text-white leading-tight">
+            <div className="min-w-0">
+              <h1 className="text-xl font-semibold text-white leading-tight truncate">
                 Edit — {props.role.name}
               </h1>
-              <p className="text-xs font-mono text-white/25 mt-px">{props.role.id}</p>
+              <p className="text-xs font-mono text-white/25 mt-px truncate">{props.role.id}</p>
             </div>
           </div>
         ) : (
           <h1 className="text-xl font-semibold text-white mb-4">Create role</h1>
         )}
 
-        <div className="flex items-center gap-1 border-b border-white/5 -mb-px">
+        <div
+          role="tablist"
+          className="flex items-center gap-1 border-b border-white/5 -mb-px overflow-x-auto"
+        >
           {tabs.map((tab) => (
             <button
               key={tab.id}
               type="button"
+              role="tab"
+              aria-selected={activeTab === tab.id}
               onClick={() => setActiveTab(tab.id)}
               className={cn(
-                "flex items-center gap-1.5 px-3 py-2 text-xs font-medium transition-colors border-b-2 -mb-px",
+                "flex items-center gap-1.5 px-3 py-2 text-xs font-medium transition-colors border-b-2 -mb-px whitespace-nowrap",
                 activeTab === tab.id
                   ? "border-[#5865f2] text-white"
-                  : "border-transparent text-white/40 hover:text-white/70"
+                  : "border-transparent text-white/40 hover:text-white/70",
               )}
             >
               {tab.icon}
@@ -188,38 +208,33 @@ export default function RoleFormView(props: Props) {
         </div>
       </div>
 
-      <form
-        onSubmit={form.handleSubmit(onSubmit)}
-        className="flex flex-col flex-1 overflow-hidden"
-      >
-        <div className="flex-1 overflow-y-auto px-8 py-6 flex flex-col gap-6">
-
+      <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col flex-1 overflow-hidden">
+        <div className="flex-1 overflow-y-auto px-4 sm:px-6 lg:px-8 py-6 flex flex-col gap-6">
           {activeTab === "display" && (
             <>
               <div className="flex flex-col gap-2">
                 <div className="flex items-center justify-between">
-                  <label className="text-xs font-semibold uppercase tracking-widest text-white/40">
+                  <label htmlFor="role-name" className="text-xs font-semibold uppercase tracking-widest text-white/40">
                     Role Name
                   </label>
                   <span className="text-xs text-white/20">{nameValue.length} / 50</span>
                 </div>
                 <Input
+                  id="role-name"
                   autoComplete="off"
                   {...form.register("name")}
                   placeholder="new role"
                   className={cn(
-                    "bg-white/5 text-white text-sm rounded-lg",
+                    "bg-white/5 text-white text-sm rounded-lg w-full max-w-md",
                     errors.name
                       ? "border-red-500/60 focus:border-red-500"
-                      : "border-white/10 focus:border-white/25"
+                      : "border-white/10 focus:border-white/25",
                   )}
                 />
-                {errors.name && (
-                  <p className="text-xs text-red-400">{errors.name.message}</p>
-                )}
+                {errors.name && <p className="text-xs text-red-400">{errors.name.message}</p>}
                 <div className="flex items-center gap-2 mt-0.5">
                   {icon ? (
-                    <img src={icon} alt="" className="size-2.5 rounded-full object-cover shrink-0" />
+                    <Image width={10} height={10} src={icon} alt="" className="size-2.5 rounded-full object-cover shrink-0" />
                   ) : (
                     <span
                       className="size-2.5 rounded-full shrink-0 transition-colors"
@@ -243,10 +258,12 @@ export default function RoleFormView(props: Props) {
                     <button
                       key={i}
                       type="button"
+                      aria-label={`Role color ${c}`}
+                      aria-pressed={color === c}
                       onClick={() => form.setValue("role_color", c, { shouldDirty: true })}
                       className={cn(
                         "size-7 rounded-full transition-all border-2",
-                        color === c ? "border-white scale-110" : "border-transparent hover:scale-110"
+                        color === c ? "border-white scale-110" : "border-transparent hover:scale-110",
                       )}
                       style={{ backgroundColor: c }}
                     />
@@ -256,7 +273,7 @@ export default function RoleFormView(props: Props) {
 
               {/* Icon URL */}
               <div className="flex flex-col gap-2">
-                <label className="text-xs font-semibold uppercase tracking-widest text-white/40">
+                <label htmlFor="role-icon" className="text-xs font-semibold uppercase tracking-widest text-white/40">
                   Icon URL
                   <span className="ml-2 normal-case tracking-normal font-normal text-white/25">
                     (optional)
@@ -264,7 +281,9 @@ export default function RoleFormView(props: Props) {
                 </label>
                 <div className="flex items-center gap-2">
                   {icon ? (
-                    <img
+                    <Image
+                      width={32}
+                      height={32}
                       src={icon}
                       alt=""
                       className="size-8 rounded-full object-cover border border-white/10 shrink-0"
@@ -275,9 +294,10 @@ export default function RoleFormView(props: Props) {
                     </div>
                   )}
                   <Input
+                    id="role-icon"
                     {...form.register("icon")}
                     placeholder="https://example.com/icon.png"
-                    className="bg-white/5 text-white text-sm rounded-lg border-white/10 focus:border-white/25 flex-1"
+                    className="bg-white/5 text-white text-sm rounded-lg border-white/10 focus:border-white/25 flex-1 min-w-0"
                   />
                 </div>
               </div>
@@ -291,7 +311,7 @@ export default function RoleFormView(props: Props) {
                   name="hoist"
                   render={({ field }) => (
                     <div className="flex items-start justify-between gap-4 p-4 rounded-xl bg-white/3 border border-white/5">
-                      <div>
+                      <div className="min-w-0">
                         <p className="text-sm font-medium text-white">Display separately</p>
                         <p className="text-xs text-white/35 mt-0.5 leading-relaxed">
                           Members with this role appear in their own group
@@ -310,7 +330,7 @@ export default function RoleFormView(props: Props) {
                   name="mentionable"
                   render={({ field }) => (
                     <div className="flex items-start justify-between gap-4 p-4 rounded-xl bg-white/3 border border-white/5">
-                      <div>
+                      <div className="min-w-0">
                         <p className="text-sm font-medium text-white">Allow @mention</p>
                         <p className="text-xs text-white/35 mt-0.5 leading-relaxed">
                           Anyone can @mention this role to notify all members
@@ -346,23 +366,29 @@ export default function RoleFormView(props: Props) {
                     </p>
                     <p className="text-xs text-white/35">{perm.desc}</p>
                   </div>
-                  <Switch
-                    className="data-unchecked:bg-sidebar-primary data-checked:bg-discord-blue shadow shrink-0"
-                    checked={!!existing.includes(perm.label)}
-                  />
+                  {/* Switch owns the toggle directly now; stopPropagation keeps
+                      the row's onClick (used for the rest of the row) from
+                      firing a second, canceling toggle. */}
+                  <span onClick={(e) => e.stopPropagation()} className="shrink-0">
+                    <Switch
+                      className="data-unchecked:bg-sidebar-primary data-checked:bg-discord-blue shadow"
+                      checked={!!existing.includes(perm.label)}
+                      onCheckedChange={() => togglePermission(perm.label)}
+                    />
+                  </span>
                 </div>
               ))}
             </div>
           )}
         </div>
 
-        {/* ── Footer: create = explicit buttons, edit = SaveBar ─────────── */}
+        {/* Footer: create = explicit buttons, edit = SaveBar */}
         {mode === "create" ? (
-          <div className="shrink-0 border-t border-white/5 px-8 py-4">
+          <div className="shrink-0 border-t border-white/5 px-4 sm:px-6 lg:px-8 py-4">
             {status?.type === "error" && (
               <p className="text-xs text-red-400 mb-3">{status.message}</p>
             )}
-            <div className="flex justify-end gap-2">
+            <div className="flex flex-col sm:flex-row sm:justify-end gap-2">
               <Button
                 type="button"
                 variant="ghost"
@@ -374,7 +400,7 @@ export default function RoleFormView(props: Props) {
               <Button
                 type="submit"
                 disabled={isSubmitting}
-                className="bg-[#5865f2] hover:bg-[#4752c4] text-white disabled:opacity-50 flex items-center gap-2"
+                className="bg-[#5865f2] hover:bg-[#4752c4] text-white disabled:opacity-50 flex items-center justify-center gap-2"
               >
                 {isSubmitting && <Loader2 size={12} className="animate-spin" />}
                 {isSubmitting ? "Creating…" : "Create role"}

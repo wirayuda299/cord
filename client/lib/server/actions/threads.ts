@@ -1,38 +1,47 @@
 'use server'
 
 import { getPublicApiUrl } from "@/lib/env";
+import { APIResponse } from "@/lib/types/response";
 import { auth } from "@clerk/nextjs/server";
-import { revalidateTag } from "next/cache";
+import { updateTag } from "next/cache";
 
 
-export async function deleteThread(thread_id: string, server_id: string) {
-    try {
+export async function deleteThread(thread_id: string, server_id: string): Promise<APIResponse> {
+  const { getToken } = await auth.protect();
+  try {
 
-        const { getToken } = await auth()
-        const token = await getToken()
-        const res = await fetch(`${getPublicApiUrl()}/threads/delete`, {
-            method: "DELETE",
-            headers: {
-                "Content-Type": "application/json",
-                "Accept": "application/json",
-                "Authorization": `Bearer ${token}`
-            },
-            body: JSON.stringify({
-                thread_id,
-                server_id
-            })
-        });
+    const token = await getToken()
+    const res = await fetch(`${getPublicApiUrl()}/threads/delete`, {
+      method: "DELETE",
+      headers: {
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+        "Authorization": `Bearer ${token}`
+      },
+      body: JSON.stringify({
+        thread_id,
+        server_id
+      })
+    });
 
-        if (!res.ok) {
-            console.error("failed to delete thread -> ", await res.text())
-            return {
-                error: "Failed to delete thread",
-            }
-        }
-
-        revalidateTag('messages', { expire: 0 })
-
-    } catch (err) {
-        throw err
+    const json: APIResponse = await res.json().catch(() => null)
+    if (!res.ok) {
+      return {
+        message: json.message ?? "Failed to delete thread",
+        success: false
+      }
     }
+
+    updateTag('messages')
+    return {
+      message: "thread deleted",
+      success: true
+    }
+
+  } catch (err) {
+    return {
+      message: "Failed to delete thread",
+      success: false
+    }
+  }
 }

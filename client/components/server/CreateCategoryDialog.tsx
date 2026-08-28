@@ -12,22 +12,17 @@ export default function CreateCategoryDialog({ serverId }: { serverId: string })
   })
 
   const onSubmit = async (data: CreateCategoryPayload) => {
-    try {
-      const res = await createCategory(data)
-      if (res.error) {
-        alert(res.error)
-        return
-      }
-    } catch (e) {
-      alert(e)
-    } finally {
-      reset()
+    const res = await createCategory(data)
+    if (!res.success) {
+      alert(res.message)
+      return
     }
+    reset()
   }
 
   return (
     <Dialog>
-      <DialogTrigger className="w-full p-1.5 text-sm rounded flex justify-between items-center hover:bg-sidebar-primary/15">
+      <DialogTrigger className="w-full p-1.5 text-xs font-medium md:font-normal md:text-sm rounded flex justify-between items-center hover:bg-sidebar-primary/15">
         <p>Create category</p>
         <FolderPlus size={20} />
       </DialogTrigger>
@@ -38,10 +33,10 @@ export default function CreateCategoryDialog({ serverId }: { serverId: string })
       >
         <form onSubmit={handleSubmit(onSubmit)}>
           <div className="px-6 pt-6 pb-0">
-            <h2 className="text-xl font-bold text-text-bright tracking-tight mb-1">
+            <h2 className="text-sm md:text-xl font-bold text-text-bright tracking-tight mb-1">
               Create Category
             </h2>
-            <p className="text-[13px] text-text-dim mb-5">
+            <p className="text-xs md:text-[13px] text-text-dim mb-5">
               Categories help organize your channels into groups.
             </p>
           </div>
@@ -61,7 +56,7 @@ export default function CreateCategoryDialog({ serverId }: { serverId: string })
                     placeholder="New Category"
                     maxLength={20}
                     required
-                    className="w-full bg-bg-input rounded text-[15px] text-text-primary placeholder-text-placeholder px-3 py-2.5 outline-none focus:ring-2 focus:ring-discord-brand border-none"
+                    className="w-full bg-bg-input rounded text-xs md:text-[15px] text-text-primary placeholder-text-placeholder px-3 py-1 md:py-2.5 outline-none focus:ring-2 focus:ring-discord-brand border-none"
                   />
                 </div>
               )}
@@ -69,17 +64,17 @@ export default function CreateCategoryDialog({ serverId }: { serverId: string })
             <div className="h-px bg-surface-hover mb-4" />
           </div>
 
-          <div className="bg-surface-raised px-6 py-4 flex items-center justify-end gap-3">
+          <div className="bg-surface-raised px-2 md:px-6 py-4 flex items-center justify-center md:justify-end gap-3">
             <DialogClose
               type="button"
-              className="text-[13.5px] font-medium text-text-primary hover:text-white hover:underline px-4 py-2 rounded bg-transparent border-none cursor-pointer transition-colors"
+              className="md:text-[13.5px] text-xs font-medium text-text-primary hover:text-white hover:underline px-4 py-2 rounded bg-transparent border-none cursor-pointer transition-colors"
             >
               Cancel
             </DialogClose>
             <button
               type="submit"
               disabled={isSubmitting}
-              className="text-[13.5px] font-medium text-white bg-discord-brand hover:bg-accent-blue disabled:opacity-50 px-4 py-2 rounded border-none cursor-pointer transition-colors"
+              className="md:text-[13.5px] text-xs font-medium text-white bg-discord-brand hover:bg-accent-blue disabled:opacity-50 py-1 px-3 md:px-4 md:py-2 rounded border-none cursor-pointer transition-colors"
             >
               Create Category
             </button>
