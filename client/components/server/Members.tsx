@@ -33,41 +33,22 @@ import {
 import { unbanMember } from "@/lib/actions/servers";
 import { getAllRoles, unassignRole } from "@/lib/api/roles";
 import { Role } from "@/types/role";
-import Image from "next/image";
 import useToggleRoleMember from "@/hooks/useToggleRole";
 import { format } from "date-fns";
 import { hasPermission } from "@/lib/api/permissions";
 import { PermissionKey } from "@/constants/permissions";
+import { Avatar, getInitials, avatarColorFromSeed } from "@/components/ui/avatar";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 
 function MemberAvatar({ member }: { member: Member }) {
-  if (member.avatar_url) {
-    return (
-      <div className="relative shrink-0">
-        <Image
-          src={member.avatar_url}
-          width={36}
-          height={36}
-          alt={member.username}
-          className="size-9 rounded-full object-cover"
-        />
-        <span className="absolute -bottom-0.5 -right-0.5 size-3 rounded-full border-2 border-[#313338] bg-[#23a559]" />
-      </div>
-    );
-  }
-
-  const initials = (member.username ?? "??").slice(0, 2).toUpperCase();
-  const hue =
-    member.user_id.split("").reduce((a, c) => a + c.charCodeAt(0), 0) % 360;
   return (
-    <div className="relative shrink-0">
-      <div
-        className="size-9 rounded-full flex items-center justify-center text-xs font-bold text-white select-none"
-        style={{ background: `hsl(${hue} 60% 40%)` }}
-      >
-        {initials}
-      </div>
-      <span className="absolute -bottom-0.5 -right-0.5 size-3 rounded-full border-2 border-[#313338] bg-[#23a559]" />
-    </div>
+    <Avatar
+      src={member.avatar_url}
+      alt={member.username}
+      fallback={getInitials(member.username)}
+      fallbackStyle={{ background: avatarColorFromSeed(member.user_id) }}
+      indicator="online"
+    />
   );
 }
 
@@ -102,57 +83,36 @@ function BanConfirmDialog({
   const [reason, setReason] = useState("");
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-      <div className="bg-sidebar-primary border border-white/10 rounded-2xl p-6 w-full max-w-sm mx-4 flex flex-col gap-4 shadow-2xl text-white">
-        <div className="flex items-center gap-3">
-          <div className="flex items-center justify-center size-10 rounded-xl bg-red-500/15 shrink-0">
-            <Ban size={20} className="text-red-400" />
-          </div>
-          <div>
-            <p className="font-semibold text-white text-sm">
-              Ban {username}
-            </p>
-            <p className="text-xs text-white/40 mt-0.5">
-              Are you sure you want to ban this member?
-            </p>
-          </div>
-        </div>
-        <p className="text-sm text-white/60 leading-relaxed">
+    <ConfirmDialog
+      icon={<Ban size={20} />}
+      tone="danger"
+      title={`Ban ${username}`}
+      subtitle="Are you sure you want to ban this member?"
+      description={
+        <>
           Banning{" "}
           <span className="text-white font-medium">{username}</span> will
           remove them from the server and prevent them from rejoining.
-        </p>
-        <div className="flex flex-col gap-1.5 mt-2">
-          <label className="text-[10px] font-bold uppercase tracking-wider text-[#949ba4]">
-            Reason for ban
-          </label>
-          <textarea
-            value={reason}
-            onChange={(e) => setReason(e.target.value)}
-            placeholder="Optional reason for ban"
-            rows={2}
-            maxLength={150}
-            className="w-full bg-[#1e1f22] border border-white/10 rounded-lg p-2.5 text-xs text-white placeholder:text-[#4e5058] outline-none focus:border-[#5865f2] transition-colors resize-none"
-          />
-        </div>
-        <div className="flex gap-2 justify-end mt-2">
-          <button
-            type="button"
-            onClick={onCancel}
-            className="px-4 py-2 rounded-lg text-sm text-white/50 hover:text-white hover:bg-white/5 transition-colors cursor-pointer"
-          >
-            Cancel
-          </button>
-          <button
-            type="button"
-            onClick={() => onConfirm(reason)}
-            className="px-4 py-2 rounded-lg text-sm font-medium bg-red-600 hover:bg-red-500 text-white transition-colors cursor-pointer"
-          >
-            Ban
-          </button>
-        </div>
+        </>
+      }
+      confirmLabel="Ban"
+      onConfirm={() => onConfirm(reason)}
+      onCancel={onCancel}
+    >
+      <div className="flex flex-col gap-1.5 mt-2">
+        <label className="text-[10px] font-bold uppercase tracking-wider text-[#949ba4]">
+          Reason for ban
+        </label>
+        <textarea
+          value={reason}
+          onChange={(e) => setReason(e.target.value)}
+          placeholder="Optional reason for ban"
+          rows={2}
+          maxLength={150}
+          className="w-full bg-[#1e1f22] border border-white/10 rounded-lg p-2.5 text-xs text-white placeholder:text-[#4e5058] outline-none focus:border-[#5865f2] transition-colors resize-none"
+        />
       </div>
-    </div>
+    </ConfirmDialog>
   );
 }
 

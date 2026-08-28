@@ -2,11 +2,13 @@
 
 import { useState, useMemo } from "react"
 import { Ban, Search, ShieldOff, RotateCcw } from "lucide-react"
-import { cn } from "@/lib/utils"
 import { unbanMember } from "@/lib/actions/servers"
 import { format } from "date-fns"
 import { getBans } from "@/lib/api/bans"
 import useSWR from "swr"
+import { EmptyState } from "@/components/ui/empty-state"
+import { Avatar } from "@/components/ui/avatar"
+import { ConfirmDialog } from "@/components/ui/confirm-dialog"
 
 
 type BannedMember = {
@@ -34,39 +36,22 @@ function UnbanConfirm({ name, onConfirm, onCancel }: {
   onCancel: () => void
 }) {
   return (
-    <div className="fixed inset-0 z-20 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-      <div className="bg-sidebar-primary border border-white/10 rounded-2xl p-2 md:p-6 w-full max-w-sm mx-4 flex flex-col gap-4 shadow-2xl">
-        <div className="flex items-center gap-3">
-          <div className="flex items-center justify-center size-10 rounded-xl bg-green-500/15 shrink-0">
-            <ShieldOff size={20} className="text-green-400" />
-          </div>
-          <div>
-            <p className="font-semibold text-white text-sm">Revoke ban</p>
-            <p className="text-xs text-white/40 mt-0.5">This action cannot be undone</p>
-          </div>
-        </div>
-        <p className="text-sm text-white/60 leading-relaxed">
+    <ConfirmDialog
+      className="p-2 md:p-6"
+      icon={<ShieldOff size={20} />}
+      tone="success"
+      title="Revoke ban"
+      subtitle="This action cannot be undone"
+      description={
+        <>
           Are you sure you want to unban{" "}
           <span className="text-white font-medium">{name}</span>? They will be able to rejoin the server with a new invite.
-        </p>
-        <div className="flex gap-2 justify-end">
-          <button
-            type="button"
-            onClick={onCancel}
-            className="px-4 py-2 rounded-lg text-sm text-white/50 hover:text-white hover:bg-white/5 transition-colors"
-          >
-            Cancel
-          </button>
-          <button
-            type="button"
-            onClick={onConfirm}
-            className="px-4 py-2 rounded-lg text-sm font-medium bg-green-600 hover:bg-green-500 text-white transition-colors"
-          >
-            Unban
-          </button>
-        </div>
-      </div>
-    </div>
+        </>
+      }
+      confirmLabel="Unban"
+      onConfirm={onConfirm}
+      onCancel={onCancel}
+    />
   )
 }
 
@@ -75,12 +60,12 @@ function BanRow({ member, onUnban }: { member: BannedMember; onUnban: () => void
   return (
     <div className="flex items-center gap-4 px-2 md:px-5 py-3.5 rounded-xl bg-white/2 border border-white/5 hover:bg-white/4 transition-colors group">
 
-      <div className={cn(
-        "size-10 rounded-full flex items-center justify-center text-xs font-semibold shrink-0",
-        member.color
-      )}>
-        {member.initials}
-      </div>
+      <Avatar
+        size={40}
+        alt={member.name}
+        fallback={member.initials}
+        fallbackClassName={member.color}
+      />
 
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
@@ -119,16 +104,13 @@ export default function Bans({ serverId }: { serverId: string }) {
   const [confirmId, setConfirmId] = useState<string | null>(null)
   const { data: bans = [], error, isLoading, mutate } = useSWR(() => serverId ? "/api/bans" : null, () => getBans(serverId))
 
-
-
-  if (isLoading) return "loading bans"
-  if (error) return "failed to get banned members"
-
-
   const filtered = useMemo(() =>
     bans.filter((b) => b.name.toLowerCase().includes(query.toLowerCase())),
     [bans, query]
   )
+
+  if (isLoading) return "loading bans"
+  if (error) return "failed to get banned members"
 
   const confirmTarget = bans.find((b) => b.id === confirmId)
 
@@ -186,10 +168,10 @@ export default function Bans({ serverId }: { serverId: string }) {
 
       <div className="flex-1 overflow-y-auto px-8 py-4">
         {filtered.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-24 text-white/25 gap-3">
-            <Ban size={32} className="opacity-40" />
-            <p className="text-sm">{query ? "No matching bans" : "No banned members"}</p>
-          </div>
+          <EmptyState
+            icon={<Ban size={32} className="opacity-40" />}
+            title={query ? "No matching bans" : "No banned members"}
+          />
         ) : (
           <div className="flex flex-col gap-2">
             <div className="grid grid-cols-[auto_1fr_auto] gap-4 px-5 pb-1">

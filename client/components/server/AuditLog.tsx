@@ -18,6 +18,8 @@ import {
   ActionType,
 } from "@/constants/auditLog"
 import { getAuditLogs } from "@/lib/actions/audit"
+import { EmptyState } from "@/components/ui/empty-state"
+import { Avatar } from "@/components/ui/avatar"
 
 
 
@@ -97,14 +99,12 @@ function EntryRow({ entry }: { entry: AuditEntry }) {
         </div>
 
         {/* Actor avatar */}
-        <div
-          className={cn(
-            "size-7 rounded-full flex items-center justify-center text-[10px] font-semibold shrink-0",
-            entry.actor.color,
-          )}
-        >
-          {entry.actor.initials}
-        </div>
+        <Avatar
+          size={28}
+          alt={entry.actor.name}
+          fallback={entry.actor.initials}
+          fallbackClassName={cn(entry.actor.color, "text-[10px]")}
+        />
 
         {/* Description */}
         <p className="flex-1 min-w-0 text-sm truncate sm:whitespace-normal">
@@ -327,15 +327,16 @@ export default function AuditLog({ serverId }: { serverId: string }) {
         {status === "loading" ? (
           <LogSkeleton />
         ) : status === "error" ? (
-          <div className="flex flex-col items-center justify-center py-24 text-white/40 gap-3 px-4 text-center">
-            <AlertTriangle size={28} className="opacity-50 text-red-400" />
-            <p className="text-sm">Couldn't load the audit log. Please try again.</p>
-          </div>
+          <EmptyState
+            className="text-white/40 px-4 text-center"
+            icon={<AlertTriangle size={28} className="opacity-50 text-red-400" />}
+            title="Couldn't load the audit log. Please try again."
+          />
         ) : filtered.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-24 text-white/25 gap-3">
-            <ClipboardList size={32} className="opacity-40" />
-            <p className="text-sm">No actions found</p>
-          </div>
+          <EmptyState
+            icon={<ClipboardList size={32} className="opacity-40" />}
+            title="No actions found"
+          />
         ) : (
           <div className="flex flex-col gap-6 min-w-0">
             {groups.map(({ label, entries }) => (
