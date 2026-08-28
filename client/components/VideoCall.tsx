@@ -44,7 +44,7 @@ export default function VideoCall({ room, serverId }: { room: string; serverId: 
       video={true}
       audio={true}
       token={token}
-      serverUrl={process.env.LIVEKIT_URL}
+      serverUrl={process.env.NEXT_PUBLIC_LIVEKIT_URL}
       data-lk-theme='default'
       className='fixed! inset-x-0 top-0 min-h-dvh md:min-h-screen overflow-y-auto z-50 md:static! md:z-0'
     >
