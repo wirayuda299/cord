@@ -1,3 +1,5 @@
+import "client-only";
+
 import { RolePermission } from "@/types/permission"
 import { apiFetcher } from "@/lib/fetcher"
 

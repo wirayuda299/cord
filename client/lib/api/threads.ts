@@ -1,3 +1,5 @@
+import "client-only";
+
 import { apiFetcher } from "@/lib/fetcher"
 
 export async function getThreadById(id: string) {

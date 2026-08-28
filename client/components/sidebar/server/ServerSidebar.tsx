@@ -17,7 +17,7 @@ import Invites from "@/components/server/Invites";
 import { currentUser } from "@clerk/nextjs/server";
 import { unauthorized } from "next/navigation";
 import Image from "next/image";
-import { hasPermission } from "@/lib/api/permissions";
+import { hasPermission } from "@/lib/queries/permissions";
 import { PermissionKey } from "@/constants/permissions";
 
 export default async function ServerSidebar({
