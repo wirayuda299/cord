@@ -84,6 +84,7 @@ export async function deleteRole(role_id: string, server_id: string) {
     },
     body: JSON.stringify({ role_id, server_id })
   })
+  console.log(await res.json())
   if (!res.ok) {
     throw new Error("Failed to delete role")
   }

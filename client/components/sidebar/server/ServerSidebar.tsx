@@ -32,7 +32,10 @@ export default async function ServerSidebar({
 
   const { getToken } = await auth()
 
-  const [hasPermManageChannel, channels] = await Promise.all([hasPermission(serverId, PermissionKey.ManageChannel, await getToken()), getAllChannel(serverId)])
+  const [hasPermManageChannel, channels] = await Promise.all([
+    hasPermission(serverId, PermissionKey.ManageChannel, await getToken()),
+    getAllChannel(serverId)
+  ])
 
 
   return (
@@ -82,7 +85,7 @@ export default async function ServerSidebar({
       </header>
 
       <div className="flex flex-col overflow-y-auto h-full">
-        <ChannelList channels={channels} />
+        <ChannelList channels={channels} hasPerm={hasPermManageChannel} />
       </div>
 
       <div className="sticky bottom-0 p-2 flex items-center gap-2 border-t border-sidebar-secondary">

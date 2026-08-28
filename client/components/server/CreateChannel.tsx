@@ -21,47 +21,41 @@ export default function CreateChannel({ serverID }: { serverID: string }) {
   const selectedType = watch("type")
 
   const handleCreateChannel: SubmitHandler<CreateChannelPayload> = async (data) => {
+    const res = await createChannel({
+      name: data.name,
+      categoryID: selectedCategory?.id ?? null,
+      type: data.type,
+      serverID: serverID
+    })
 
-    try {
-      const res = await createChannel({
-        name: data.name,
-        categoryID: selectedCategory?.id ?? null,
-        type: data.type,
-        serverID: serverID
-      })
-
-      if (res && res.error) {
-        alert(res.error)
-        return
-      }
-      alert("Success")
-    } catch (e) {
-      alert(e)
-    } finally {
-      reset()
+    if (!res.success) {
+      alert(res.message)
+      return
     }
+    alert("channel created")
+    reset()
   }
 
   return (
     <Dialog modal={false}>
-      <DialogTrigger className="w-full p-1.5 text-sm rounded flex justify-between items-center hover:bg-sidebar-primary/15">
+      <DialogTrigger className="w-full p-1.5 text-xs font-medium md:font-normal md:text-sm rounded flex justify-between items-center hover:bg-sidebar-primary/15">
         <p>Create channel</p>
         <Plus size={20} />
       </DialogTrigger>
 
       <DialogContent
         onKeyDown={(e) => e.stopPropagation()}
-        className="p-0 overflow-hidden rounded-sm bg-surface-base border-none shadow-[0_0_0_1px_rgba(0,0,0,0.3),0_8px_16px_rgba(0,0,0,0.6)]"
+        className="p-0 overflow-hidden rounded-sm bg-surface-chat md:bg-surface-base border-none shadow-[0_0_0_1px_rgba(0,0,0,0.3),0_8px_16px_rgba(0,0,0,0.6)] "
       >
         <form onSubmit={handleSubmit(handleCreateChannel)}>
-          <div className="px-6 pt-6 pb-0">
-            <h2 className="text-xl font-bold text-text-bright tracking-tight mb-1">
+          <div className="px-3 md:px-6 pt-6 pb-0">
+            <h2 className="text-sm md:text-xl font-bold text-text-bright tracking-tight mb-1">
               Create Channel
             </h2>
           </div>
 
-          <div className="px-6 pb-0">
-            <p className="text-[11px] font-bold text-text-secondary uppercase tracking-[0.06em] mb-2">
+          <div className="px-3 md:px-6 pb-0">
+            <p className="text-[10px] md:text-[11px] md:font-bold text-text-secondary uppercase tracking-[0.06em] mb-2">
               Channel Type
             </p>
             <Controller
@@ -73,7 +67,7 @@ export default function CreateChannel({ serverID }: { serverID: string }) {
                     <div
                       onClick={() => setValue("type", type.id as typeof selectedType)}
                       key={type.id}
-                      className={`flex items-center gap-3 px-3 py-3 rounded cursor-pointer border-[1.5px] transition-colors ${selectedType === type.id
+                      className={`flex items-center gap-3 px-3 py-1 md:py-3 rounded cursor-pointer border-[1.5px] transition-colors ${selectedType === type.id
                         ? "bg-discord-brand/15 border-discord-brand"
                         : "border-transparent hover:bg-white/4"
                         }`}
@@ -88,10 +82,10 @@ export default function CreateChannel({ serverID }: { serverID: string }) {
                       </div>
 
                       <div className="flex-1 min-w-0">
-                        <p className="text-[15px] capitalize font-semibold text-text-bright leading-tight">
+                        <p className="text-xs md:text-[15px] capitalize font-semibold text-text-bright leading-tight">
                           {type.name}
                         </p>
-                        <p className="text-[12px] text-text-dim leading-snug mt-0.5">
+                        <p className="text-[12px] text-text-dim hidden md:block leading-snug mt-0.5">
                           {type.description}
                         </p>
                       </div>
@@ -137,8 +131,8 @@ export default function CreateChannel({ serverID }: { serverID: string }) {
                       required
                       {...field}
                       type="text"
-                      placeholder="new-channel"
-                      className="w-full bg-bg-input rounded text-[15px] text-text-primary placeholder-text-placeholder pl-7 pr-3 py-2.5 outline-none focus:ring-2 focus:ring-discord-brand border-none"
+                      placeholder="# new-channel"
+                      className="w-full bg-bg-input rounded text-[15px] text-text-primary placeholder-text-placeholder px-3 py-1 md:py-2.5 outline-none focus:ring-2 focus:ring-discord-brand border-none placeholder:text-xs text-xs md:text-sm"
                     />
                     {fieldState.invalid && (
                       <FieldError errors={[fieldState.error]} />
@@ -152,13 +146,13 @@ export default function CreateChannel({ serverID }: { serverID: string }) {
           <div className="bg-surface-raised px-6 py-4 flex items-center justify-end gap-3">
             <DialogClose
               type="button"
-              className="text-[13.5px] font-medium text-text-primary hover:text-white hover:underline px-4 py-2 rounded bg-transparent border-none cursor-pointer transition-colors"
+              className="md:text-[13.5px] text-xs font-medium text-text-primary hover:text-white hover:underline px-4 py-2 rounded bg-transparent border-none cursor-pointer transition-colors"
             >
               Cancel
             </DialogClose>
             <button
               type="submit"
-              className="text-[13.5px] font-medium text-white bg-discord-brand hover:bg-accent-blue px-4 py-2 rounded border-none cursor-pointer transition-colors"
+              className="md:text-[13.5px] text-xs font-medium text-white bg-discord-brand hover:bg-accent-blue px-4 py-1.5 md:py-2 rounded border-none cursor-pointer transition-colors"
             >
               Create Channel
             </button>

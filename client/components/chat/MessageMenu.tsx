@@ -228,30 +228,26 @@ function useMenuActions(
           icon: <Pin size={15} />,
           label: "Pin Message",
           onClick: async () => {
-            try {
-              const res = await pinMessage(
-                message.id,
-                message.channel_id,
-                serverId
-              );
-              if (res?.error) {
-                alert(res.error)
-                return
-              };
+            const res = await pinMessage(
+              message.id,
+              message.channel_id,
+              serverId
+            );
+            if (res && !res.success) {
+              alert(res.message)
+              return
+            };
 
-              alert("message pinned")
-            } catch (e) {
-               alert(e)
-            }
+            alert("message pinned")
           },
         },
       ] : []),
       ...(!isBanned ? [
-         {
-           icon: <SmilePlus size={15} />,
-           label: "Add Reaction",
-           onClick: toggleEmojiPicker,
-         },
+        {
+          icon: <SmilePlus size={15} />,
+          label: "Add Reaction",
+          onClick: toggleEmojiPicker,
+        },
       ] : []),
       ...(!isBanned ? [
         { icon: <Bookmark size={15} />, label: "Bookmark", onClick: onBookmark },
@@ -274,18 +270,19 @@ function useMenuActions(
           icon: <Trash2 size={15} />,
           label: "Delete Message",
           onClick: async () => {
-            try {
-              await deleteMessage({
-                id: message.id,
-                public_id: message.image_asset_id,
-                channel_id: message.channel_id,
-                server_id: serverId,
-                path: pathname,
-              });
-              onDelete(message.id);
-            } catch (e) {
-              alert(e)
+            const res = await deleteMessage({
+              id: message.id,
+              public_id: message.image_asset_id,
+              channel_id: message.channel_id,
+              server_id: serverId,
+            });
+            onDelete(message.id);
+            if (res && !res.success) {
+              alert(res.message)
+              return
             }
+
+            alert("message deleted")
           },
           danger: true,
         },
@@ -388,13 +385,13 @@ function MessageMenu(props: MessageMenuProps) {
       `}
     >
       {!props.isBanned && (
-         <div className="relative">
-           <EmojiRow
-             onSelectEmoji={handleEmojiSelect}
-             showPicker={showPicker}
-             setShowPicker={setShowPicker}
-           />
-         </div>
+        <div className="relative">
+          <EmojiRow
+            onSelectEmoji={handleEmojiSelect}
+            showPicker={showPicker}
+            setShowPicker={setShowPicker}
+          />
+        </div>
       )}
       <div className="flex flex-col px-1.5 py-1.5 gap-px">
         {actions.map((action) => {

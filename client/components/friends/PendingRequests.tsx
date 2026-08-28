@@ -10,7 +10,7 @@ function Avatar({ name, avatarURL }: { name: string; avatarURL: string }) {
   return (
     <div className="w-9 h-9 rounded-full bg-discord-brand/70 flex items-center justify-center text-sm font-bold text-white shrink-0">
       {avatarURL ? (
-        <Image src={avatarURL} width={36} height={36} alt={name} />
+        <Image className="rounded-full" src={avatarURL} width={36} height={36} alt={name} />
       ) : (
         name.toUpperCase().charAt(0)
       )}

@@ -19,9 +19,8 @@ const tabs: { id: Tab; label: string; icon: React.ReactNode }[] = [
 
 
 export default async function DirectMessagesPage() {
-  const { userId } = await auth()
+  const { userId } = await auth.protect()
 
-  if (!userId) return unauthorized()
   return (
     <Tabs
       defaultValue="all"

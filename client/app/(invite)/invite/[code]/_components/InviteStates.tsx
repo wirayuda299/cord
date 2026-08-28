@@ -1,4 +1,5 @@
 import { ShieldAlert, ServerCrash, Loader2 } from "lucide-react"
+import Link from "next/link"
 
 export function InviteLoading() {
   return (
@@ -21,12 +22,12 @@ export function InviteExpired({ code }: { code: string }) {
           Invite <span className="font-mono text-text-muted">{code}</span> has expired or reached its maximum uses.
         </p>
       </div>
-      <a
-        href="/"
+      <Link
+        href="/direct-messages"
         className="mt-2 px-5 py-2.5 rounded-xl bg-surface-hover hover:bg-surface-subtle text-text-primary text-sm font-medium transition-colors"
       >
         Back to Home
-      </a>
+      </Link>
     </div>
   )
 }
@@ -43,12 +44,12 @@ export function InviteInvalid() {
           This invite link doesn&apos;t exist or has been revoked.
         </p>
       </div>
-      <a
-        href="/"
+      <Link
+        href="/direct-messages"
         className="mt-2 px-5 py-2.5 rounded-xl bg-surface-hover hover:bg-surface-subtle text-text-primary text-sm font-medium transition-colors"
       >
         Back to Home
-      </a>
+      </Link>
     </div>
   )
 }

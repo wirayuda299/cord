@@ -44,24 +44,19 @@ export default function CreateThreadForm({
   })
 
   const handleCreateThread = async (val: CreateThreadSchemaType) => {
-    try {
-      const res = await createThread({
-        channel_id: val.channel_id,
-        message_id: val.message_id,
-        name: val.name,
-        server_id
-      })
+    const res = await createThread({
+      channel_id: val.channel_id,
+      message_id: val.message_id,
+      name: val.name,
+      server_id
+    })
 
-      if (!res.success) {
-        alert(res.error)
-        return
-      }
-      alert("thread created")
-      router.refresh()
-
-    } catch (e) {
-      alert(e)
+    if (!res.success) {
+      alert(res.message)
+      return
     }
+    alert("thread created")
+    router.refresh()
   }
 
   return (

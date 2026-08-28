@@ -1,6 +1,13 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import {
+   useState,
+   useEffect,
+   useRef,
+   useCallback,
+   Dispatch,
+   SetStateAction,
+} from "react";
 import { Search, X, Loader2 } from "lucide-react";
 import { Controller, useForm } from "react-hook-form";
 import { searchMessage } from "@/lib/client/api/messages";
@@ -14,19 +21,27 @@ interface SearchResult {
    avatar_url: string;
 }
 
+type SearchFormProps = {
+   serverID: string;
+   channelID: string;
+   isExpanded: boolean;
+   setIsExpanded: Dispatch<SetStateAction<boolean>>;
+};
+
 export default function SearchForm({
    serverID,
    channelID,
-}: {
-   serverID: string;
-   channelID: string;
-}) {
+   isExpanded,
+   setIsExpanded,
+}: SearchFormProps) {
    const [results, setResults] = useState<SearchResult[]>([]);
    const [isOpen, setIsOpen] = useState(false);
    const [isLoading, setIsLoading] = useState(false);
    const [error, setError] = useState<string | null>(null);
+   const [isMobile, setIsMobile] = useState(false);
 
    const containerRef = useRef<HTMLDivElement>(null);
+   const inputRef = useRef<HTMLInputElement | null>(null);
 
    const form = useForm({
       defaultValues: {
@@ -36,13 +51,15 @@ export default function SearchForm({
 
    const handleSearchMessage = async (val: { query: string }) => {
       if (!val.query.trim()) return;
+
       setIsLoading(true);
       setError(null);
       setIsOpen(true);
+
       try {
-         const messages = await searchMessage(val.query, serverID, channelID);
-         console.log(messages);
-         setResults(messages || []);
+         setResults(
+            (await searchMessage(val.query, serverID, channelID)) || [],
+         );
       } catch (e: any) {
          setError(e.message || "Failed to search message");
       } finally {
@@ -51,12 +68,23 @@ export default function SearchForm({
    };
 
    useEffect(() => {
+      const mql = window.matchMedia("(min-width: 768px)");
+      const update = () => setIsMobile(!mql.matches);
+      update();
+      mql.addEventListener("change", update);
+      return () => mql.removeEventListener("change", update);
+   }, []);
+
+   useEffect(() => {
       const handleClickOutside = (event: MouseEvent) => {
          if (
             containerRef.current &&
             !containerRef.current.contains(event.target as Node)
          ) {
             setIsOpen(false);
+            // Collapse the mobile search bar back to icon-only when clicking away
+            // (md+ always stays visually expanded via CSS, so this only affects mobile).
+            setIsExpanded(false);
          }
       };
 
@@ -69,7 +97,6 @@ export default function SearchForm({
    const handleJumpToMessage = useCallback((messageId: string) => {
       const element = document.getElementById(messageId);
       if (element) {
-         // Scroll to element (fallback-equipped manual centering)
          const container = element.closest(".overflow-y-auto");
          if (container) {
             const containerRect = container.getBoundingClientRect();
@@ -108,20 +135,53 @@ export default function SearchForm({
       setIsOpen(false);
    }, []);
 
+   // On mobile, tapping the icon while collapsed should expand the field
+   // instead of submitting the (likely empty) form. On md+ it always submits normally.
+   const handleSearchButtonClick = (e: React.MouseEvent<HTMLButtonElement>) => {
+      if (isMobile && !isExpanded) {
+         e.preventDefault();
+         setIsExpanded(true);
+         setTimeout(() => inputRef.current?.focus(), 50);
+      }
+   };
+
+   const handleClear = () => {
+      form.setValue("query", "");
+      setIsOpen(false);
+      setResults([]);
+      if (isMobile) {
+         setIsExpanded(false);
+      } else {
+         inputRef.current?.focus();
+      }
+   };
+
    return (
       <div ref={containerRef} className="relative">
          <form
             onSubmit={form.handleSubmit(handleSearchMessage)}
-            className="flex items-center gap-2 bg-sidebar-primary rounded px-3 py-1.5 w-64 md:w-80"
+            className={`flex items-center gap-2 transition-all duration-300 ease-in-out overflow-hidden rounded-xs md:w-64 md:h-auto md:px-3 md:py-1.5 md:justify-start lg:w-80 ${
+               isExpanded
+                  ? "w-48 sm:w-64 px-3 py-1.5 justify-start bg-sidebar-primary"
+                  : "w-9 h-9 px-0 py-0 justify-center md:bg-sidebar-primary"
+            } `}
          >
             <Controller
                control={form.control}
                name="query"
                render={({ field, fieldState }) => (
-                  <div className="flex items-center gap-1.5 flex-1 min-w-0">
+                  <div
+                     className={`items-center gap-1.5 flex-1 md:flex min-w-0 ${
+                        isExpanded ? "flex" : "hidden"
+                     }`}
+                  >
                      <input
                         {...field}
-                        className="bg-transparent focus-visible:ring-0 text-white placeholder:text-gray-400 text-sm w-full outline-none border-none focus:outline-none focus:border-none"
+                        ref={(el) => {
+                           field.ref(el);
+                           inputRef.current = el;
+                        }}
+                        className="bg-transparent focus-visible:ring-0 text-white placeholder:text-gray-400 md:text-sm w-full outline-none border-none focus:outline-none focus:border-none text-xs"
                         aria-invalid={fieldState.invalid}
                         placeholder="search message..."
                         autoComplete="off"
@@ -129,12 +189,8 @@ export default function SearchForm({
                      {field.value && (
                         <button
                            type="button"
-                           onClick={() => {
-                              form.setValue("query", "");
-                              setIsOpen(false);
-                              setResults([]);
-                           }}
-                           className="text-gray-500 hover:text-white transition-colors"
+                           onClick={handleClear}
+                           className="text-gray-500 hover:text-white transition-colors shrink-0"
                         >
                            <X size={14} />
                         </button>
@@ -143,7 +199,12 @@ export default function SearchForm({
                )}
             />
 
-            <button type="submit" className="shrink-0 cursor-pointer">
+            <button
+               type={isMobile && !isExpanded ? "button" : "submit"}
+               onClick={handleSearchButtonClick}
+               aria-label="Search messages"
+               className="shrink-0 cursor-pointer flex items-center justify-center"
+            >
                <Search
                   className="text-gray-500 hover:text-white transition-colors"
                   size={15}
@@ -152,14 +213,17 @@ export default function SearchForm({
          </form>
 
          {isOpen && (
-            <div className="fixed right-0 mt-2  w-80 sm:w-[400px] h-[400px] max-h-[70vh] flex flex-col bg-sidebar-primary border border-gray-700/50 rounded-lg shadow-2xl z-50 overflow-hidden">
+            <div className="fixed inset-x-2 sm:inset-x-auto sm:right-0 mt-2 sm:w-96 h-[70vh] sm:h-100 max-h-[70vh] flex flex-col bg-sidebar-primary border border-gray-700/50 rounded-lg shadow-2xl z-50 overflow-hidden">
                <div className="flex items-center justify-between p-3 border-b border-gray-700/50 bg-sidebar-primary sticky top-0 z-10">
                   <span className="text-xs font-semibold text-gray-300">
                      Search Results ({results.length})
                   </span>
                   <button
                      type="button"
-                     onClick={() => setIsOpen(false)}
+                     onClick={() => {
+                        setIsOpen(false);
+                        if (isMobile) setIsExpanded(false);
+                     }}
                      className="text-gray-400 hover:text-white transition-colors cursor-pointer"
                   >
                      <X size={16} />
@@ -210,7 +274,7 @@ export default function SearchForm({
                                        {msg.username}
                                     </span>
                                  </div>
-                                 <p className="text-xs text-gray-300 break-words mt-0.5 line-clamp-2">
+                                 <p className="text-xs text-gray-300 wrap-break-word mt-0.5 line-clamp-2">
                                     {msg.content}
                                  </p>
                               </div>

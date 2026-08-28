@@ -169,31 +169,25 @@ function ProfileEditorContent({ serverId }: Props) {
 
   const submit = async (values: UpdateServerProfileType) => {
     setSubmitStatus(null);
-    try {
-      const patch: Parameters<typeof updateServerProfile>[0]["payload"] = {};
+    const patch: Parameters<typeof updateServerProfile>[0]["payload"] = {};
 
-      if (form.formState.dirtyFields.username) patch.username = values.username;
-      if (form.formState.dirtyFields.bio) patch.bio = values.bio;
+    if (form.formState.dirtyFields.username) patch.username = values.username;
+    if (form.formState.dirtyFields.bio) patch.bio = values.bio;
 
-      if (attachedFiles.length > 0) {
-        const uploaded = await uploadImage(attachedFiles[0].file);
-        patch.avatar = uploaded.url;
-        patch.avatar_asset_id = uploaded.public_id;
-      }
-      const result = await updateServerProfile({ serverId, payload: patch });
-      if (result?.error) {
-        setSubmitStatus({ type: "error", message: result.error });
-        return;
-      }
-      form.reset({ ...values, avatar: patch.avatar ?? values.avatar });
-      setSubmitStatus({ type: "success", message: "Changes saved!" });
-      setTimeout(() => setSubmitStatus(null), 3000);
-    } catch {
-      setSubmitStatus({
-        type: "error",
-        message: "Something went wrong. Try again.",
-      });
+    if (attachedFiles.length > 0) {
+      const uploaded = await uploadImage(attachedFiles[0].file);
+      patch.avatar = uploaded.data?.url;
+      patch.avatar_asset_id = uploaded.data?.public_id;
     }
+    const result = await updateServerProfile({ serverId, payload: patch });
+    if (result && !result.success) {
+      setSubmitStatus({ type: "error", message: result.message });
+      return;
+    }
+
+    form.reset({ ...values, avatar: patch.avatar ?? values.avatar });
+    setSubmitStatus({ type: "success", message: "Changes saved!" });
+    setTimeout(() => setSubmitStatus(null), 3000);
   };
 
   return (
@@ -204,14 +198,14 @@ function ProfileEditorContent({ serverId }: Props) {
       </DialogClose>
 
       <div className="flex flex-1 overflow-hidden">
-        <div className="flex-1 overflow-y-auto px-10 py-10 pb-28">
+        <div className="flex-1 overflow-y-auto p-3 md:p-10">
           <phantom-ui loading={isLoading}>
             <div className="space-y-8">
               <header className="space-y-1">
-                <h2 className="text-xl font-bold text-[#f2f3f5]">
+                <h2 className="md:text-xl text-sm font-bold text-[#f2f3f5]">
                   Edit Server Profile
                 </h2>
-                <p className="text-sm text-[#949ba4]">
+                <p className="text-xs md:text-sm text-[#949ba4]">
                   Changes here only apply to this server and won&apos;t affect
                   your global profile.
                 </p>
@@ -227,7 +221,7 @@ function ProfileEditorContent({ serverId }: Props) {
                   onDragLeave={onDragLeave}
                   onDrop={onDrop}
                 >
-                  <div className="size-20 rounded-full overflow-hidden bg-[#1e1f22] ring-2 ring-white/10 shrink-0 flex items-center justify-center">
+                  <div className=" size-15 md:size-20 rounded-full overflow-hidden bg-[#1e1f22] ring-2 ring-white/10 shrink-0 flex items-center justify-center">
                     {previewAvatar ? (
                       <Image
                         src={previewAvatar}
@@ -244,7 +238,7 @@ function ProfileEditorContent({ serverId }: Props) {
                     <div className="flex flex-wrap gap-2">
                       <label
                         htmlFor="sp-avatar"
-                        className="cursor-pointer px-4 py-1.5 rounded-md text-sm font-medium bg-[#5865f2] hover:bg-[#4752c4] text-white transition-colors"
+                        className="cursor-pointer px-3 md:px-4 py-1.5 rounded-md text-xs md:text-sm md:font-medium bg-[#5865f2] hover:bg-[#4752c4] text-white transition-colors"
                       >
                         Change Avatar
                       </label>
@@ -315,7 +309,7 @@ function ProfileEditorContent({ serverId }: Props) {
                           className={cn(
                             "pr-14 bg-[#1e1f22] border border-white/10 text-[#f2f3f5] placeholder:text-[#4e5058] focus-visible:ring-1 focus-visible:ring-[#5865f2] focus-visible:border-[#5865f2] ring-0! transition-colors",
                             fieldState.error &&
-                              "border-[#f23f42] focus-visible:ring-[#f23f42] focus-visible:border-[#f23f42]",
+                            "border-[#f23f42] focus-visible:ring-[#f23f42] focus-visible:border-[#f23f42]",
                           )}
                         />
                         <span
@@ -341,7 +335,6 @@ function ProfileEditorContent({ serverId }: Props) {
 
               <div className="h-px bg-white/6" />
 
-              {/* About Me */}
               <Section
                 label="About Me"
                 hint="Visible on your profile card in this server. Max 190 characters."
@@ -386,7 +379,6 @@ function ProfileEditorContent({ serverId }: Props) {
           </phantom-ui>
         </div>
 
-        {/* ── Right: preview ── */}
         <div className="w-70 shrink-0 overflow-y-auto h-full border-l border-white/6 bg-[#2b2d31]/30 px-6 py-10 hidden xl:flex flex-col gap-4">
           <p className="text-[10px] font-bold uppercase tracking-widest text-[#6d6f78]">
             Preview
@@ -406,7 +398,7 @@ function ProfileEditorContent({ serverId }: Props) {
       {/* ── Save bar ── */}
       <div
         className={cn(
-          "absolute bottom-0 inset-x-0 z-20 flex items-center justify-between px-8 py-3 border-t border-white/10 bg-[#111214]/95 backdrop-blur-sm transition-all duration-200",
+          "absolute bottom-0 inset-x-0 z-20 flex flex-col md:flex-row gap-3 items-center justify-between px-3 md:px-8 py-3 border-t border-white/10 bg-[#111214]/95 backdrop-blur-sm transition-all duration-200",
           isChanged || submitStatus
             ? "translate-y-0 opacity-100"
             : "translate-y-full opacity-0 pointer-events-none",
@@ -418,7 +410,7 @@ function ProfileEditorContent({ serverId }: Props) {
             <div className="flex gap-3">
               <button
                 type="button"
-                className="text-sm text-[#949ba4] hover:text-[#f2f3f5] transition-colors"
+                className="text-xs md:text-sm text-[#949ba4] hover:text-[#f2f3f5] transition-colors"
                 onClick={() => {
                   form.reset();
                   setSubmitStatus(null);
@@ -429,7 +421,7 @@ function ProfileEditorContent({ serverId }: Props) {
               <button
                 type="button"
                 onClick={form.handleSubmit(submit)}
-                className="px-4 py-1.5 rounded-md text-sm font-medium bg-[#5865f2] hover:bg-[#4752c4] text-white transition-colors"
+                className="md:px-4 px-2 py-1.5 rounded-md text-xs md:text-sm font-medium bg-[#5865f2] hover:bg-[#4752c4] text-white transition-colors"
               >
                 Retry
               </button>
@@ -441,7 +433,7 @@ function ProfileEditorContent({ serverId }: Props) {
           </p>
         ) : (
           <>
-            <p className="text-sm text-[#dbdee1]">
+            <p className="text-xs md:text-sm text-[#dbdee1]">
               <span className="font-semibold text-yellow-400">Careful</span> —
               you have unsaved changes!
             </p>
@@ -450,7 +442,7 @@ function ProfileEditorContent({ serverId }: Props) {
                 type="button"
                 disabled={isSubmitting}
                 onClick={() => form.reset()}
-                className="text-sm text-[#949ba4] hover:text-[#f2f3f5] disabled:opacity-40 transition-colors"
+                className="text-xs md:text-sm text-[#949ba4] hover:text-[#f2f3f5] disabled:opacity-40 transition-colors"
               >
                 Reset
               </button>
@@ -458,7 +450,7 @@ function ProfileEditorContent({ serverId }: Props) {
                 type="button"
                 disabled={isSubmitting}
                 onClick={form.handleSubmit(submit)}
-                className="px-4 py-1.5 rounded-md text-sm font-medium bg-[#23a559] hover:bg-[#1a8c4a] text-white disabled:opacity-50 flex items-center gap-2 transition-colors"
+                className="px-4 py-1.5 rounded-md text-xs md:text-sm md:font-medium bg-[#23a559] hover:bg-[#1a8c4a] text-white disabled:opacity-50 flex items-center gap-2 transition-colors"
               >
                 {isSubmitting && <Loader2 size={13} className="animate-spin" />}
                 {isSubmitting ? "Saving…" : "Save Changes"}
@@ -474,7 +466,7 @@ function ProfileEditorContent({ serverId }: Props) {
 export default function EditPerServerProfileDialog({ serverId }: Props) {
   return (
     <Dialog>
-      <DialogTrigger className="w-full p-1.5 text-sm rounded flex justify-between items-center hover:bg-sidebar-primary/15 text-white hover:text-white transition-colors">
+      <DialogTrigger className="w-full p-1.5 text-xs font-medium md:font-normal md:text-sm rounded flex justify-between items-center hover:bg-sidebar-primary/15 text-white hover:text-white transition-colors">
         <p>Edit Per-server profile</p>
         <Pen size={20} />
       </DialogTrigger>

@@ -4,8 +4,11 @@ import { auth } from "@clerk/nextjs/server"
 import { cache } from "react"
 
 export const getChannelById = cache(async (id: string) => {
+  const { getToken, userId } = await auth()
   try {
-    const { getToken } = await auth()
+    if (!userId) {
+      throw new Error("unauthenticated")
+    }
     const token = await getToken()
 
     const res = await fetch(`${getPublicApiUrl()}/channel?channelId=${id}`, {

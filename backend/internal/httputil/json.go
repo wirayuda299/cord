@@ -17,27 +17,40 @@ type ErrorResponse struct {
 	Code int
 }
 
-func WriteErrorResponse(w http.ResponseWriter, message string, status int) {
+func WriteResponse(
+	w http.ResponseWriter,
+	response Response,
+	status int,
+) {
 	w.WriteHeader(status)
 
-	log.Printf("Error %d: %s", status, message)
-
-	if err := json.NewEncoder(w).Encode(Response{
-		Message: message,
-		Success: false,
-	}); err != nil {
-		log.Println(err.Error())
+	if err := json.NewEncoder(w).Encode(response); err != nil {
+		log.Printf("failed to encode response: %v", err)
 	}
 }
 
-func EncodeResponse(w http.ResponseWriter, message string, status int, data any) {
-	w.WriteHeader(status)
+func WriteErrorResponse(
+	w http.ResponseWriter,
+	message string,
+	status int,
+) {
+	log.Printf("Error %d: %s", status, message)
 
-	if err := json.NewEncoder(w).Encode(Response{
+	WriteResponse(w, Response{
+		Message: message,
+		Success: false,
+	}, status)
+}
+
+func EncodeResponse(
+	w http.ResponseWriter,
+	message string,
+	status int,
+	data any,
+) {
+	WriteResponse(w, Response{
 		Message: message,
 		Success: true,
 		Data:    data,
-	}); err != nil {
-		WriteErrorResponse(w, err.Error(), http.StatusInternalServerError)
-	}
+	}, status)
 }

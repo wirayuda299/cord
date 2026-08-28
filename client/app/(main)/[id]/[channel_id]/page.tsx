@@ -24,24 +24,24 @@ export default async function ChannelDetail({
 
   if (channel.channel_type === 'audio') {
     return <VideoCall room={channel.id} serverId={id} />
-  } else {
-    const messages = await getAllMessagesByChannelId(channel_id)
-    if (messages && 'error' in messages) {
-      return <p className="text-red-600 text-sm">failed to fetch messages</p>
-    }
-
-    return (
-      <div className="flex-1 min-h-0 overflow-hidden">
-        <ChatList
-          serverOwner={channel.created_by}
-          currentUser={userId}
-          thread_id={null}
-          serverId={id}
-          channel={channel}
-          historyMessages={messages}
-        />
-      </div>
-    );
   }
+
+  const messages = await getAllMessagesByChannelId(channel_id)
+  if (messages && 'error' in messages) {
+    return <p className="text-red-600 text-sm">failed to fetch messages</p>
+  }
+
+  return (
+    <div className="flex-1 min-h-0 overflow-hidden">
+      <ChatList
+        serverOwner={channel.created_by}
+        currentUser={userId}
+        thread_id={null}
+        serverId={id}
+        channel={channel}
+        historyMessages={messages}
+      />
+    </div>
+  );
 
 }

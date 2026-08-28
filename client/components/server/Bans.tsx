@@ -2,9 +2,12 @@
 
 import { useState, useMemo, useEffect } from "react"
 import { Ban, Search, ShieldOff, RotateCcw } from "lucide-react"
-import { cn } from "@/lib/utils"
-import { getBans, unbanMember } from "@/lib/server/actions/servers"
+import { apiFetcher, cn } from "@/lib/utils"
+import { unbanMember } from "@/lib/server/actions/servers"
 import { format } from "date-fns"
+import { getBans } from "@/lib/client/api/bans"
+import useSWR from "swr"
+import { BannedMemberRow } from "@/lib/types/bans"
 
 
 type BannedMember = {
@@ -33,7 +36,7 @@ function UnbanConfirm({ name, onConfirm, onCancel }: {
 }) {
   return (
     <div className="fixed inset-0 z-20 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-      <div className="bg-sidebar-primary border border-white/10 rounded-2xl p-6 w-full max-w-sm mx-4 flex flex-col gap-4 shadow-2xl">
+      <div className="bg-sidebar-primary border border-white/10 rounded-2xl p-2 md:p-6 w-full max-w-sm mx-4 flex flex-col gap-4 shadow-2xl">
         <div className="flex items-center gap-3">
           <div className="flex items-center justify-center size-10 rounded-xl bg-green-500/15 shrink-0">
             <ShieldOff size={20} className="text-green-400" />
@@ -71,7 +74,7 @@ function UnbanConfirm({ name, onConfirm, onCancel }: {
 
 function BanRow({ member, onUnban }: { member: BannedMember; onUnban: () => void }) {
   return (
-    <div className="flex items-center gap-4 px-5 py-3.5 rounded-xl bg-white/2 border border-white/5 hover:bg-white/4 transition-colors group">
+    <div className="flex items-center gap-4 px-2 md:px-5 py-3.5 rounded-xl bg-white/2 border border-white/5 hover:bg-white/4 transition-colors group">
 
       <div className={cn(
         "size-10 rounded-full flex items-center justify-center text-xs font-semibold shrink-0",
@@ -111,22 +114,17 @@ function BanRow({ member, onUnban }: { member: BannedMember; onUnban: () => void
   )
 }
 
-// ─── root ─────────────────────────────────────────────────────────────────────
 
 export default function Bans({ serverId }: { serverId: string }) {
-  const [bans, setBans] = useState<BannedMember[]>([])
   const [query, setQuery] = useState("")
   const [confirmId, setConfirmId] = useState<string | null>(null)
+  const { data: bans = [], error, isLoading, mutate } = useSWR(() => serverId ? "/api/bans" : null, () => apiFetcher<BannedMemberRow[]>(`/server/bans?serverID=${serverId}`))
 
-  useEffect(() => {
-    async function loadBans() {
-      const { error, data } = await getBans(serverId)
-      if (!error && data) {
-        setBans(data)
-      }
-    }
-    loadBans()
-  }, [serverId])
+
+
+  if (isLoading) return "loading bans"
+  if (error) return "failed to get banned members"
+
 
   const filtered = useMemo(() =>
     bans.filter((b) => b.name.toLowerCase().includes(query.toLowerCase())),
@@ -137,9 +135,11 @@ export default function Bans({ serverId }: { serverId: string }) {
 
   const handleUnban = async () => {
     if (confirmId === null) return
-    const { error } = await unbanMember(serverId, confirmId)
-    if (!error) {
-      setBans((prev) => prev.filter((b) => b.id !== confirmId))
+    const res = await unbanMember(serverId, confirmId)
+    if (res && res.success) {
+      mutate()
+    } else {
+      alert(res.message)
     }
     setConfirmId(null)
   }
@@ -155,15 +155,15 @@ export default function Bans({ serverId }: { serverId: string }) {
         />
       )}
 
-      <div className="px-8 pt-8 pb-5 shrink-0 border-b border-white/5">
+      <div className="px-2 md:px-8 pt-8 pb-5 shrink-0 border-b border-white/5">
         <div className="flex items-center justify-between mb-5">
           <div className="flex items-center gap-3">
             <div className="flex items-center justify-center size-10 rounded-xl bg-red-500/15">
               <Ban size={20} className="text-red-400" />
             </div>
             <div>
-              <h2 className="font-semibold text-xl">Bans</h2>
-              <p className="text-sm text-white/40 mt-0.5">
+              <h2 className="font-semibold text-lg md:text-xl">Bans</h2>
+              <p className="text-xs md:text-sm text-white/40 mt-0.5">
                 {bans.length} banned member{bans.length !== 1 ? "s" : ""}
               </p>
             </div>

@@ -8,7 +8,7 @@ export default function CopyServerIDButton({ serverID }: { serverID: string }) {
   return (
     <button
       onClick={() => copyText(serverID, { onSuccess: () => alert("Server ID copied") })}
-      className="w-full p-1.5 text-sm rounded flex justify-between items-center hover:bg-sidebar-primary/15">
+      className="w-full p-1.5 text-xs font-medium md:font-normal md:text-sm rounded flex justify-between items-center hover:bg-sidebar-primary/15">
       <p>Copy server ID</p>
       <Copy size={20} />
     </button>
