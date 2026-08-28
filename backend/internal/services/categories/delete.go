@@ -1,4 +1,4 @@
-package roles
+package categories
 
 import (
 	"context"
@@ -11,13 +11,12 @@ import (
 	"github.com/wirayuda299/backend/internal/utils"
 )
 
-type UnassignRolePayload struct {
-	MemberUserID string `json:"member_user_id"`
-	ServerID     string `json:"server_id"`
-	RoleID       string `json:"role_id"`
+type DeleteCategoryPayload struct {
+	CategoryID string `json:"category_id"`
+	ServerID   string `json:"server_id"`
 }
 
-func UnassignRole(ctx context.Context, db *databases.Container, p *UnassignRolePayload) *httputil.ErrorResponse {
+func DeleteCategory(ctx context.Context, db *databases.Container, p *DeleteCategoryPayload) *httputil.ErrorResponse {
 	_, err := utils.GetSession(ctx)
 	if err != nil {
 		return &httputil.ErrorResponse{Err: err, Code: http.StatusUnauthorized}
@@ -27,33 +26,29 @@ func UnassignRole(ctx context.Context, db *databases.Container, p *UnassignRoleP
 		Ctx:        ctx,
 		Db:         db,
 		ServerID:   p.ServerID,
-		Permission: "manage_role",
+		Permission: "manage_channel",
 	})
 
 	if err != nil {
 		return &httputil.ErrorResponse{Err: err, Code: http.StatusInternalServerError}
 	}
-
 	if !hasPerm {
-		return &httputil.ErrorResponse{Err: errors.New("you not allowed to unassign role"), Code: http.StatusUnauthorized}
+		return &httputil.ErrorResponse{Err: errors.New("you not allowed to delete category"), Code: http.StatusUnauthorized}
 	}
-
-	if p.MemberUserID == "" {
-		return &httputil.ErrorResponse{Err: errors.New("member_user_id is required"), Code: http.StatusBadRequest}
+	if p.CategoryID == "" {
+		return &httputil.ErrorResponse{Err: errors.New("category_id is required"), Code: http.StatusBadRequest}
 	}
 	if p.ServerID == "" {
 		return &httputil.ErrorResponse{Err: errors.New("server_id is required"), Code: http.StatusBadRequest}
 	}
-	if p.RoleID == "" {
-		return &httputil.ErrorResponse{Err: errors.New("role_id is required"), Code: http.StatusBadRequest}
-	}
 
-	_, err = db.Postgres.Exec(ctx,
-		"DELETE FROM user_roles WHERE user_id = $1 AND server_id = $2 AND role_id = $3",
-		p.MemberUserID, p.ServerID, p.RoleID,
-	)
+	tag, err := db.Postgres.Exec(ctx, "DELETE FROM categories WHERE id = $1 AND server_id = $2", p.CategoryID, p.ServerID)
 	if err != nil {
 		return &httputil.ErrorResponse{Err: err, Code: http.StatusInternalServerError}
 	}
+	if tag.RowsAffected() == 0 {
+		return &httputil.ErrorResponse{Err: errors.New("category not found"), Code: http.StatusNotFound}
+	}
+
 	return nil
 }

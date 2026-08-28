@@ -58,6 +58,11 @@ func (c *Client) ReadIncomingMessage(db *databases.Container) {
 			return
 		}
 	}()
+	defer func() {
+		if r := recover(); r != nil {
+			log.Println("recovered panic in websocket handler:", r)
+		}
+	}()
 
 	c.Conn.SetReadLimit(maxMessageSize)
 	if err := c.Conn.SetReadDeadline(time.Now().Add(pongWait)); err != nil {
@@ -112,11 +117,19 @@ func (c *Client) WriteMessage() {
 			log.Printf("Error close connection -> %s", err)
 		}
 	}()
+	defer func() {
+		if r := recover(); r != nil {
+			log.Println("recovered panic in websocket handler:", r)
+		}
+	}()
 
 	for {
 		select {
 
 		case message, ok := <-c.send:
+			if err := c.Conn.SetWriteDeadline(time.Now().Add(writeWait)); err != nil {
+				log.Println("Error set write deadline -> ", err)
+			}
 			if !ok {
 				if err := c.Conn.WriteMessage(websocket.CloseMessage, []byte{}); err != nil {
 					log.Printf("Error write ws message -> %s", err)

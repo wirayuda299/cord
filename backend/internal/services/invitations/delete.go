@@ -6,8 +6,10 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/wirayuda299/backend/internal/databases"
 	"github.com/wirayuda299/backend/internal/httputil"
+	"github.com/wirayuda299/backend/internal/services/permissions"
 )
 
 type DeleteInvitationPayload struct {
@@ -28,14 +30,26 @@ func DeleteInvitationCode(ctx context.Context, db *databases.Container, p *Delet
 		}
 	}()
 
-	var exist bool
-	err = tx.QueryRow(ctx, "SELECT EXISTS(select 1 from invitations where code = $1)", p.Code).Scan(&exist)
+	var serverID string
+	err = tx.QueryRow(ctx, "SELECT server_id::text from invitations where code = $1", p.Code).Scan(&serverID)
 	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return &httputil.ErrorResponse{Err: errors.New("Invitation not found"), Code: http.StatusNotFound}
+		}
 		return &httputil.ErrorResponse{Err: err, Code: http.StatusInternalServerError}
 	}
 
-	if !exist {
-		return &httputil.ErrorResponse{Err: errors.New("Invitation not found"), Code: http.StatusNotFound}
+	hasPerm, err := permissions.HasPermission(&permissions.HasPermissionType{
+		Ctx:        ctx,
+		Db:         db,
+		ServerID:   serverID,
+		Permission: "manage_server",
+	})
+	if err != nil {
+		return &httputil.ErrorResponse{Err: err, Code: http.StatusInternalServerError}
+	}
+	if !hasPerm {
+		return &httputil.ErrorResponse{Err: errors.New("you not allowed to delete invitation"), Code: http.StatusUnauthorized}
 	}
 
 	_, err = tx.Exec(ctx, "DELETE FROM invitations where code = $1", p.Code)

@@ -55,7 +55,7 @@ function MemberAvatar({ member }: { member: Member }) {
     );
   }
 
-  const initials = member.username.slice(0, 2).toUpperCase();
+  const initials = (member.username ?? "??").slice(0, 2).toUpperCase();
   const hue =
     member.user_id.split("").reduce((a, c) => a + c.charCodeAt(0), 0) % 360;
   return (

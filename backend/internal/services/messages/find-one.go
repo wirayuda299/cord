@@ -65,3 +65,9 @@ func GetMessageByID(ctx context.Context, db *databases.Container, messageID, cha
 	}
 	return &msgs[0], nil
 }
+
+func GetServerIDByChannelID(ctx context.Context, db *databases.Container, channelID string) (string, error) {
+	var serverID string
+	err := db.Postgres.QueryRow(ctx, "SELECT server_id::text FROM channels WHERE id = $1", channelID).Scan(&serverID)
+	return serverID, err
+}

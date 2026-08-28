@@ -3,6 +3,7 @@ package servers
 import (
 	"context"
 	"errors"
+	"log"
 	"net/http"
 
 	"github.com/jackc/pgx/v5"
@@ -32,6 +33,11 @@ func JoinServer(ctx context.Context, db *databases.Container, p *JoinServerPaylo
 	if err != nil {
 		return &httputil.ErrorResponse{Err: err, Code: http.StatusInternalServerError}
 	}
+	defer func() {
+		if err := tx.Rollback(ctx); err != nil {
+			log.Println("error rollback -> ", err)
+		}
+	}()
 
 	var server ServerInfo
 	err = tx.QueryRow(ctx, "SELECT created_by from servers where id = $1", p.ServerId).Scan(&server.CreatedBy)

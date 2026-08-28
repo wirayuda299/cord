@@ -265,7 +265,7 @@ export default function SearchForm({
                                  />
                               ) : (
                                  <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-indigo-600 text-xs font-semibold text-white uppercase mt-0.5">
-                                    {msg.username.charAt(0)}
+                                    {msg.username?.charAt(0) ?? "?"}
                                  </div>
                               )}
                               <div className="flex-1 min-w-0">

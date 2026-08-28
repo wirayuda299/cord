@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
+	"log"
 	"net/http"
 
 	"github.com/wirayuda299/backend/internal/databases"
@@ -36,8 +37,15 @@ func (th *ThreadHandler) DeleteThread(w http.ResponseWriter, r *http.Request) {
 
 	// Fetch the updated message row to broadcast to other clients
 	updatedMsg, getErr := messages.GetMessageByID(r.Context(), th.db, messageID, channelID)
-	if getErr == nil && th.hub != nil {
-		th.hub.BroadcastMessages(p.ServerID, channelID, []services.MessageRow{*updatedMsg})
+	if getErr != nil {
+		log.Println("failed to fetch updated message for broadcast:", getErr.Err)
+	} else if th.hub != nil {
+		serverID, sidErr := messages.GetServerIDByChannelID(r.Context(), th.db, channelID)
+		if sidErr != nil {
+			log.Println("failed to resolve server id for broadcast:", sidErr)
+		} else {
+			th.hub.BroadcastMessages(serverID, channelID, []services.MessageRow{*updatedMsg})
+		}
 	}
 
 	httputil.EncodeResponse(w, "thread deleted", http.StatusOK, nil)
@@ -78,8 +86,15 @@ func (th *ThreadHandler) CreateThread(w http.ResponseWriter, r *http.Request) {
 
 	// Fetch the updated message row to broadcast to other clients
 	updatedMsg, getErr := messages.GetMessageByID(r.Context(), th.db, p.MessageID, p.ChannelID)
-	if getErr == nil && th.hub != nil {
-		th.hub.BroadcastMessages(p.ServerID, p.ChannelID, []services.MessageRow{*updatedMsg})
+	if getErr != nil {
+		log.Println("failed to fetch updated message for broadcast:", getErr.Err)
+	} else if th.hub != nil {
+		serverID, sidErr := messages.GetServerIDByChannelID(r.Context(), th.db, p.ChannelID)
+		if sidErr != nil {
+			log.Println("failed to resolve server id for broadcast:", sidErr)
+		} else {
+			th.hub.BroadcastMessages(serverID, p.ChannelID, []services.MessageRow{*updatedMsg})
+		}
 	}
 
 	httputil.EncodeResponse(w, "thread created", http.StatusCreated, nil)

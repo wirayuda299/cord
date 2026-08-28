@@ -331,9 +331,9 @@ export default function ChatForm({
 
       {fileErrors.length > 0 && (
         <div className="mb-2 flex flex-col gap-1">
-          {fileErrors.map((err, i) => (
+          {fileErrors.map((err) => (
             <div
-              key={i}
+              key={err}
               className="flex items-center gap-2 bg-destructive/10 border border-destructive/30 text-destructive text-xs px-3 py-2 rounded-lg"
             >
               <X size={12} />
@@ -363,7 +363,7 @@ export default function ChatForm({
           <div className="flex gap-3 p-3 pb-0 flex-wrap">
             {attachedFiles.map((attached, i) => (
               <FilePreview
-                key={i}
+                key={attached.id}
                 attached={attached}
                 onRemove={() => removeFile(i)}
               />

@@ -28,13 +28,13 @@ func FindAllCategories(ctx context.Context, db *databases.Container, serverID st
 	categories := make([]Category, 0)
 
 	rows, err := db.Postgres.Query(ctx, `
-	SELECT 
-		c.id, 
-		c.name, 
-		c.server_id, 
-		c.created_by, 
+	SELECT
+		c.id,
+		c.name,
+		c.server_id,
+		c.created_by,
 		s.name
-	FROM category as c
+	FROM categories as c
 	JOIN servers as s ON c.server_id = s.id
 	WHERE c.server_id = $1
 `, serverID)

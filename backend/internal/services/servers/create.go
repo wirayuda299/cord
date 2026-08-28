@@ -34,6 +34,7 @@ func CreateServer(ctx context.Context, container *databases.Container, srv *Serv
 			Code: http.StatusInternalServerError,
 		}
 	}
+	defer rows.Close()
 
 	var serverID string
 	for rows.Next() {

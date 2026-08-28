@@ -1,121 +1,144 @@
 "use client";
 
 import { copyText } from "@/lib/client/clipboard";
-import { cn } from "@/lib/utils";
-import { Check, Copy, Search, X } from "lucide-react";
+import { createInvitationCode } from "@/lib/server/actions/invitations";
+import type { FriendListItem } from "@/lib/types/friends";
+import { Check, Copy, Search } from "lucide-react";
 import Image from "next/image";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
-const mockUsers = [
-  { id: 1, name: "Alice", avatar: "https://i.pravatar.cc/40?img=1" },
-  { id: 2, name: "Bob", avatar: "https://i.pravatar.cc/40?img=2" },
-  { id: 3, name: "Charlie", avatar: "https://i.pravatar.cc/40?img=3" },
-  { id: 4, name: "David", avatar: "https://i.pravatar.cc/40?img=4" },
-  { id: 5, name: "Eve", avatar: "https://i.pravatar.cc/40?img=5" },
-] as const;
+type Props = {
+   serverId: string;
+   friends: FriendListItem[];
+};
 
-type MockUser = (typeof mockUsers)[number];
+export default function FriendList({ serverId, friends }: Props) {
+   const [query, setQuery] = useState("");
+   const [inviteLink, setInviteLink] = useState<string | null>(null);
+   const [linkError, setLinkError] = useState<string | null>(null);
+   const [copiedId, setCopiedId] = useState<string | null>(null);
 
-export default function FriendList() {
-  const [query, setQuery] = useState("");
-  const [selected, setSelected] = useState<MockUser[]>([]);
+   useEffect(() => {
+      let cancelled = false;
 
-  const filtered = mockUsers.filter((u) =>
-    u.name.toLowerCase().includes(query.toLowerCase()),
-  );
+      async function createLink() {
+         const result = await createInvitationCode(serverId);
+         if (cancelled) return;
 
-  const toggleUser = (user: MockUser) => {
-    setSelected((prev) => {
-      if (prev.find((u) => u.id === user.id)) {
-        return prev.filter((u) => u.id !== user.id);
+         if (result && typeof result === "object" && "error" in result && result.error) {
+            setLinkError("Failed to create invite link");
+            return;
+         }
+
+         const code =
+            typeof result === "string"
+               ? result
+               : (result?.data ?? result?.code ?? null);
+
+         if (!code) {
+            setLinkError("Failed to create invite link");
+            return;
+         }
+
+         setInviteLink(`${window.location.origin}/invite/${code}`);
       }
-      return [...prev, user];
-    });
-  };
 
-  return (
+      createLink();
+      return () => {
+         cancelled = true;
+      };
+   }, [serverId]);
 
-    <div className="w-full max-w-md bg-surface-raised text-white rounded-2xl shadow-xl p-4">
-      <h2 className="text-lg font-semibold mb-3">Invite Friends</h2>
+   const filtered = friends.filter((f) =>
+      f.username.toLowerCase().includes(query.toLowerCase()),
+   );
 
-      <div className="flex items-center bg-bg-input px-3 py-2 rounded-lg mb-3">
-        <Search size={16} className="text-gray-400" />
-        <input
-          type="text"
-          placeholder="Search friends"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          className="bg-transparent outline-none ml-2 w-full text-sm"
-        />
-      </div>
+   const handleCopy = (id: string) => {
+      if (!inviteLink) return;
+      copyText(inviteLink).then(() => {
+         setCopiedId(id);
+         setTimeout(() => setCopiedId((prev) => (prev === id ? null : prev)), 1500);
+      });
+   };
 
-      {selected.length > 0 && (
-        <div className="flex flex-wrap gap-2 mb-3">
-          {selected.map((user) => (
-            <div
-              key={user.id}
-              className="flex items-center gap-2 bg-discord-brand px-2 py-1 rounded-full text-sm"
+   return (
+      <div className="w-full max-w-md bg-surface-raised text-white rounded-2xl shadow-xl p-4">
+         <h2 className="text-lg font-semibold mb-3">Invite Friends</h2>
+
+         <div className="flex items-center bg-bg-input px-3 py-2 rounded-lg mb-3">
+            <Search size={16} className="text-gray-400" />
+            <input
+               type="text"
+               placeholder="Search friends"
+               value={query}
+               onChange={(e) => setQuery(e.target.value)}
+               className="bg-transparent outline-none ml-2 w-full text-sm"
+            />
+         </div>
+
+         <div className="max-h-60 overflow-y-auto space-y-1">
+            {filtered.length === 0 && (
+               <p className="text-sm text-gray-400 text-center py-4">
+                  {friends.length === 0 ? "No friends yet" : "No matching friends"}
+               </p>
+            )}
+            {filtered.map((friend) => (
+               <div
+                  key={friend.user_id}
+                  className="flex items-center justify-between px-3 py-2 rounded-lg hover:bg-surface-hover"
+               >
+                  <div className="flex items-center gap-3 min-w-0">
+                     {friend.avatar_url ? (
+                        <Image
+                           width={32}
+                           height={32}
+                           alt={friend.username}
+                           src={friend.avatar_url}
+                           className="w-8 h-8 rounded-full object-cover"
+                        />
+                     ) : (
+                        <div className="w-8 h-8 shrink-0 rounded-full bg-discord-brand/70 flex items-center justify-center text-xs font-bold text-white">
+                           {friend.username.charAt(0).toUpperCase()}
+                        </div>
+                     )}
+                     <span className="text-sm truncate">{friend.username}</span>
+                  </div>
+
+                  <button
+                     type="button"
+                     disabled={!inviteLink}
+                     onClick={() => handleCopy(friend.user_id)}
+                     title="Copy invite link"
+                     className="flex items-center gap-1.5 text-xs px-2 py-1 rounded-md text-gray-300 hover:text-white hover:bg-white/10 disabled:opacity-40 cursor-pointer transition-colors"
+                  >
+                     {copiedId === friend.user_id ? (
+                        <>
+                           <Check size={14} className="text-green-400" />
+                           Copied
+                        </>
+                     ) : (
+                        <>
+                           <Copy size={14} />
+                           Copy link
+                        </>
+                     )}
+                  </button>
+               </div>
+            ))}
+         </div>
+
+         <div className="flex items-center justify-between bg-sidebar-primary p-3 rounded-md mt-3">
+            <p className="truncate text-sm text-gray-300">
+               {linkError ? linkError : (inviteLink ?? "Generating invite link...")}
+            </p>
+            <button
+               className="cursor-pointer disabled:opacity-40"
+               disabled={!inviteLink}
+               onClick={() => inviteLink && copyText(inviteLink).then(() => setCopiedId("__link"))}
             >
-              <Image alt="avatar" src={user.avatar} className="w-5 h-5 rounded-full" />
-              {user.name}
-              <button onClick={() => toggleUser(user)}>
-                <X size={14} />
-              </button>
-            </div>
-          ))}
-        </div>
-      )}
-
-      <div className="max-h-60 overflow-y-auto space-y-1">
-        {filtered.map((user) => {
-          const isSelected = selected.find((u) => u.id === user.id);
-          return (
-            <div
-              key={user.id}
-              onClick={() => toggleUser(user)}
-              className="flex items-center justify-between px-3 py-2 rounded-lg hover:bg-surface-hover cursor-pointer"
-            >
-              <div className="flex items-center gap-3">
-                <Image
-                  width={32}
-                  height={32}
-                  alt="avatar"
-                  src={user.avatar}
-                  className="w-8 h-8 rounded-full"
-                />
-                <span className="text-sm">{user.name}</span>
-              </div>
-
-              <div
-                className={cn("w-5 h-5 flex items-center justify-center rounded-md border", isSelected
-                  ? "bg-discord-brand border-discord-brand"
-                  : "border-gray-500")}
-              >
-                {isSelected && <Check size={14} />}
-              </div>
-            </div>
-          );
-        })}
+               {copiedId === "__link" ? <Check size={20} /> : <Copy size={20} />}
+            </button>
+         </div>
       </div>
-
-      <div className="flex items-center justify-between bg-sidebar-primary p-3 rounded-md mt-2">
-        <p className="truncate">https://discord.clone.app/1233</p>
-        <button
-          className="cursor-pointer"
-          onClick={() =>
-            copyText("https://discord.clone.app/1233").then(() => alert("Invitation code copied"))}>
-          <Copy size={20} />
-        </button>
-      </div>
-
-      <div className="mt-4 flex justify-between items-center">
-        <span className="text-xs text-gray-400">
-          {selected.length} selected
-        </span>
-        <button className="bg-discord-brand hover:bg-accent-blue cursor-pointer px-4 py-2 rounded-lg text-sm">
-          Send Invite
-        </button>
-      </div>
-    </div>
-  );
+   );
 }

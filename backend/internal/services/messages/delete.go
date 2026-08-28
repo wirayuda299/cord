@@ -39,11 +39,23 @@ func DeleteMessage(p *DeleteMessagePayload) *httputil.ErrorResponse {
 	if !hasPerm {
 		return &httputil.ErrorResponse{Err: errors.New("you not allowed to delete message"), Code: http.StatusUnauthorized}
 	}
-	if _, deleteErr := p.DB.Postgres.Exec(p.Ctx, "DELETE FROM messages WHERE id = $1", p.DeleteImgPayload.ID); deleteErr != nil {
+
+	var realChannelID, realServerID string
+	if err := p.DB.Postgres.QueryRow(p.Ctx, "SELECT c.id::text, c.server_id::text FROM messages m JOIN channels c ON c.id = m.channel_id WHERE m.id = $1", p.DeleteImgPayload.ID).Scan(&realChannelID, &realServerID); err != nil {
+		return &httputil.ErrorResponse{Err: errors.New("message not found"), Code: http.StatusNotFound}
+	}
+
+	if realServerID != p.DeleteImgPayload.ServerID {
+		return &httputil.ErrorResponse{Err: errors.New("you not allowed to delete message"), Code: http.StatusUnauthorized}
+	}
+
+	if tag, deleteErr := p.DB.Postgres.Exec(p.Ctx, "DELETE FROM messages WHERE id = $1 AND channel_id = $2", p.DeleteImgPayload.ID, realChannelID); deleteErr != nil {
 		return &httputil.ErrorResponse{
 			Err:  deleteErr,
 			Code: http.StatusInternalServerError,
 		}
+	} else if tag.RowsAffected() == 0 {
+		return &httputil.ErrorResponse{Err: errors.New("message not found"), Code: http.StatusNotFound}
 	}
 	if p.DeleteImgPayload.PublicID != "" {
 		if err := queue.PushJob(p.Ctx, p.DB.Redis, queue.DeleteImage, p.DeleteImgPayload); err != nil {
@@ -54,7 +66,7 @@ func DeleteMessage(p *DeleteMessagePayload) *httputil.ErrorResponse {
 		}
 	}
 	if p.Hub != nil {
-		p.Hub.BroadcastDelete(p.DeleteImgPayload.ServerID, p.DeleteImgPayload.ChannelID, p.DeleteImgPayload.ID)
+		p.Hub.BroadcastDelete(realServerID, realChannelID, p.DeleteImgPayload.ID)
 	}
 	return nil
 }

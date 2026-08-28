@@ -48,23 +48,6 @@ func PinMessage(ctx context.Context, db *databases.Container, p *PinMessagePaylo
 		return &httputil.ErrorResponse{Err: errors.New("server ID is missing"), Code: http.StatusBadRequest}
 	}
 
-	allowed, err := permissions.HasPermission(&permissions.HasPermissionType{
-		Ctx:        ctx,
-		Db:         db,
-		ServerID:   p.ServerID,
-		Permission: "manage_messages",
-	})
-
-	if !allowed {
-		return &httputil.ErrorResponse{Err: errors.New("you not allowed to pin message"), Code: http.StatusUnauthorized}
-	}
-	if err != nil {
-		return &httputil.ErrorResponse{
-			Err:  err,
-			Code: http.StatusInternalServerError,
-		}
-	}
-
 	if _, err := db.Postgres.Exec(ctx, "INSERT INTO pinned_messages(message_id, channel_id,pinned_by) values($1,$2,$3)", p.MessageID, p.ChannelID, userID); err != nil {
 		return &httputil.ErrorResponse{
 			Err:  err,

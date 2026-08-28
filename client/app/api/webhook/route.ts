@@ -62,7 +62,14 @@ export async function POST(req: Request) {
       });
 
       const responseText = await res.text();
+      console.log("[webhook] Backend response:", res.status, responseText);
+
       if (!res.ok) {
+        console.error(
+          "[webhook] Backend rejected user creation:",
+          res.status,
+          responseText,
+        );
         return new Response(`Backend error: ${responseText}`, {
           status: 500,
         });
@@ -74,7 +81,6 @@ export async function POST(req: Request) {
       return new Response("Failed to create user", { status: 500 });
     }
   }
-
 
   console.log("[webhook] Unhandled event type:", evt.type);
   return new Response("OK", { status: 200 });
