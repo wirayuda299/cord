@@ -14,7 +14,7 @@ import { getAllChannel } from "@/lib/server/data/channels";
 import CopyServerIDButton from "@/components/server/CopyServerIDButton";
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import Invites from "@/components/server/Invites";
-import { auth, currentUser } from "@clerk/nextjs/server";
+import { currentUser } from "@clerk/nextjs/server";
 import { unauthorized } from "next/navigation";
 import Image from "next/image";
 import { hasPermission } from "@/lib/client/api/permissions";
@@ -30,10 +30,8 @@ export default async function ServerSidebar({
   if (!user) unauthorized()
 
 
-  const { getToken } = await auth()
-
   const [hasPermManageChannel, channels] = await Promise.all([
-    hasPermission(serverId, PermissionKey.ManageChannel, await getToken()),
+    hasPermission(serverId, PermissionKey.ManageChannel),
     getAllChannel(serverId)
   ])
 

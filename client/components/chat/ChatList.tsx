@@ -13,7 +13,6 @@ import { MessageSquareText } from "lucide-react";
 import useSWR from "swr";
 import { hasPermission } from "@/lib/client/api/permissions";
 import { PermissionKey } from "@/constants/permissions";
-import { useAuth } from "@clerk/nextjs";
 import { isMemberBanned } from "@/lib/server/actions/members";
 
 type Props = {
@@ -45,15 +44,13 @@ export default function ChatList({
   currentUser,
   serverOwner,
 }: Props) {
-  const { getToken } = useAuth();
   const {
     data: allowed,
     error,
     isLoading,
-  } = useSWR(serverId ? ["/api/has-perm", serverId] : null, async () => {
-    const token = await getToken();
-    return hasPermission(serverId, PermissionKey.ManageMessage, token);
-  });
+  } = useSWR(serverId ? ["/api/has-perm", serverId] : null, () =>
+    hasPermission(serverId, PermissionKey.ManageMessage),
+  );
 
   const { data: memberBanned } = useSWR(
     serverId ? ["/api/is-banned", serverId] : null,

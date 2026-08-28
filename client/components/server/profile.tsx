@@ -181,11 +181,11 @@ export default function ServerProfile() {
   useEffect(() => {
     if (data) {
       form.reset({
-        name: data?.data.name ?? "",
-        icon: data?.data.logo ?? "",
-        banner: data?.data.banner_colors,
-        private: data?.data.private ?? false,
-        description: data?.data.description ?? "",
+        name: data?.name ?? "",
+        icon: data?.logo ?? "",
+        banner: data?.banner_colors,
+        private: data?.private ?? false,
+        description: data?.description ?? "",
       });
     }
     // form.reset is stable across renders; only re-run when fetched data changes.

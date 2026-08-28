@@ -20,7 +20,6 @@ import useSWR from "swr"
 import { findPermissionByRoleId } from "@/lib/client/api/permissions"
 import { deleteRole } from "@/lib/client/api/roles"
 import { PERMISSIONS } from "@/constants/permissions"
-import { useAuth } from "@clerk/nextjs"
 import Image from "next/image";
 
 type Tab = "display" | "permissions" | "members"
@@ -206,11 +205,9 @@ export default function RoleDetailView({
   serverOwner,
   serverID,
 }: RoleDetailViewProps) {
-  const { getToken } = useAuth()
-  const { data, isLoading } = useSWR(role.id ? ["/api/permission", role.id] : null, async () => {
-    const token = await getToken()
-    return await findPermissionByRoleId(role.id, token)
-  })
+  const { data, isLoading } = useSWR(role.id ? ["/api/permission", role.id] : null, () =>
+    findPermissionByRoleId(role.id),
+  )
   const [activeTab, setActiveTab] = useState<Tab>("display")
   const [deleteState, setDeleteState] = useState<"idle" | "confirm" | "deleting" | "error">("idle")
   const [deleteError, setDeleteError] = useState<string | null>(null)

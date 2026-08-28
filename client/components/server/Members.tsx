@@ -38,7 +38,6 @@ import useToggleRoleMember from "@/hooks/useToggleRole";
 import { format } from "date-fns";
 import { hasPermission } from "@/lib/client/api/permissions";
 import { PermissionKey } from "@/constants/permissions";
-import { useAuth } from "@clerk/nextjs";
 
 function MemberAvatar({ member }: { member: Member }) {
   if (member.avatar_url) {
@@ -413,7 +412,6 @@ export default function Members({
 }) {
   const [query, setQuery] = useState("");
   const [roleFilter, setRoleFilter] = useState<string>("all");
-  const { getToken } = useAuth();
 
   const {
     data: hasKickMemberPerm,
@@ -421,13 +419,7 @@ export default function Members({
     isLoading: kickMemberLoading,
   } = useSWR(
     `/api/permissions/${serverID}`,
-    async () => {
-      return await hasPermission(
-        serverID,
-        PermissionKey.KickMember,
-        await getToken(),
-      );
-    },
+    () => hasPermission(serverID, PermissionKey.KickMember),
     { suspense: true },
   );
 
@@ -437,13 +429,7 @@ export default function Members({
     isLoading: banMemberLoading,
   } = useSWR(
     `/api/permissions/${serverID}`,
-    async () => {
-      return await hasPermission(
-        serverID,
-        PermissionKey.BanMember,
-        await getToken(),
-      );
-    },
+    () => hasPermission(serverID, PermissionKey.BanMember),
     { suspense: true },
   );
 

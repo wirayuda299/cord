@@ -22,9 +22,6 @@ export default async function ChannelLayout({
   const isJoin = await isUserJoin(id);
   if (!isJoin) redirect("/direct-messages");
 
-  const { getToken } = await auth();
-  const token = await getToken();
-
   const channel = await getChannelById(channel_id);
 
   if (channel && "error" in channel) return "Failed to fetch channel";
@@ -32,7 +29,6 @@ export default async function ChannelLayout({
   const hasPerm = await hasPermission(
     channel.server_id,
     PermissionKey.ManageMessage,
-    token,
   );
   const pinnedMessages = await getAllPinnedMessages(channel_id);
 
