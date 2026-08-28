@@ -25,6 +25,7 @@
       "@/hooks/*": ["./hooks/*"],
       "@/stores/*": ["./stores/*"],
       "@/constants/*": ["./constants/*"],
+      "@/types/*": ["./types/*"],
     },
   },
   "include": [

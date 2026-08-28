@@ -1,6 +1,6 @@
 import useToggleRoleMember from "@/hooks/useToggleRole"
-import { getAllMemberByRole, UserRole } from "@/lib/client/api/roles"
-import { Role } from "@/lib/types/role"
+import { getAllMemberByRole, UserRole } from "@/lib/api/roles"
+import { Role } from "@/types/role"
 import { Loader2, Users, X } from "lucide-react"
 import useSWR from "swr"
 

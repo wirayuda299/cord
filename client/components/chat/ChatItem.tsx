@@ -14,12 +14,12 @@ import {
 } from "lucide-react";
 
 import MessageMenu from "./MessageMenu";
-import type { Message } from "@/lib/types/chat";
+import type { Message } from "@/types/chat";
 import {
    addReaction,
    editMessage,
    removeReaction,
-} from "@/lib/client/api/messages";
+} from "@/lib/api/messages";
 import Link from "next/link";
 import {
    Dialog,
@@ -28,7 +28,7 @@ import {
    DialogTitle,
    DialogTrigger,
 } from "../ui/dialog";
-import { deleteThread } from "@/lib/server/actions/threads";
+import { deleteThread } from "@/lib/actions/threads";
 
 type ChatItemVariant = "channel" | "thread-parent" | "thread-reply";
 

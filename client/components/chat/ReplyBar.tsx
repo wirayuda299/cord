@@ -1,6 +1,6 @@
 import { X } from "lucide-react";
 
-import type { Message } from "@/lib/types/chat";
+import type { Message } from "@/types/chat";
 
 type ReplyBarProps = {
   message: Message;

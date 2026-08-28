@@ -1,11 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import Notification from "@/components/Notification";
-import PinnedMessages from "@/components/PinnedMessages";
-import MembersButton from "@/components/MemberButton";
-import SearchForm from "@/components/SearchForm";
-import { PinnedMessage } from "@/lib/types/chat";
+import Notification from "@/components/server/Notification";
+import PinnedMessages from "@/components/server/PinnedMessages";
+import MembersButton from "@/components/server/MemberButton";
+import SearchForm from "@/components/server/SearchForm";
+import { PinnedMessage } from "@/types/chat";
 
 export default function ChannelActions({
   serverId,

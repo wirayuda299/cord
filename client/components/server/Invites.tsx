@@ -3,11 +3,11 @@
 import { useMemo, useState } from "react"
 import { Copy, Check, Trash2, Plus, Link, Users, Clock } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { copyText } from "@/lib/client/clipboard"
+import { copyText } from "@/lib/clipboard"
 import useSWR from "swr"
-import { createInvitationCode } from "@/lib/server/actions/invitations"
-import { Invitation } from "@/lib/types/invitation"
-import { deleteInvitationCode, getAllInvitation } from "@/lib/client/api/invitation"
+import { createInvitationCode } from "@/lib/actions/invitations"
+import { Invitation } from "@/types/invitation"
+import { deleteInvitationCode, getAllInvitation } from "@/lib/api/invitation"
 import { getPublicApiUrl } from "@/lib/env"
 
 

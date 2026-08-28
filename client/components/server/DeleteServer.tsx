@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { AlertTriangle, Loader2, Trash2 } from "lucide-react";
-import { deleteServer } from "@/lib/server/actions/servers";
+import { deleteServer } from "@/lib/actions/servers";
 
 type DeleteServerProps = {
   serverId: string;

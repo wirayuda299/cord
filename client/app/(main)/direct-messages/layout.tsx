@@ -4,7 +4,7 @@ import Image from "next/image"
 import Link from "next/link"
 import { ReactNode } from "react"
 
-import { getAllConversations } from "@/lib/server/data/conversations"
+import { getAllConversations } from "@/lib/queries/conversations"
 
 
 export default async function DirectMessagesLayout({ children }: { children: ReactNode }) {

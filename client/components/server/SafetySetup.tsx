@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { updateSafetySetup } from "@/lib/server/actions/servers";
+import { updateSafetySetup } from "@/lib/actions/servers";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -20,7 +20,7 @@ import {
   NOTIFICATION_OPTIONS,
   VERIFICATION_LEVELS,
 } from "@/constants/safety";
-import { getSafetySetup } from "@/lib/client/api/safety_rules";
+import { getSafetySetup } from "@/lib/api/safety_rules";
 
 // ─── schema ───────────────────────────────────────────────────────────────────
 

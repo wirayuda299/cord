@@ -1,6 +1,6 @@
 "use client";
 
-import type { Message, ResponseMessage } from "@/lib/types/chat";
+import type { Message, ResponseMessage } from "@/types/chat";
 import { useAppStore } from "@/stores/store";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useShallow } from "zustand/react/shallow";
@@ -11,9 +11,9 @@ import ReplyBar from "./ReplyBar";
 import { useWebSocket } from "@/hooks/useWebsocket";
 import { MessageSquareText } from "lucide-react";
 import useSWR from "swr";
-import { hasPermission } from "@/lib/client/api/permissions";
+import { hasPermission } from "@/lib/api/permissions";
 import { PermissionKey } from "@/constants/permissions";
-import { isMemberBanned } from "@/lib/server/actions/members";
+import { isMemberBanned } from "@/lib/actions/members";
 
 type Props = {
   channel: {

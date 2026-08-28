@@ -1,13 +1,12 @@
 'use client'
 
-import { useState, useMemo, useEffect } from "react"
+import { useState, useMemo } from "react"
 import { Ban, Search, ShieldOff, RotateCcw } from "lucide-react"
-import { apiFetcher, cn } from "@/lib/utils"
-import { unbanMember } from "@/lib/server/actions/servers"
+import { cn } from "@/lib/utils"
+import { unbanMember } from "@/lib/actions/servers"
 import { format } from "date-fns"
-import { getBans } from "@/lib/client/api/bans"
+import { getBans } from "@/lib/api/bans"
 import useSWR from "swr"
-import { BannedMemberRow } from "@/lib/types/bans"
 
 
 type BannedMember = {
@@ -118,7 +117,7 @@ function BanRow({ member, onUnban }: { member: BannedMember; onUnban: () => void
 export default function Bans({ serverId }: { serverId: string }) {
   const [query, setQuery] = useState("")
   const [confirmId, setConfirmId] = useState<string | null>(null)
-  const { data: bans = [], error, isLoading, mutate } = useSWR(() => serverId ? "/api/bans" : null, () => apiFetcher<BannedMemberRow[]>(`server/bans?serverID=${serverId}`))
+  const { data: bans = [], error, isLoading, mutate } = useSWR(() => serverId ? "/api/bans" : null, () => getBans(serverId))
 
 
 

@@ -6,7 +6,6 @@ import AllFriends from "@/components/friends/AllFriends";
 import { Suspense } from "react";
 import AddFriendPanel from "@/components/friends/AddFriendPanel";
 import { auth } from "@clerk/nextjs/server";
-import { unauthorized } from "next/navigation";
 
 type Tab = "online" | "all" | "pending" | "add";
 

@@ -1,8 +1,8 @@
 "use client";
 
-import { copyText } from "@/lib/client/clipboard";
-import { createInvitationCode } from "@/lib/server/actions/invitations";
-import type { FriendListItem } from "@/lib/types/friends";
+import { copyText } from "@/lib/clipboard";
+import { createInvitationCode } from "@/lib/actions/invitations";
+import type { FriendListItem } from "@/types/friends";
 import { Check, Copy, Search } from "lucide-react";
 import Image from "next/image";
 import { useEffect, useState } from "react";
@@ -25,15 +25,16 @@ export default function FriendList({ serverId, friends }: Props) {
          const result = await createInvitationCode(serverId);
          if (cancelled) return;
 
-         if (result && typeof result === "object" && "error" in result && result.error) {
-            setLinkError("Failed to create invite link");
+         if (!result.success) {
+            setLinkError(result.message || "Failed to create invite link");
             return;
          }
 
+         const data = result.data as { code?: string; data?: { code?: string } } | string | undefined;
          const code =
-            typeof result === "string"
-               ? result
-               : (result?.data ?? result?.code ?? null);
+            typeof data === "string"
+               ? data
+               : (data?.code ?? data?.data?.code ?? null);
 
          if (!code) {
             setLinkError("Failed to create invite link");

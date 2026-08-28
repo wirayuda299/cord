@@ -3,7 +3,7 @@ import Link from "next/link"
 import dynamic from "next/dynamic"
 import { Compass } from "lucide-react"
 
-import { getAllServers } from "@/lib/server/data/servers"
+import { getAllServers } from "@/lib/queries/servers"
 import { cn } from "@/lib/utils"
 
 const CreateServerForm = dynamic(() => import("@/components/server/CreateServerForm"))

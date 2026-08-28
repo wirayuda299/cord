@@ -1,11 +1,11 @@
 "use client";
 
 import { getPublicWsUrl } from "@/lib/env";
-import type { ResponseMessage } from "@/lib/types/chat";
+import type { ResponseMessage } from "@/types/chat";
 import { useAuth } from "@clerk/nextjs";
 import { useCallback, useEffect, useRef, useState } from "react";
 
-export type { Message } from "@/lib/types/chat";
+export type { Message } from "@/types/chat";
 
 export type ConnectionStatus =
    | "connecting"

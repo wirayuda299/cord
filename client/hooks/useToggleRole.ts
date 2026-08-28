@@ -1,4 +1,4 @@
-import { assignRole, unassignRole } from "@/lib/client/api/roles"
+import { assignRole, unassignRole } from "@/lib/api/roles"
 import { useState } from "react"
 
 type Props = {

@@ -29,14 +29,14 @@ import {
   kickMember,
   banMember,
   Member,
-} from "@/lib/client/api/members";
-import { unbanMember } from "@/lib/server/actions/servers";
-import { getAllRoles, unassignRole } from "@/lib/client/api/roles";
-import { Role } from "@/lib/types/role";
+} from "@/lib/api/members";
+import { unbanMember } from "@/lib/actions/servers";
+import { getAllRoles, unassignRole } from "@/lib/api/roles";
+import { Role } from "@/types/role";
 import Image from "next/image";
 import useToggleRoleMember from "@/hooks/useToggleRole";
 import { format } from "date-fns";
-import { hasPermission } from "@/lib/client/api/permissions";
+import { hasPermission } from "@/lib/api/permissions";
 import { PermissionKey } from "@/constants/permissions";
 
 function MemberAvatar({ member }: { member: Member }) {
@@ -225,9 +225,9 @@ function MemberRow({
 
   const handleUnbanMember = async () => {
     try {
-      const { error } = await unbanMember(serverID, member.user_id);
-      if (error) {
-        throw new Error(error);
+      const res = await unbanMember(serverID, member.user_id);
+      if (!res.success) {
+        throw new Error(res.message);
       }
       onMutate();
     } catch (e) {

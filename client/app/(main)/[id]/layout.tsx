@@ -1,7 +1,7 @@
 import { auth } from "@clerk/nextjs/server";
 import ServerSidebar from "@/components/sidebar/server/ServerSidebar"
 import ServerSidebarWrapper from "@/components/sidebar/server/ServerSidebarWrapper"
-import { isUserJoin } from "@/lib/server/data/members"
+import { isUserJoin } from "@/lib/queries/members"
 import { redirect } from "next/navigation"
 import { ReactNode } from "react"
 

@@ -10,14 +10,14 @@ import ServerSettingDialog from "@/components/server/ServerSettingDialog";
 import CreateCategoryDialog from "@/components/server/CreateCategoryDialog";
 import EditPerServerProfileDialog from "@/components/server/EditPerServerProfileDialog";
 import ChannelList from "./ChannelList";
-import { getAllChannel } from "@/lib/server/data/channels";
+import { getAllChannel } from "@/lib/queries/channels";
 import CopyServerIDButton from "@/components/server/CopyServerIDButton";
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import Invites from "@/components/server/Invites";
 import { currentUser } from "@clerk/nextjs/server";
 import { unauthorized } from "next/navigation";
 import Image from "next/image";
-import { hasPermission } from "@/lib/client/api/permissions";
+import { hasPermission } from "@/lib/api/permissions";
 import { PermissionKey } from "@/constants/permissions";
 
 export default async function ServerSidebar({

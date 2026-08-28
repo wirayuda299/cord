@@ -2,7 +2,7 @@ import { memo } from "react";
 import { cn } from "@/lib/utils";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import useSWR from "swr";
-import { getAllMembers, Member } from "@/lib/client/api/members";
+import { getAllMembers, Member } from "@/lib/api/members";
 import Image from "next/image";
 import { X } from "lucide-react";
 

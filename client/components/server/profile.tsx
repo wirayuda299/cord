@@ -9,15 +9,15 @@ import { Field, FieldDescription, FieldLabel } from "../ui/field";
 import { Input } from "../ui/input";
 import { useAttachedFiles } from "@/hooks/useAttachedFiles";
 import { useEffect, useState } from "react";
-import { ALLOWED_FILE_EXTENSIONS } from "@/lib/shared/file-validation";
+import { ALLOWED_FILE_EXTENSIONS } from "@/lib/file-validation";
 import { cn } from "@/lib/utils";
 import { Switch } from "../ui/switch";
 import useSWR from "swr";
-import getServerById from "@/lib/client/api/server";
+import getServerById from "@/lib/api/server";
 import { useParams } from "next/navigation";
-import { uploadImage } from "@/lib/server/actions/images";
-import { updateServerSchema, UpdateServerType } from "@/lib/validation/server";
-import { updateServer } from "@/lib/server/actions/servers";
+import { uploadImage } from "@/lib/actions/images";
+import { updateServerSchema, UpdateServerType } from "@/lib/validations/server";
+import { updateServer } from "@/lib/actions/servers";
 
 const gradients: [string, string][] = [
   ["#1f1f1f", "#3a3a3a"], // dark gray
@@ -518,7 +518,7 @@ export default function ServerProfile() {
         </div>
 
         <div className="order-1 lg:order-2 z-10 lg:z-0 w-full lg:w-auto lg:sticky lg:top-5 shrink-0">
-          <ServerProfilePreview selected={selected} server={data?.data} />
+          <ServerProfilePreview selected={selected} server={data} />
         </div>
       </div>
     </div>

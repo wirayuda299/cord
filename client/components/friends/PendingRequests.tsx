@@ -1,6 +1,6 @@
 "use client";
 
-import { acceptFriendRequest, cancelFriendRequest, declineFriendRequest, getAllPendingRequest } from "@/lib/client/api/friends";
+import { acceptFriendRequest, cancelFriendRequest, declineFriendRequest, getAllPendingRequest } from "@/lib/api/friends";
 import { Check, X, Clock } from "lucide-react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";

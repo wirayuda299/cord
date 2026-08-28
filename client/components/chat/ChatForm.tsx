@@ -3,16 +3,16 @@
 import { Plus, Smile, Gift, Sticker, X, ImageIcon } from "lucide-react";
 import { useRef, useState, useCallback, useEffect } from "react";
 import type { ConnectionStatus } from "@/hooks/useWebsocket";
-import { deleteImage, uploadImage } from "@/lib/server/actions/images";
+import { deleteImage, uploadImage } from "@/lib/actions/images";
 import { getPublicApiUrl } from "@/lib/env";
-import { ALLOWED_FILE_EXTENSIONS } from "@/lib/shared/file-validation";
+import { ALLOWED_FILE_EXTENSIONS } from "@/lib/file-validation";
 import { useAttachedFiles } from "@/hooks/useAttachedFiles";
 import { useAppStore } from "@/stores/store";
 import { emojiList } from "@/constants/emoji";
 import { FilePreview } from "./FilePreview";
-import { isMemberJoined, isMemberBanned } from "@/lib/server/actions/members";
+import { isMemberJoined } from "@/lib/actions/members";
 import { useRouter } from "next/navigation";
-import { APIResponse } from "@/lib/types/response";
+import { APIResponse } from "@/types/response";
 
 type UploadResult = { url: string; public_id: string };
 

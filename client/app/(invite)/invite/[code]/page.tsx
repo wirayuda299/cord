@@ -1,8 +1,8 @@
-import { isUserJoin } from "@/lib/server/data/members";
+import { isUserJoin } from "@/lib/queries/members";
 import InviteCard from "./_components/InviteCard";
 import { InviteInvalid } from "./_components/InviteStates";
 import { redirect } from "next/navigation";
-import { findInvitationByCode } from "@/lib/server/data/invitations";
+import { findInvitationByCode } from "@/lib/queries/invitations";
 import { auth } from "@clerk/nextjs/server";
 
 export default async function InvitePage({

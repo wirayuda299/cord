@@ -1,6 +1,6 @@
 import { auth } from '@clerk/nextjs/server';
 import { Compass } from 'lucide-react'
-import { browseServers } from '@/lib/server/data/servers'
+import { browseServers } from '@/lib/queries/servers'
 import ServerCard from './_components/ServerCard'
 
 export default async function BrowsePage() {

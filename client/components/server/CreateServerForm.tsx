@@ -14,12 +14,12 @@ import {
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Field, FieldLabel } from "@/components/ui/field"
-import { createServer } from "@/lib/server/actions/servers"
+import { createServer } from "@/lib/actions/servers"
 import { Controller, useForm } from "react-hook-form"
-import { createServerSchema, type CreateServerSchemaType } from "@/lib/validation/server"
+import { createServerSchema, type CreateServerSchemaType } from "@/lib/validations/server"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useAttachedFiles } from "@/hooks/useAttachedFiles"
-import { ALLOWED_FILE_EXTENSIONS } from "@/lib/shared/file-validation"
+import { ALLOWED_FILE_EXTENSIONS } from "@/lib/file-validation"
 
 export default function CreateServerForm() {
   const { attachedFiles, addFiles, isDragging, onDragOver, onDragLeave, onDrop } = useAttachedFiles()

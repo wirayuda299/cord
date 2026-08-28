@@ -1,6 +1,6 @@
-import { getAllFriends } from "@/lib/server/data/friends";
-import { startConversation } from "@/lib/server/actions/conversations";
-import { FriendListItem } from "@/lib/types/friends";
+import { getAllFriends } from "@/lib/queries/friends";
+import { startConversation } from "@/lib/actions/conversations";
+import { FriendListItem } from "@/types/friends";
 import { MessageSquare } from "lucide-react";
 import Image from "next/image";
 

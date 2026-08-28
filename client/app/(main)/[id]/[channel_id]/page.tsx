@@ -1,7 +1,7 @@
 import ChatList from "@/components/chat/ChatList";
-import VideoCall from "@/components/VideoCall";
-import { getChannelById } from "@/lib/server/data/channel_detail";
-import { getAllMessagesByChannelId } from "@/lib/server/data/messages";
+import VideoCall from "@/components/server/VideoCall";
+import { getChannelById } from "@/lib/queries/channel_detail";
+import { getAllMessagesByChannelId } from "@/lib/queries/messages";
 import { auth } from "@clerk/nextjs/server";
 import { unauthorized } from "next/navigation";
 

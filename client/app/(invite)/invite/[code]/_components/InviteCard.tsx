@@ -3,8 +3,8 @@
 import { useRouter } from "next/navigation";
 import { Users, Circle } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { joinServerByCode } from "@/lib/server/actions/invitations";
-import { Invitation } from "@/lib/types/invitation";
+import { joinServerByCode } from "@/lib/actions/invitations";
+import { Invitation } from "@/types/invitation";
 import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";

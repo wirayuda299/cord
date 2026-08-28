@@ -1,6 +1,6 @@
-import { ssrSafe } from "@/lib/shared/zustand-ssr"
-import { Category } from "@/lib/types/category"
-import type { Message } from "@/lib/types/chat"
+import { ssrSafe } from "@/lib/zustand-ssr"
+import { Category } from "@/types/category"
+import type { Message } from "@/types/chat"
 import { create } from "zustand"
 
 export type StoreState = {

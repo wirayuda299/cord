@@ -1,6 +1,6 @@
 "use client";
 
-import { cn } from "@/lib/shared/utils";
+import { cn } from "@/lib/utils";
 import {
    Hash,
    ChevronRight,
@@ -8,11 +8,11 @@ import {
    ArrowLeft,
    Menu,
 } from "lucide-react";
-import { Channel } from "@/lib/types/channel";
+import { Channel } from "@/types/channel";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import useSWR from "swr";
-import { getThreadById } from "@/lib/client/api/threads";
+import { getThreadById } from "@/lib/api/threads";
 import type { ReactNode } from "react";
 import { useAppStore } from "@/stores/store";
 

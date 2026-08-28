@@ -3,7 +3,7 @@
 import { ChevronDown, Hash, Settings, Volume2 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useAppStore } from "@/stores/store"
-import { GroupedChannels } from "@/lib/server/data/channels"
+import { GroupedChannels } from "@/lib/queries/channels"
 import { useParams } from "next/navigation"
 import Link from "next/link"
 import { Dialog, DialogContent, DialogTrigger } from "../../ui/dialog"

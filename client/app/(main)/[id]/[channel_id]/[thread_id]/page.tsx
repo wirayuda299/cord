@@ -1,6 +1,6 @@
 import ChatList from "@/components/chat/ChatList";
-import { getChannelById } from "@/lib/server/data/channel_detail";
-import { getAllThreadMessages } from "@/lib/server/data/threads";
+import { getChannelById } from "@/lib/queries/channel_detail";
+import { getAllThreadMessages } from "@/lib/queries/threads";
 import { auth } from "@clerk/nextjs/server";
 
 

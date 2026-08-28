@@ -17,7 +17,7 @@ import {
   ActionCategory,
   ActionType,
 } from "@/constants/auditLog"
-import { getAuditLogs } from "@/lib/server/actions/audit"
+import { getAuditLogs } from "@/lib/actions/audit"
 
 
 

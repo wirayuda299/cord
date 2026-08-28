@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/dialog"
 import z from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { createThread } from "@/lib/server/actions/messages";
+import { createThread } from "@/lib/actions/messages";
 import { useRouter } from "next/navigation";
 import { Button } from "../ui/button";
 

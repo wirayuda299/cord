@@ -4,8 +4,8 @@ import useSWR from "swr";
 import useSWRMutation from "swr/mutation";
 import { useEffect, useState } from "react";
 
-import { findUsersByName, Friend } from "@/lib/client/api/users";
-import { sendFriendRequest } from "@/lib/server/actions/friends";
+import { findUsersByName, Friend } from "@/lib/api/users";
+import { sendFriendRequest } from "@/lib/actions/friends";
 
 function useDebouncedValue<T>(value: T, delay = 500) {
   const [debouncedValue, setDebouncedValue] = useState(value);
