@@ -1,6 +1,6 @@
 'use client'
 
-import { copyText } from "@/lib/client/clipboard"
+import { copyText } from "@/lib/clipboard"
 import { Copy } from "lucide-react"
 
 

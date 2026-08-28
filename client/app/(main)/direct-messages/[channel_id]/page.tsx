@@ -2,8 +2,8 @@ import Image from "next/image";
 import { UserRound } from "lucide-react";
 
 import ChatList from "@/components/chat/ChatList";
-import { getConversationById } from "@/lib/server/data/conversations";
-import { getAllMessagesByChannelId } from "@/lib/server/data/messages";
+import { getConversationById } from "@/lib/queries/conversations";
+import { getAllMessagesByChannelId } from "@/lib/queries/messages";
 import { auth } from "@clerk/nextjs/server";
 import { unauthorized } from "next/navigation";
 

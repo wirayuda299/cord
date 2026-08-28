@@ -1,7 +1,7 @@
 "use client"
 
 
-import { copyText } from "@/lib/client/clipboard"
+import { copyText } from "@/lib/clipboard"
 import { getPublicApiUrl } from "@/lib/env"
 import { Copy, Check, MessageSquare, ArrowRight, ShieldCheck, Sparkles } from "lucide-react"
 import Link from "next/link"

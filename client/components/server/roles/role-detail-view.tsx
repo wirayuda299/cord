@@ -15,10 +15,10 @@ import {
 } from "lucide-react"
 import { useState } from "react"
 import MembersTab from "./members"
-import { Role } from "@/lib/types/role"
+import { Role } from "@/types/role"
 import useSWR from "swr"
-import { findPermissionByRoleId } from "@/lib/client/api/permissions"
-import { deleteRole } from "@/lib/client/api/roles"
+import { findPermissionByRoleId } from "@/lib/api/permissions"
+import { deleteRole } from "@/lib/api/roles"
 import { PERMISSIONS } from "@/constants/permissions"
 import Image from "next/image";
 

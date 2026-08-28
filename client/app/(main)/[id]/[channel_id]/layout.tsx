@@ -1,13 +1,13 @@
 import ChannelHeader from "@/components/server/ChannelHeader";
-import { getChannelById } from "@/lib/server/data/channel_detail";
+import { getChannelById } from "@/lib/queries/channel_detail";
 import { type ReactNode } from "react";
 import { auth } from "@clerk/nextjs/server";
-import { hasPermission } from "@/lib/client/api/permissions";
+import { hasPermission } from "@/lib/api/permissions";
 import { PermissionKey } from "@/constants/permissions";
-import { isUserJoin } from "@/lib/server/data/members";
+import { isUserJoin } from "@/lib/queries/members";
 import { redirect } from "next/navigation";
 import ChannelActions from "@/components/server/ChannelActions";
-import { getAllPinnedMessages } from "@/lib/server/data/messages";
+import { getAllPinnedMessages } from "@/lib/queries/messages";
 
 export default async function ChannelLayout({
   children,

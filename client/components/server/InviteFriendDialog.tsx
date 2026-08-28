@@ -1,8 +1,8 @@
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import { Users } from "lucide-react";
 import FriendList from "@/components/members/FriendList";
-import { getAllFriends } from "@/lib/server/data/friends";
-import type { FriendListItem } from "@/lib/types/friends";
+import { getAllFriends } from "@/lib/queries/friends";
+import type { FriendListItem } from "@/types/friends";
 
 export default async function InviteFriendDialog({
    serverId,

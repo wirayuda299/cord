@@ -5,8 +5,8 @@ import Image from 'next/image'
 import { Users } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { cn } from '@/lib/utils'
-import { joinServer } from '@/lib/server/actions/servers'
-import type { BrowsableServer } from '@/lib/types/server'
+import { joinServer } from '@/lib/actions/servers'
+import type { BrowsableServer } from '@/types/server'
 import { useAuth } from '@clerk/nextjs'
 
 const PALETTE = [

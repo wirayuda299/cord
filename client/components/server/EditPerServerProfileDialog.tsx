@@ -13,15 +13,15 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 import useSWR from "swr";
 import { useAttachedFiles } from "@/hooks/useAttachedFiles";
-import { uploadImage } from "@/lib/server/actions/images";
-import { updateServerProfile } from "@/lib/server/actions/serverProfile";
-import { getServerProfile } from "@/lib/client/api/serverProfile";
+import { uploadImage } from "@/lib/actions/images";
+import { updateServerProfile } from "@/lib/actions/serverProfile";
+import { getServerProfile } from "@/lib/api/serverProfile";
 import {
   updateServerProfileSchema,
   UpdateServerProfileType,
-} from "@/lib/validation/serverProfile";
+} from "@/lib/validations/serverProfile";
 import { Input } from "@/components/ui/input";
-import { ALLOWED_FILE_EXTENSIONS } from "@/lib/shared/file-validation";
+import { ALLOWED_FILE_EXTENSIONS } from "@/lib/file-validation";
 import { cn } from "@/lib/utils";
 
 function ProfileCard({

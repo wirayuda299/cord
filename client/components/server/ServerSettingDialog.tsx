@@ -226,15 +226,17 @@ function SettingsSidebar({
         className="flex-1 overflow-y-auto px-2 py-3 space-y-4"
         aria-label="Server settings"
       >
-        {SIDEBAR_GROUPS.map((group, gi) => (
-          <div key={group.title ?? gi} role="group" aria-label={group.title}>
-            {!group.title && gi > 0 && (
+        {SIDEBAR_GROUPS.map((group, gi) => {
+          const title: string | undefined = "title" in group ? group.title : undefined;
+          return (
+          <div key={title ?? gi} role="group" aria-label={title}>
+            {!title && gi > 0 && (
               <div className="h-px bg-surface-subtle/40 mx-1 mb-4" />
             )}
 
-            {group.title && (
+            {title && (
               <p className="px-1 md:px-3 mb-1 text-[10px] font-semibold uppercase tracking-widest text-text-muted">
-                {group.title}
+                {title}
               </p>
             )}
 
@@ -249,7 +251,8 @@ function SettingsSidebar({
               ))}
             </div>
           </div>
-        ))}
+          );
+        })}
       </nav>
 
       <div className="shrink-0 px-3 py-3 border-t border-surface-subtle/40">

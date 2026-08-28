@@ -1,8 +1,10 @@
 import useToggleRoleMember from "@/hooks/useToggleRole"
-import { getAllMemberByRole, UserRole } from "@/lib/client/api/roles"
-import { Role } from "@/lib/types/role"
+import { getAllMemberByRole, UserRole } from "@/lib/api/roles"
+import { Role } from "@/types/role"
 import { Loader2, Users, X } from "lucide-react"
 import useSWR from "swr"
+import { EmptyState } from "@/components/ui/empty-state"
+import { Avatar, getInitials } from "@/components/ui/avatar"
 
 function MemberRow({
   user,
@@ -24,21 +26,14 @@ function MemberRow({
     serverOwner
   })
 
-  const initials = (user.username ?? user.user_id)
-    .split(" ")
-    .slice(0, 2)
-    .map((w) => w[0]?.toUpperCase() ?? "")
-    .join("")
-
   return (
     <div className="flex relative items-center gap-3 px-4 py-2.5 rounded-xl bg-white/3 border border-white/5">
-      {user.avatar_url ? (
-        <img src={user.avatar_url} alt="" className="size-9 rounded-full object-cover shrink-0" />
-      ) : (
-        <div className="size-9 rounded-full bg-white/10 flex items-center justify-center text-xs font-semibold text-white/60 shrink-0">
-          {initials || "?"}
-        </div>
-      )}
+      <Avatar
+        src={user.avatar_url}
+        alt=""
+        fallback={getInitials(user.username ?? user.user_id, "?")}
+        fallbackClassName="bg-white/10 text-white/60"
+      />
       <div className="flex-1 min-w-0">
         <p className="text-sm font-medium text-white truncate">{user.username ?? user.user_id}</p>
         <p className="text-xs text-white/30 truncate font-mono">{user.user_id}</p>
@@ -78,10 +73,11 @@ export default function MembersTab({ role, serverID, serverOwner }: { serverOwne
 
   if (!userRows || userRows.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center py-20 text-white/25 gap-2">
-        <Users size={32} className="opacity-40" />
-        <p className="text-sm">No members have this role</p>
-      </div>
+      <EmptyState
+        className="py-20 gap-2"
+        icon={<Users size={32} className="opacity-40" />}
+        title="No members have this role"
+      />
     )
   }
 

@@ -1,7 +1,7 @@
 "use client"
 
-import { getAllRoles } from "@/lib/client/api/roles"
-import { Role } from "@/lib/types/role"
+import { getAllRoles } from "@/lib/api/roles"
+import { Role } from "@/types/role"
 import { cn } from "@/lib/utils"
 import { GripVertical, Plus } from "lucide-react"
 import Image from "next/image";

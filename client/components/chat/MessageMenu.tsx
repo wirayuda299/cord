@@ -14,9 +14,9 @@ import {
   Trash2,
 } from "lucide-react";
 import { topEmojies, emojiList } from "@/constants/emoji";
-import { copyText } from "@/lib/client/clipboard";
-import { deleteMessage, pinMessage } from "@/lib/server/actions/messages";
-import type { Message } from "@/lib/types/chat";
+import { copyText } from "@/lib/clipboard";
+import { deleteMessage, pinMessage } from "@/lib/actions/messages";
+import type { Message } from "@/types/chat";
 import { usePathname } from "next/navigation";
 import { useAppStore } from "@/stores/store";
 import z from "zod";

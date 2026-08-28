@@ -2,10 +2,10 @@
 
 import { Plus } from "lucide-react"
 import { DialogContent, Dialog, DialogTrigger, DialogClose } from "@/components/ui/dialog"
-import { createChannel } from "@/lib/server/actions/channels"
+import { createChannel } from "@/lib/actions/channels"
 import { Controller, SubmitHandler, useForm } from "react-hook-form"
 import { Field, FieldError, FieldLabel } from "@/components/ui/field"
-import type { CreateChannelPayload } from "@/lib/validation/channel"
+import type { CreateChannelPayload } from "@/lib/validations/channel"
 import { channelTypes } from "@/constants/channel-type"
 import { useAppStore } from "@/stores/store"
 

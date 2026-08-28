@@ -3,8 +3,8 @@
 import { FolderPlus } from "lucide-react"
 import { DialogContent, Dialog, DialogTrigger, DialogClose } from "@/components/ui/dialog"
 import { Controller, useForm } from "react-hook-form"
-import { createCategory } from "@/lib/server/actions/categories"
-import type { CreateCategoryPayload } from "@/lib/types/category"
+import { createCategory } from "@/lib/actions/categories"
+import type { CreateCategoryPayload } from "@/types/category"
 
 export default function CreateCategoryDialog({ serverId }: { serverId: string }) {
   const { handleSubmit, reset, control, formState: { isSubmitting } } = useForm<CreateCategoryPayload>({

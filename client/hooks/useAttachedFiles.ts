@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from "react";
-import { validateFiles, MAX_FILES } from "@/lib/shared/file-validation";
+import { validateFiles, MAX_FILES } from "@/lib/file-validation";
 
 type AttachedFile = {
   id: string;

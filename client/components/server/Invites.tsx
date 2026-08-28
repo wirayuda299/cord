@@ -3,12 +3,13 @@
 import { useMemo, useState } from "react"
 import { Copy, Check, Trash2, Plus, Link, Users, Clock } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { copyText } from "@/lib/client/clipboard"
+import { copyText } from "@/lib/clipboard"
 import useSWR from "swr"
-import { createInvitationCode } from "@/lib/server/actions/invitations"
-import { Invitation } from "@/lib/types/invitation"
-import { deleteInvitationCode, getAllInvitation } from "@/lib/client/api/invitation"
+import { createInvitationCode } from "@/lib/actions/invitations"
+import { Invitation } from "@/types/invitation"
+import { deleteInvitationCode, getAllInvitation } from "@/lib/api/invitation"
 import { getPublicApiUrl } from "@/lib/env"
+import { EmptyState } from "@/components/ui/empty-state"
 
 
 
@@ -248,9 +249,10 @@ export default function Invites({ serverID }: { serverID: string }) {
           )}
 
           {data?.length === 0 && !creating ? (
-            <div className="flex flex-col items-center justify-center py-24 text-white/25 gap-3">
-              <Link size={32} className="opacity-40" />
-              <p className="text-sm">No invite links yet</p>
+            <EmptyState
+              icon={<Link size={32} className="opacity-40" />}
+              title="No invite links yet"
+            >
               <button
                 type="button"
                 onClick={() => setCreating(true)}
@@ -258,7 +260,7 @@ export default function Invites({ serverID }: { serverID: string }) {
               >
                 Create your first invite
               </button>
-            </div>
+            </EmptyState>
           ) : (
             <>
               <div className="hidden md:grid grid-cols-[1fr_9rem_7rem_auto] gap-4 px-4 pb-1">

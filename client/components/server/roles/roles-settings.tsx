@@ -2,11 +2,11 @@
 
 import { useMemo, useState } from "react"
 import useSWR from "swr"
-import { Role } from "@/lib/types/role"
+import { Role } from "@/types/role"
 import RoleList from "./list"
 import RoleDetailView from "./role-detail-view"
 import RoleFormView from "./role-form-view"
-import { getAllMembers } from "@/lib/client/api/members"
+import { getAllMembers } from "@/lib/api/members"
 
 type View = "list" | "create" | "detail" | "edit"
 

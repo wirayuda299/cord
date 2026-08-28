@@ -2,34 +2,9 @@ import { memo } from "react";
 import { cn } from "@/lib/utils";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import useSWR from "swr";
-import { getAllMembers, Member } from "@/lib/client/api/members";
-import Image from "next/image";
+import { getAllMembers, Member } from "@/lib/api/members";
 import { X } from "lucide-react";
-
-const Avatar = memo(
-  ({ member, isOnline }: { member: Member; isOnline?: boolean }) => {
-    const indicator = isOnline ? "bg-emerald-400" : "bg-zinc-700";
-    return (
-      <div className="relative shrink-0">
-        <div
-          className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-medium ${member.role_color}`}
-        >
-          <Image
-            src={member.avatar_url}
-            alt={`${member.username}'s avatar`}
-            className="w-full h-full rounded-full object-cover"
-            width={32}
-            height={32}
-          />
-        </div>
-        <div
-          className={`absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border-2 border-zinc-800 ${indicator}`}
-        />
-      </div>
-    );
-  },
-);
-Avatar.displayName = "Avatar";
+import { Avatar, getInitials, avatarColorFromSeed } from "@/components/ui/avatar";
 
 const MemberRow = memo(
   ({
@@ -45,7 +20,15 @@ const MemberRow = memo(
     return (
       <div className="flex items-center flex-1 gap-2 px-2 py-1.5 rounded-md cursor-pointer hover:bg-white/5 transition-colors">
 
-        <Avatar member={member} isOnline={!isOffline} />
+        <Avatar
+          size={32}
+          src={member.avatar_url}
+          alt={`${member.username}'s avatar`}
+          fallback={getInitials(member.username)}
+          fallbackClassName={member.role_color ?? undefined}
+          fallbackStyle={!member.role_color ? { background: avatarColorFromSeed(member.user_id) } : undefined}
+          indicator={isOffline ? "offline" : "online"}
+        />
         <div className="flex-1 min-w-0">
           <p
             className={`text-sm font-medium truncate ${
