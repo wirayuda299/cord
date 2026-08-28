@@ -51,18 +51,81 @@ export async function createChannel(data: CreateChannelServer): Promise<APIRespo
       updateTag("channels")
       return {
         message: result.message,
-        success: false
+        success: true
       }
     }
 
     return {
       message: result.message,
-      success: true
+      success: false
     }
   } catch (e) {
 
     return {
       message: "failed to create channel",
+      success: false
+    }
+  }
+}
+
+export type UpdateChannelPayload = {
+  channelId: string
+  name: string
+  categoryId: string | null
+  serverId: string
+}
+
+export async function updateChannel(data: UpdateChannelPayload): Promise<APIResponse> {
+  const { getToken, userId } = await auth.protect();
+  try {
+    if (!userId) {
+      return {
+        message: "unauthenticated",
+        success: false
+      }
+    }
+
+    const parsed = createChannelSchema.pick({ name: true }).safeParse({
+      name: data.name,
+    })
+    if (!parsed.success) {
+      return {
+        message: parsed.error.message,
+        success: false
+      }
+    }
+    const token = await getToken()
+
+    const res = await fetch(`${getPublicApiUrl()}/channel`, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+        "Authorization": `Bearer ${token}`
+      },
+      body: JSON.stringify({
+        channel_id: data.channelId,
+        name: parsed.data.name,
+        category_id: data.categoryId,
+        server_id: data.serverId,
+      }),
+    })
+    const result: APIResponse = await res.json().catch(() => null)
+    if (res.ok && result.success) {
+      updateTag("channels")
+      return {
+        message: result.message,
+        success: true
+      }
+    }
+
+    return {
+      message: result.message,
+      success: false
+    }
+  } catch (e) {
+    return {
+      message: "failed to update channel",
       success: false
     }
   }

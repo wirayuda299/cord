@@ -6,7 +6,8 @@ import { useAppStore } from "@/stores/store"
 import { GroupedChannels } from "@/lib/queries/channels"
 import { useParams } from "next/navigation"
 import Link from "next/link"
-import { Dialog, DialogContent, DialogTrigger } from "../../ui/dialog"
+import { Dialog, DialogTrigger } from "../../ui/dialog"
+import EditChannelDialog from "@/components/server/EditChannelDialog"
 
 export default function ChannelList({ channels, hasPerm }: { channels: GroupedChannels, hasPerm: boolean }) {
   const category = useAppStore(c => c.selectedCategory)
@@ -16,7 +17,7 @@ export default function ChannelList({ channels, hasPerm }: { channels: GroupedCh
   return (
     <ul className="flex flex-col gap-3 text-white p-4">
       {channels.uncategorized.map((c) => (
-        <li key={c.id} className="pl-2 text-sm">
+        <li key={c.id} className="pl-2 pr-3 text-sm group rounded-md hover:bg-surface-chat flex items-center justify-between">
           <Link
             href={`/${param.id}/${c.id}?name=${channels.server.name}`}
             className="flex items-center gap-2 text-gray-400 hover:text-white"
@@ -24,6 +25,19 @@ export default function ChannelList({ channels, hasPerm }: { channels: GroupedCh
             {c.channel_type === 'text' ? <Hash size={15} /> : <Volume2 size={15} />}
             {c.name}
           </Link>
+
+          {hasPerm && (
+            <Dialog>
+              <DialogTrigger>
+                <Settings size={15} className='text-gray-400 group-hover:block hidden group-hover:text-white' />
+              </DialogTrigger>
+              <EditChannelDialog
+                channel={c}
+                serverID={param.id as string}
+                categoryID={null}
+              />
+            </Dialog>
+          )}
         </li>
       ))}
 
@@ -60,9 +74,11 @@ export default function ChannelList({ channels, hasPerm }: { channels: GroupedCh
                       <DialogTrigger>
                         <Settings size={15} className='text-gray-400 group-hover:block hidden group-hover:text-white' />
                       </DialogTrigger>
-                      <DialogContent>
-                        hello world
-                      </DialogContent>
+                      <EditChannelDialog
+                        channel={c}
+                        serverID={param.id as string}
+                        categoryID={cat.id}
+                      />
                     </Dialog>
                   )}
                 </li>
