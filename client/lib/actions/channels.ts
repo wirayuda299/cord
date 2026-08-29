@@ -71,6 +71,7 @@ export async function createChannel(data: CreateChannelServer): Promise<APIRespo
 export type UpdateChannelPayload = {
   channelId: string
   name: string
+  topic: string
   categoryId: string | null
   serverId: string
 }
@@ -85,8 +86,9 @@ export async function updateChannel(data: UpdateChannelPayload): Promise<APIResp
       }
     }
 
-    const parsed = createChannelSchema.pick({ name: true }).safeParse({
+    const parsed = createChannelSchema.pick({ name: true, topic: true }).safeParse({
       name: data.name,
+      topic: data.topic,
     })
     if (!parsed.success) {
       return {
@@ -106,6 +108,7 @@ export async function updateChannel(data: UpdateChannelPayload): Promise<APIResp
       body: JSON.stringify({
         channel_id: data.channelId,
         name: parsed.data.name,
+        topic: parsed.data.topic ?? "",
         category_id: data.categoryId,
         server_id: data.serverId,
       }),

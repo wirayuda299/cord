@@ -8,6 +8,7 @@ import { channelTypes } from "@/constants/channel-type"
 
 type EditChannelForm = {
   name: string
+  topic: string
 }
 
 type EditChannelDialogProps = {
@@ -15,6 +16,7 @@ type EditChannelDialogProps = {
     id: string
     name: string
     channel_type: string
+    topic?: string
   }
   serverID: string
   categoryID: string | null
@@ -24,6 +26,7 @@ export default function EditChannelDialog({ channel, serverID, categoryID }: Edi
   const { control, handleSubmit } = useForm<EditChannelForm>({
     defaultValues: {
       name: channel.name,
+      topic: channel.topic ?? "",
     },
     mode: "onSubmit"
   })
@@ -32,6 +35,7 @@ export default function EditChannelDialog({ channel, serverID, categoryID }: Edi
     const res = await updateChannel({
       channelId: channel.id,
       name: data.name,
+      topic: data.topic,
       categoryId: categoryID,
       serverId: serverID,
     })
@@ -134,6 +138,37 @@ export default function EditChannelDialog({ channel, serverID, categoryID }: Edi
                     type="text"
                     placeholder="# channel-name"
                     className="w-full bg-bg-input rounded text-[15px] text-text-primary placeholder-text-placeholder px-3 py-1 md:py-2.5 outline-none focus:ring-2 focus:ring-discord-brand border-none placeholder:text-xs text-xs md:text-sm"
+                  />
+                  {fieldState.invalid && (
+                    <FieldError errors={[fieldState.error]} />
+                  )}
+                </div>
+              )}
+            />
+          </div>
+
+          <div className="mb-5">
+            <Field>
+              <FieldLabel
+                htmlFor="topic"
+                className="block text-[11px] font-bold text-text-secondary uppercase tracking-[0.06em] mb-2"
+              >
+                Channel Topic
+              </FieldLabel>
+            </Field>
+            <Controller
+              control={control}
+              name="topic"
+              rules={{ maxLength: 200 }}
+              render={({ field, fieldState }) => (
+                <div>
+                  <textarea
+                    autoComplete="off"
+                    maxLength={200}
+                    {...field}
+                    placeholder="What's this channel about?"
+                    rows={2}
+                    className="w-full bg-bg-input rounded text-[15px] text-text-primary placeholder-text-placeholder px-3 py-2 outline-none focus:ring-2 focus:ring-discord-brand border-none resize-none placeholder:text-xs text-xs md:text-sm"
                   />
                   {fieldState.invalid && (
                     <FieldError errors={[fieldState.error]} />
