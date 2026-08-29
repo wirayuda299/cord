@@ -16,13 +16,9 @@ cd client
 pnpm install
 pnpm dev
 
-# Backend API
+# Backend API (also runs the background job worker in-process)
 cd backend
 go run ./cmd/api
-
-# Worker (background jobs)
-cd backend
-go run ./cmd/worker
 ```
 
 ## Features (current status)
@@ -105,9 +101,10 @@ routes/handlers), not from memory — last checked 2026-08-29 (post presence/DM/
 - **Live streaming** — no backend or client support.
 
 ### Notes
-- `backend/cmd/worker` handles background jobs — audit log
-  persistence, queued operations.
-- `go run ./cmd/api` starts the API, `go run ./cmd/worker` starts the
-  worker.
+- Background jobs (audit log persistence, queued operations) run as
+  goroutines inside `cmd/api` (`internal/worker`), not a separate
+  process — one free-tier-friendly deployable instead of two.
+- `go run ./cmd/api` starts everything: the HTTP/WebSocket server and
+  the queue worker.
 - `backend/internal/middleware/clerk_auth.go` protects authenticated
   routes.
