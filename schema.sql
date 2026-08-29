@@ -1,8 +1,5 @@
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
--- =========================================================
--- updated_at helper
--- =========================================================
 
 CREATE OR REPLACE FUNCTION set_updated_at()
 RETURNS TRIGGER AS $$
@@ -525,4 +522,3 @@ CREATE TABLE audit_logs (
 );
 
 CREATE INDEX idx_audit_logs_server_id ON audit_logs(server_id);
-

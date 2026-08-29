@@ -18,7 +18,14 @@ export default async function MainSidebar() {
         href="/direct-messages"
         className="flex items-center justify-center w-12 h-12 min-h-12 bg-(--server-item) transition-all duration-300 rounded-full hover:bg-discord-blue"
       >
-         <MessageCircle className="text-white" size={20}/>
+           <Image
+             src="/cord-logo.png"
+             alt="Cord logo"
+             width={36}
+             height={36}
+             className="w-full h-full object-cover"
+             priority
+           />
       </Link>
       <ul className="space-y-4">
         {servers?.map((server) => (
