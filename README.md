@@ -28,7 +28,7 @@ go run ./cmd/worker
 ## Features (current status)
 
 Audited directly against the code (both client UI wiring and backend
-routes/handlers), not from memory — last checked 2026-08-29.
+routes/handlers), not from memory — last checked 2026-08-29 (post presence/DM/invite fixes).
 
 ### Finished
 - **Authentication** — Clerk on both sides; Next.js middleware
@@ -38,13 +38,17 @@ routes/handlers), not from memory — last checked 2026-08-29.
   update profile (name/icon/banner/description/privacy), delete
   (type-name-to-confirm), leave.
 - **Channels** — create (text/audio/forum type), list grouped by
-  category, edit name (gear icon on hover, per channel).
+  category, edit name + topic (gear icon on hover, per channel).
 - **Categories** — create, list. *(No edit/delete UI — see below.)*
 - **Real-time chat** — WebSocket hub
   ([backend/internal/websocket/hub.go](backend/internal/websocket/hub.go)) +
   client hook ([client/hooks/useWebsocket.ts](client/hooks/useWebsocket.ts));
-  live typing users, presence in the chat member list, live message
-  broadcast.
+  live typing users, live message broadcast.
+- **Online presence** — global websocket presence bucket
+  ([client/components/presence/PresenceProvider.tsx](client/components/presence/PresenceProvider.tsx))
+  wired into the shared Zustand store; real (not hardcoded) online/
+  offline indicators across the chat member list, server settings →
+  Members tab, friends list, and invite previews (online member count).
 - **Messages** — send (text + one image attachment), edit, delete,
   reply/thread, pin/unpin, emoji reactions, emoji picker, full-text
   search within a channel.
@@ -70,21 +74,16 @@ routes/handlers), not from memory — last checked 2026-08-29.
   server icons/banners, and chat attachments.
 
 ### Partially implemented / has known gaps
-- **Kick member** — works, but fires immediately on click with no
-  confirmation dialog, unlike ban/unban which both confirm first.
-  Inconsistent, easy to mis-click.
-- **Member presence** — real in the chat sidebar's member list (driven
-  by the websocket's online-users set); **hardcoded to always show
-  "online"** in the server settings → Members management tab
-  (`components/server/Members.tsx`'s `MemberAvatar` always passes
-  `indicator="online"` — not wired to real presence there).
-- **Channel management** — create and rename only. No UI to delete a
-  channel or move it between categories, and no way to change a
-  channel's type after creation — even though the backend supports
-  channel deletion (`DELETE /channel`) and the edit dialog explicitly
-  can't touch type because the backend update endpoint doesn't accept
-  one (only name/topic/category_id, and topic isn't exposed in the UI
-  either).
+- **Kick member** — works, and now revalidates the kicked user's
+  server-list cache (`updateTag("servers")`), but still fires
+  immediately on click with no confirmation dialog, unlike ban/unban
+  which both confirm first. Inconsistent, easy to mis-click.
+- **Channel management** — create, rename, and edit topic. Still no UI
+  to delete a channel or move it between categories, and no way to
+  change a channel's type after creation — even though the backend
+  supports channel deletion (`DELETE /channel`) and the edit dialog
+  still can't touch type because the backend update endpoint doesn't
+  accept one (only name/topic/category_id).
 - **Category management** — create-only. Backend has update and delete
   endpoints (`backend/internal/services/categories/{update,delete}.go`)
   with no client action or UI calling either.
