@@ -57,7 +57,7 @@ export async function POST(req: Request) {
           avatar_id: "",
           bio: "",
           email_verified:
-            email_addresses?.[0]?.verification?.status ?? "unverified",
+            email_addresses?.[0]?.verification?.status === "unverified"? false:true,
         }),
       });
 
