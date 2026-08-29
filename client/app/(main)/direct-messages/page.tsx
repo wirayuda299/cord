@@ -55,7 +55,7 @@ export default async function DirectMessagesPage() {
           <p className="text-xs font-semibold uppercase tracking-widest text-zinc-500 mb-3">
             All Friends
           </p>
-          <Suspense defer fallback={<phantom-ui loading />}>
+          <Suspense defer fallback={<p>Loading....</p>}>
             <AllFriends />
           </Suspense>
         </>
@@ -69,7 +69,7 @@ export default async function DirectMessagesPage() {
         <p className="text-xs font-semibold uppercase tracking-widest text-zinc-500 mb-3">
           Online
         </p>
-        <Suspense defer fallback={<phantom-ui loading />}>
+        <Suspense defer fallback={<p>Loading....</p>}>
           <AllFriends filter="online" />
         </Suspense>
       </TabsContent>

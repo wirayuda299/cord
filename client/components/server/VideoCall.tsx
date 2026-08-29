@@ -34,7 +34,7 @@ export default function VideoCall({ room, serverId }: { room: string; serverId: 
     })();
   }, [room]);
 
-  if (!token) return <phantom-ui loading className="fixed inset-x-0 top-0 min-h-dvh md:min-h-screen block" />;
+  if (!token) return <p>Loading...</p>;
 
   return (
     <LiveKitRoom

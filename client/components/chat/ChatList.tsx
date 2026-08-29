@@ -184,10 +184,10 @@ export default function ChatList({
     bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
   }, [messages]);
 
+  if (isLoading) return <p>loading permission</p>;
   if (error) return <p>{error}</p>;
 
   return (
-    <phantom-ui loading={isLoading}>
     <div className="flex h-full min-h-0 flex-1">
       <div className="flex flex-col flex-1 min-h-0 min-w-0">
         {isThread && (
@@ -263,6 +263,5 @@ export default function ChatList({
         />
       )}
     </div>
-    </phantom-ui>
   );
 }

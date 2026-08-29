@@ -312,8 +312,9 @@ export default function AuditLog({ serverId }: { serverId: string }) {
           <div className="min-w-0">
             <h2 className="font-semibold text-xl">Audit Log</h2>
             <p className="text-sm text-white/40 mt-0.5">
-              {status !== "loading" &&
-                `${filtered.length} of ${logs.length} action${logs.length !== 1 ? "s" : ""}`}
+              {status === "loading"
+                ? "Loading…"
+                : `${filtered.length} of ${logs.length} action${logs.length !== 1 ? "s" : ""}`}
             </p>
           </div>
         </div>
