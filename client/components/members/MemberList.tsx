@@ -106,25 +106,25 @@ function MemberList({
         isOpen ? "translate-x-0" : "translate-x-full md:w-0",
       )}
     >
-      <ScrollArea className="h-full w-60 overflow-y-auto bg-zinc-800 px-2 pt-2 pb-20 font-sans">
-        {error ? (
-          <p className="p-2 text-sm text-red-500">Failed to load members</p>
-        ) : isLoading ? (
-          <p className="p-2 text-sm text-zinc-500">Loading…</p>
-        ) : (
-          <>
-            <SectionLabel setIsMemberOpen={setIsMemberOpen} label={`Online — ${onlineCount}`} />
-            {data?.map((member) => (
-              <MemberRow
-                key={member.id}
-                isOwner={member.user_id === serverOwner}
-                member={member}
-                isOnline={!!onlineIds?.has(member.user_id)}
-              />
-            ))}
-          </>
-        )}
-      </ScrollArea>
+      <phantom-ui loading={isLoading}>
+        <ScrollArea className="h-full w-60 overflow-y-auto bg-zinc-800 px-2 pt-2 pb-20 font-sans">
+          {error ? (
+            <p className="p-2 text-sm text-red-500">Failed to load members</p>
+          ) : (
+            <>
+              <SectionLabel setIsMemberOpen={setIsMemberOpen} label={`Online — ${onlineCount}`} />
+              {data?.map((member) => (
+                <MemberRow
+                  key={member.id}
+                  isOwner={member.user_id === serverOwner}
+                  member={member}
+                  isOnline={!!onlineIds?.has(member.user_id)}
+                />
+              ))}
+            </>
+          )}
+        </ScrollArea>
+      </phantom-ui>
     </div>
   );
 }
