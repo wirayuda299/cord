@@ -90,7 +90,7 @@ function BanRow({ member, onUnban }: { member: BannedMember; onUnban: () => void
       <button
         type="button"
         onClick={onUnban}
-        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-white/30 hover:text-green-400 hover:bg-green-500/10 border border-transparent hover:border-green-500/20 transition-all opacity-0 group-hover:opacity-100"
+        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-white/30 hover:text-green-400 hover:bg-green-500/10 border border-transparent hover:border-green-500/20 transition-all opacity-100 md:opacity-0 md:group-hover:opacity-100"
       >
         <RotateCcw size={12} />
         Unban

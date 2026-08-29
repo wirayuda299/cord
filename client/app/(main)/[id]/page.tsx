@@ -56,7 +56,7 @@ export default async function ServerDetail({
     channels.categories.flatMap(cat => cat.channels).find(c => c.channel_type === 'text')
 
   return (
-    <div className="flex-1 bg-surface-content flex flex-col h-screen overflow-hidden">
+    <div className="flex-1 bg-surface-content flex flex-col h-dvh overflow-hidden">
       <ServerDetailHeader serverName={server.name} />
       <div className="flex-1 min-h-0 overflow-y-auto p-4 sm:p-6 space-y-6 lg:border-r lg:border-white/5">
         <div className="relative rounded-3xl overflow-hidden bg-linear-to-br from-indigo-900/40 via-surface-chat to-overlay border border-white/5 p-6 sm:p-8 flex flex-col sm:flex-row items-center gap-6 shadow-xl">

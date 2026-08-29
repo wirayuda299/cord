@@ -319,7 +319,7 @@ function ServerSettingDialog({
         }}
         className="min-w-full h-dvh max-h-dvh rounded-none bg-surface-base p-0 border-none ring-0"
       >
-        <div className="flex h-full w-full max-h-svh">
+        <div className="flex h-full w-full max-h-full">
           <SettingsSidebar
             serverName={serverName}
             active={active}

@@ -25,7 +25,7 @@ export default async function DirectMessagesPage() {
   return (
     <Tabs
       defaultValue="all"
-      className="flex flex-col w-full h-screen bg-sidebar-secondary"
+      className="flex flex-col w-full h-dvh bg-sidebar-secondary"
     >
       <div className="flex items-center gap-2 sm:gap-4 px-2 sm:px-4 h-12 border-b border-white/5 shrink-0 overflow-x-auto">
         <OpenConversationsButton />

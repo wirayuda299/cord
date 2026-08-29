@@ -34,7 +34,7 @@ export function FilePreview({ attached, onRemove }: FilePreviewProps) {
         onClick={onRemove}
         type="button"
         aria-label="Remove file"
-        className="absolute -top-2 -right-2 size-5 bg-destructive hover:bg-destructive-hover rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-10"
+        className="absolute -top-2 -right-2 size-5 bg-destructive hover:bg-destructive-hover rounded-full flex items-center justify-center opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity z-10"
       >
         <X size={12} className="text-white" />
       </button>

@@ -261,7 +261,7 @@ function MemberRow({
 
       <DropdownMenu>
         <DropdownMenuTrigger
-          className="opacity-0 group-hover:opacity-100 transition-opacity shrink-0 p-1.5 rounded hover:bg-white/10 text-[#949ba4] hover:text-white"
+          className="opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity shrink-0 p-1.5 rounded hover:bg-white/10 text-[#949ba4] hover:text-white"
           onClick={(e) => e.stopPropagation()}
         >
           <MoreHorizontal size={15} />
