@@ -46,7 +46,7 @@ export default async function DirectMessageDetail({
 
   return (
     <phantom-ui>
-      <div className="w-full bg-surface-content h-screen overflow-hidden flex flex-col">
+      <div className="w-full bg-surface-content h-dvh overflow-hidden flex flex-col">
         <header className="h-14 shrink-0 px-2.5 sm:px-4 shadow gap-2 sm:gap-3 border-b border-gray-600/50 flex items-center">
           <OpenConversationsButton />
           <div className="flex size-8 items-center justify-center rounded-full bg-discord-brand/70 text-sm font-semibold text-white overflow-hidden shrink-0">

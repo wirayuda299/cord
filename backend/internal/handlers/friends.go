@@ -10,11 +10,12 @@ import (
 )
 
 type FriendsHandler struct {
-	db *databases.Container
+	db  *databases.Container
+	hub friends.Notifier
 }
 
-func NewFriendHandler(db *databases.Container) *FriendsHandler {
-	return &FriendsHandler{db: db}
+func NewFriendHandler(db *databases.Container, hub friends.Notifier) *FriendsHandler {
+	return &FriendsHandler{db: db, hub: hub}
 }
 
 type PendingRequestPayload struct {
@@ -81,7 +82,7 @@ func (fh *FriendsHandler) AcceptFriendRequest(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	err := friends.AcceptFriendRequest(r.Context(), fh.db, &p)
+	err := friends.AcceptFriendRequest(r.Context(), fh.db, fh.hub, &p)
 	if err != nil {
 		httputil.WriteErrorResponse(w, err.Err.Error(), err.Code)
 		return

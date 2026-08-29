@@ -10,7 +10,7 @@ export default async function DirectMessagesLayout({ children }: { children: Rea
   const conversations = await getAllConversations()
 
   return (
-    <div className="flex w-full min-h-screen max-h-screen overflow-hidden">
+    <div className="flex w-full min-h-dvh max-h-dvh overflow-hidden">
       <ConversationListDrawer conversations={conversations} />
       <main className="flex-1 min-w-0 overflow-hidden">{children}</main>
     </div>

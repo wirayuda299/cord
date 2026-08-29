@@ -28,7 +28,7 @@ function FriendRow({ avatar_url, username, user_id }: FriendListItem) {
           </p>
         </div>
       </div>
-      <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
+      <div className="flex items-center gap-2 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity shrink-0">
         <form action={startConversation}>
           <input type="hidden" name="targeted_user_id" value={user_id} />
           <button

@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter, usePathname } from "next/navigation";
+import { mutate as globalMutate } from "swr";
 import { useWebSocket } from "@/hooks/useWebsocket";
 import { useAppStore } from "@/stores/store";
 
@@ -41,6 +42,12 @@ export default function PresenceProvider() {
           router.push("/direct-messages");
         }
         router.refresh();
+      } else if (ev && ev.type === "friend_accepted") {
+        // Only the accepter's own request response updates their UI —
+        // the requester (us, here) gets nothing else, so nudge both the
+        // server-rendered friends list and the client-cached pending list.
+        router.refresh();
+        globalMutate("/api/friends");
       }
     },
   });

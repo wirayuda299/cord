@@ -27,7 +27,7 @@ export default function RootLayout({
         lang="en"
         className={`${notoSans.variable} h-full antialiased`}
       >
-        <body className="min-h-screen max-h-svh bg-overlay overflow-hidden">
+        <body className="min-h-dvh max-h-dvh bg-overlay overflow-hidden">
           {children}
         </body>
         <Script

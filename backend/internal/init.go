@@ -67,7 +67,7 @@ func (s *Server) Run() {
 	mrh := handlers.NewMemberHandler(s.db, hub)
 	ih := handlers.NewInvitationHandler(s.db, hub)
 	uh := handlers.NewUserHandler(s.db)
-	fh := handlers.NewFriendHandler(s.db)
+	fh := handlers.NewFriendHandler(s.db, hub)
 	crh := handlers.NewConversationHandler(s.db)
 	th := handlers.NewThreadHandler(s.db, hub)
 	ssh := handlers.NewSafetySetupHandler(s.db, hub)

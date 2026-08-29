@@ -16,7 +16,11 @@ type AcceptFriendRequestPayload struct {
 	ID string `json:"id"`
 }
 
-func AcceptFriendRequest(ctx context.Context, db *databases.Container, p *AcceptFriendRequestPayload) *httputil.ErrorResponse {
+type Notifier interface {
+	NotifyUser(userId string, payload any)
+}
+
+func AcceptFriendRequest(ctx context.Context, db *databases.Container, hub Notifier, p *AcceptFriendRequestPayload) *httputil.ErrorResponse {
 	userID, err := utils.GetSession(ctx)
 	if err != nil {
 		return &httputil.ErrorResponse{Err: err, Code: http.StatusUnauthorized}
@@ -28,8 +32,8 @@ func AcceptFriendRequest(ctx context.Context, db *databases.Container, p *Accept
 		return &httputil.ErrorResponse{Err: errors.New("request id is missing"), Code: http.StatusBadRequest}
 	}
 
-	var addresseeID string
-	err = db.Postgres.QueryRow(ctx, `SELECT addressee_id FROM friends WHERE id = $1`, p.ID).Scan(&addresseeID)
+	var addresseeID, requesterID string
+	err = db.Postgres.QueryRow(ctx, `SELECT addressee_id, requester_id FROM friends WHERE id = $1`, p.ID).Scan(&addresseeID, &requesterID)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return &httputil.ErrorResponse{Err: errors.New("friend request not found"), Code: http.StatusNotFound}
@@ -58,6 +62,15 @@ func AcceptFriendRequest(ctx context.Context, db *databases.Container, p *Accept
 
 	if err = tx.Commit(ctx); err != nil {
 		return &httputil.ErrorResponse{Err: err, Code: http.StatusInternalServerError}
+	}
+
+	// The addressee (current user) already sees the accept in their own UI
+	// via the request's response. Push the requester a nudge so their
+	// pending/friends lists update live instead of waiting on a reload.
+	if hub != nil {
+		hub.NotifyUser(requesterID, map[string]string{
+			"type": "friend_accepted",
+		})
 	}
 
 	return nil

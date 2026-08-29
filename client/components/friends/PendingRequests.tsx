@@ -92,7 +92,7 @@ export default function PendingRequests({ currentUser }: { currentUser: string }
                                  </p>*/}
                     </div>
                   </div>
-                  <div className="flex items-center gap-2 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <div className="flex items-center gap-2 shrink-0 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
                     <button
                       onClick={() => accept(req.id)}
                       title="Accept"
@@ -139,7 +139,7 @@ export default function PendingRequests({ currentUser }: { currentUser: string }
                                  </p>*/}
                     </div>
                   </div>
-                  <div className="flex items-center gap-2 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <div className="flex items-center gap-2 shrink-0 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
                     <div className="flex items-center gap-1.5 text-xs text-zinc-500 mr-1">
                       <Clock size={13} />
                       <span>Pending</span>

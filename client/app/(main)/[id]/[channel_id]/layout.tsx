@@ -42,7 +42,7 @@ export default async function ChannelLayout({
   )
 
   return (
-    <div className="w-full bg-surface-content h-screen overflow-hidden flex flex-col">
+    <div className="w-full bg-surface-content h-dvh overflow-hidden flex flex-col">
       <ChannelHeader channel={channel} actions={actions} />
       {children}
     </div>
