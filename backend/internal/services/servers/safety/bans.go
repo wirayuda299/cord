@@ -15,6 +15,7 @@ import (
 
 type Evictor interface {
 	EvictUser(serverId, userId string)
+	NotifyUser(userId string, payload any)
 }
 
 type BanMemberPayload struct {
@@ -76,7 +77,9 @@ func BanMember(ctx context.Context, db *databases.Container, hub Evictor, p *Ban
 	}
 	defer tx.Rollback(ctx)
 
-	// Clean up roles (but keep member so they are not removed from server)
+	// Clean up roles and membership — a ban removes them from the server
+	// just like a kick. The dedicated bans list (FindBannedMembers below)
+	// reads from the bans table, not members, so it still shows them.
 	_, _ = tx.Exec(ctx, "DELETE FROM user_roles WHERE user_id = $1 AND server_id = $2", p.MemberID, p.ServerID)
 
 	// Insert into bans
@@ -85,6 +88,11 @@ func BanMember(ctx context.Context, db *databases.Container, hub Evictor, p *Ban
 		VALUES ($1, $2, $3, $4)
 		ON CONFLICT (server_id, user_id) DO UPDATE SET reason = EXCLUDED.reason
 	`, p.ServerID, p.MemberID, p.Reason, currentUser)
+	if err != nil {
+		return &httputil.ErrorResponse{Err: err, Code: http.StatusInternalServerError}
+	}
+
+	_, err = tx.Exec(ctx, "DELETE FROM members WHERE user_id = $1 AND server_id = $2", p.MemberID, p.ServerID)
 	if err != nil {
 		return &httputil.ErrorResponse{Err: err, Code: http.StatusInternalServerError}
 	}
@@ -109,6 +117,11 @@ func BanMember(ctx context.Context, db *databases.Container, hub Evictor, p *Ban
 	// Evict from active websockets immediately
 	if hub != nil {
 		hub.EvictUser(p.ServerID, p.MemberID)
+		hub.NotifyUser(p.MemberID, map[string]string{
+			"type":      "removed_from_server",
+			"server_id": p.ServerID,
+			"reason":    "banned",
+		})
 	}
 
 	return nil

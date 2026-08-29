@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter, usePathname } from "next/navigation";
 import { useWebSocket } from "@/hooks/useWebsocket";
 import { useAppStore } from "@/stores/store";
 
@@ -14,6 +15,8 @@ export default function PresenceProvider() {
   const setOnlineUserIds = useAppStore((s) => s.setOnlineUserIds);
   const addOnlineUser = useAppStore((s) => s.addOnlineUser);
   const removeOnlineUser = useAppStore((s) => s.removeOnlineUser);
+  const router = useRouter();
+  const pathname = usePathname();
 
   useWebSocket("", "", {
     onMessage: () => {},
@@ -24,6 +27,20 @@ export default function PresenceProvider() {
       } else if (ev && ev.type === "user_status") {
         if (ev.action === "connected") addOnlineUser(ev.user_id);
         else if (ev.action === "disconnected") removeOnlineUser(ev.user_id);
+      } else if (ev && ev.type === "removed_from_server") {
+        // Backend already busted the "servers" cache tag on its side
+        // (read-your-own-writes only covers the actor who kicked/banned
+        // us) — refresh so our own sidebar picks up the fresh list, and
+        // bounce out if we're currently sitting inside that server.
+        if (pathname?.startsWith(`/${ev.server_id}`)) {
+          alert(
+            ev.reason === "banned"
+              ? "You were banned from this server."
+              : "You were kicked from this server.",
+          );
+          router.push("/direct-messages");
+        }
+        router.refresh();
       }
     },
   });

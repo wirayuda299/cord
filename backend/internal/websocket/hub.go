@@ -321,6 +321,35 @@ func (h *Hub) BroadcastMessages(serverId, channelId string, messages []services.
 	}
 }
 
+// NotifyUser sends an event to every global-presence connection (served
+// with serverId="" channelId="") belonging to userId. No-op if the user
+// has no such connection open.
+func (h *Hub) NotifyUser(userId string, payload any) {
+	data, err := json.Marshal(payload)
+	if err != nil {
+		log.Printf("NotifyUser: failed to marshal payload: %v", err)
+		return
+	}
+
+	h.mu.RLock()
+	defer h.mu.RUnlock()
+
+	channels, ok := h.clients[""]
+	if !ok {
+		return
+	}
+	for _, clients := range channels {
+		for client := range clients {
+			if client.UserID == userId {
+				select {
+				case client.send <- data:
+				default:
+				}
+			}
+		}
+	}
+}
+
 func (h *Hub) EvictUser(serverId, userId string) {
 	h.mu.Lock()
 	defer h.mu.Unlock()

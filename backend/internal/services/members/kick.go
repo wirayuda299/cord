@@ -36,6 +36,7 @@ func kick(ctx context.Context, db *databases.Container, member_user_id, server_i
 
 type Evictor interface {
 	EvictUser(serverId, userId string)
+	NotifyUser(userId string, payload any)
 }
 
 type KickMemberPayload struct {
@@ -131,6 +132,11 @@ func KickMember(ctx context.Context, db *databases.Container, hub Evictor, p Kic
 
 	if hub != nil {
 		hub.EvictUser(p.ServerID, p.MemberID)
+		hub.NotifyUser(p.MemberID, map[string]string{
+			"type":      "removed_from_server",
+			"server_id": p.ServerID,
+			"reason":    "kicked",
+		})
 	}
 
 	return nil

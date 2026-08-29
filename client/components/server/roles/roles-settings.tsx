@@ -6,7 +6,9 @@ import { Role } from "@/types/role"
 import RoleList from "./list"
 import RoleDetailView from "./role-detail-view"
 import RoleFormView from "./role-form-view"
-import { getAllMembers } from "@/lib/api/members"
+import { apiFetcher } from "@/lib/fetcher";
+import { Member } from "@/types/server";
+
 
 type View = "list" | "create" | "detail" | "edit"
 
@@ -22,7 +24,7 @@ export default function RolesSettings({
   const [editPermissions, setEditPermissions] = useState<string[]>([])
   const { data: members } = useSWR(
     serverID ? ["/api/members", serverID] : null,
-    () => getAllMembers(serverID)
+ () => apiFetcher<Member[]>(`members/find-all?serverID=${serverID}`)
   )
   const memberCounts = useMemo(() => {
     const counts: Record<string, number> = {}

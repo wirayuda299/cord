@@ -2,9 +2,10 @@ import { memo } from "react";
 import { cn } from "@/lib/utils";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import useSWR from "swr";
-import { getAllMembers, Member } from "@/lib/api/members";
 import { X } from "lucide-react";
 import { Avatar, getInitials, avatarColorFromSeed } from "@/components/ui/avatar";
+import { apiFetcher } from "@/lib/fetcher";
+import { Member } from "@/types/server";
 
 const MemberRow = memo(
   ({
@@ -57,6 +58,7 @@ type SectionLabelProps = {
   label: string;
   setIsMemberOpen: () => void
 };
+
 const SectionLabel = memo(({ label, setIsMemberOpen }: SectionLabelProps) => {
   return (
     <p className="text-[11px] flex items-center justify-between font-medium text-zinc-500 uppercase tracking-widest px-2 pt-2 pb-1">
@@ -68,6 +70,7 @@ const SectionLabel = memo(({ label, setIsMemberOpen }: SectionLabelProps) => {
     </p>
   );
 });
+
 SectionLabel.displayName = "SectionLabel";
 
 type MemberListProps = {
@@ -87,7 +90,7 @@ function MemberList({
 }: MemberListProps) {
   const { data, error, isLoading } = useSWR(
     isOpen ? "/api/members" : null,
-    () => getAllMembers(serverId),
+    () => apiFetcher<Member[]>(`members/find-all?serverID=${serverId}`),
   );
 
   const onlineCount = data

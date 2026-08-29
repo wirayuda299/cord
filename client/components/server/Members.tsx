@@ -23,8 +23,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import useSWR from "swr";
-import { getAllMembers, Member } from "@/lib/api/members";
+import useSWR, { mutate as globalMutate } from "swr";
 import { kickMember, banMember, unbanMember } from "@/lib/actions/servers";
 import { getAllRoles, unassignRole } from "@/lib/api/roles";
 import { Role } from "@/types/role";
@@ -35,6 +34,8 @@ import { PermissionKey } from "@/constants/permissions";
 import { Avatar, getInitials, avatarColorFromSeed } from "@/components/ui/avatar";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { useAppStore } from "@/stores/store";
+import { Member } from "@/types/server";
+import { apiFetcher } from "@/lib/fetcher";
 
 function MemberAvatar({ member }: { member: Member }) {
   const isOnline = useAppStore((s) => s.onlineUserIds.has(member.user_id));
@@ -65,6 +66,35 @@ function RoleBadge({ name, color }: { name: string; color: string }) {
       />
       {name}
     </span>
+  );
+}
+
+function KickConfirmDialog({
+  username,
+  onConfirm,
+  onCancel,
+}: {
+  username: string;
+  onConfirm: () => void;
+  onCancel: () => void;
+}) {
+  return (
+    <ConfirmDialog
+      icon={<UserX size={20} />}
+      tone="danger"
+      title={`Kick ${username}`}
+      subtitle="Are you sure you want to kick this member?"
+      description={
+        <>
+          Kicking{" "}
+          <span className="text-white font-medium">{username}</span> will
+          remove them from the server. They can rejoin with a new invite.
+        </>
+      }
+      confirmLabel="Kick"
+      onConfirm={onConfirm}
+      onCancel={onCancel}
+    />
   );
 }
 
@@ -158,14 +188,17 @@ function MemberRow({
   };
 
   const [showBanDialog, setShowBanDialog] = useState(false);
+  const [showKickDialog, setShowKickDialog] = useState(false);
 
-  const handleKickMember = async (member: string) => {
+  const handleKickMember = async () => {
     try {
-      const res = await kickMember(member, serverID);
+      const res = await kickMember(member.user_id, serverID);
       if (!res.success) {
         throw new Error(res.message);
       }
+      setShowKickDialog(false);
       onMutate();
+      globalMutate("/api/members");
     } catch (e) {
       alert(e instanceof Error ? e.message : String(e));
     }
@@ -179,6 +212,7 @@ function MemberRow({
       }
       setShowBanDialog(false);
       onMutate();
+      globalMutate("/api/members");
     } catch (e) {
       alert(e instanceof Error ? e.message : String(e));
     }
@@ -322,7 +356,7 @@ function MemberRow({
             <>
               {hasKickMemberPerm && (
                 <DropdownMenuItem
-                  onClick={() => handleKickMember(member.user_id)}
+                  onClick={() => setShowKickDialog(true)}
                   variant="destructive"
                   className="gap-2 text-xs cursor-pointer px-2 py-1.5 rounded"
                 >
@@ -353,6 +387,13 @@ function MemberRow({
           )}
         </DropdownMenuContent>
       </DropdownMenu>
+      {showKickDialog && (
+        <KickConfirmDialog
+          username={member.username}
+          onConfirm={handleKickMember}
+          onCancel={() => setShowKickDialog(false)}
+        />
+      )}
       {showBanDialog && (
         <BanConfirmDialog
           username={member.username}
@@ -398,7 +439,8 @@ export default function Members({
     data: members,
     isLoading,
     mutate,
-  } = useSWR(`/api/members/${serverID}`, () => getAllMembers(serverID));
+  } = useSWR(`/api/members/${serverID}`,  () => apiFetcher<Member[]>(`members/find-all?serverID=${serverID}`));
+
   const { data: allRoles = [] } = useSWR(
     `/api/roles/${serverID}`,
     () => getAllRoles(serverID),
@@ -440,7 +482,7 @@ export default function Members({
             </div>
           </div>
 
-          <div className="flex items-center gap-2 bg-[#1e1f22] border border-white/10 rounded-lg px-3 py-2 focus-within:border-[#5865f2] transition-colors">
+          <div className="flex items-center gap-2 bg-[#1e1f22] border border-white/10 rounded-lg px-3 py-2 transition-colors">
             <Search size={13} className="text-[#6d6f78] shrink-0" />
             <input
               type="text"

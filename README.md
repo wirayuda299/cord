@@ -61,9 +61,15 @@ routes/handlers), not from memory — last checked 2026-08-29 (post presence/DM/
 - **Roles & permissions** — create/edit/delete roles, assign/unassign
   members, per-permission checks gating almost every UI action
   server-side and client-side.
-- **Server moderation** — ban (with reason, confirm dialog), unban
-  (confirm dialog), ban list with search, audit log (filterable,
-  real backend-persisted events via a Redis queue + worker).
+- **Server moderation** — kick (confirm dialog), ban (with reason,
+  confirm dialog, now actually removes membership like a kick — the
+  dedicated ban list still shows them via the separate `bans` table),
+  unban (confirm dialog), ban list with search, audit log (filterable,
+  real backend-persisted events via a Redis queue + worker). Both kick
+  and ban push a live `removed_from_server` event over the kicked/
+  banned user's own presence socket, so their sidebar drops the server
+  and they're bounced out immediately if they were inside it — no
+  reload needed.
 - **Server safety settings** — get/update verification level, content
   filter, default notifications.
 - **Invitations** — create, list, delete, join-by-code.
@@ -74,10 +80,6 @@ routes/handlers), not from memory — last checked 2026-08-29 (post presence/DM/
   server icons/banners, and chat attachments.
 
 ### Partially implemented / has known gaps
-- **Kick member** — works, and now revalidates the kicked user's
-  server-list cache (`updateTag("servers")`), but still fires
-  immediately on click with no confirmation dialog, unlike ban/unban
-  which both confirm first. Inconsistent, easy to mis-click.
 - **Channel management** — create, rename, and edit topic. Still no UI
   to delete a channel or move it between categories, and no way to
   change a channel's type after creation — even though the backend
