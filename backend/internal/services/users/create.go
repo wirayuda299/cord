@@ -16,7 +16,7 @@ type CreateUserPayload struct {
 	AvatarURL     string `json:"avatar_url"`
 	AvatarID      string `json:"avatar_id"`
 	Bio           string `json:"bio"`
-	EmailVerified string `json:"email_verified"`
+	EmailVerified bool   `json:"email_verified"`
 }
 
 func CreateUser(ctx context.Context, db *databases.Container, p *CreateUserPayload) *httputil.ErrorResponse {
