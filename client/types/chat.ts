@@ -1,4 +1,4 @@
-export type Reaction = {
+type Reaction = {
   user_id: string;
   emoji: string;
 };

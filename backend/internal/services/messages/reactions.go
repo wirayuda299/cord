@@ -10,11 +10,6 @@ import (
 	"github.com/wirayuda299/backend/internal/utils"
 )
 
-type Reaction struct {
-	UserID string `json:"user_id"`
-	Emoji  string `json:"emoji"`
-}
-
 type ReactionPayload struct {
 	MessageID string `json:"message_id"`
 	Emoji     string `json:"emoji"`
@@ -117,64 +112,3 @@ func RemoveReaction(ctx context.Context, db *databases.Container, p *ReactionPay
 	return nil
 }
 
-func GetReactionsByMessageID(ctx context.Context, db *databases.Container, messageID string) ([]Reaction, *httputil.ErrorResponse) {
-	if messageID == "" {
-		return nil, &httputil.ErrorResponse{Err: errors.New("message id is missing"), Code: http.StatusBadRequest}
-	}
-
-	rows, err := db.Postgres.Query(ctx, `
-		SELECT user_id, emoji FROM reactions WHERE message_id = $1
-	`, messageID)
-	if err != nil {
-		return nil, &httputil.ErrorResponse{Err: err, Code: http.StatusInternalServerError}
-	}
-	defer rows.Close()
-
-	reactions := make([]Reaction, 0)
-	for rows.Next() {
-		var r Reaction
-		if err := rows.Scan(&r.UserID, &r.Emoji); err != nil {
-			return nil, &httputil.ErrorResponse{Err: err, Code: http.StatusInternalServerError}
-		}
-		reactions = append(reactions, r)
-	}
-
-	if err := rows.Err(); err != nil {
-		return nil, &httputil.ErrorResponse{Err: err, Code: http.StatusInternalServerError}
-	}
-
-	return reactions, nil
-}
-
-func GetReactionsByChannelID(ctx context.Context, db *databases.Container, channelID string) (map[string][]Reaction, *httputil.ErrorResponse) {
-	if channelID == "" {
-		return nil, &httputil.ErrorResponse{Err: errors.New("channel id is missing"), Code: http.StatusBadRequest}
-	}
-
-	rows, err := db.Postgres.Query(ctx, `
-		SELECT r.message_id, r.user_id, r.emoji
-		FROM reactions r
-		JOIN messages m ON m.id = r.message_id
-		WHERE m.channel_id = $1
-	`, channelID)
-	if err != nil {
-		return nil, &httputil.ErrorResponse{Err: err, Code: http.StatusInternalServerError}
-	}
-	defer rows.Close()
-
-	reactions := make(map[string][]Reaction)
-	for rows.Next() {
-		var msgID string
-		var r Reaction
-		if err := rows.Scan(&msgID, &r.UserID, &r.Emoji); err != nil {
-			return nil, &httputil.ErrorResponse{Err: err, Code: http.StatusInternalServerError}
-		}
-		reactions[msgID] = append(reactions[msgID], r)
-	}
-
-	if err := rows.Err(); err != nil {
-		return nil, &httputil.ErrorResponse{Err: err, Code: http.StatusInternalServerError}
-	}
-
-	return reactions, nil
-}

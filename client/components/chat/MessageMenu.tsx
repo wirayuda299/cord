@@ -19,7 +19,6 @@ import { deleteMessage, pinMessage } from "@/lib/actions/messages";
 import type { Message } from "@/types/chat";
 import { usePathname } from "next/navigation";
 import { useAppStore } from "@/stores/store";
-import z from "zod";
 
 import CreateThreadForm from "./CreateThreadForm";
 
@@ -291,16 +290,6 @@ function useMenuActions(
     [hasPermissionManageMessages, userId, message, onEdit, onForward, toggleEmojiPicker, onBookmark, onMore, selectMessage, serverId, pathname, onDelete, isBanned],
   );
 }
-
-export const threadSchema = z.object({
-  name: z.string().min(4).max(50),
-  message_id: z.string(),
-  channel_id: z.string(),
-  created_by: z.string()
-})
-
-export type CreateThreadSchemaType = z.infer<typeof threadSchema>
-
 
 function MessageMenu(props: MessageMenuProps) {
   const {

@@ -49,7 +49,6 @@ export default function ChatList({
   const {
     data: allowed,
     error,
-    isLoading,
   } = useSWR(isServerChannel ? ["/api/has-perm", serverId] : null, () =>
     hasPermission(serverId, PermissionKey.ManageMessage),
   );
@@ -184,7 +183,7 @@ export default function ChatList({
     bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
   }, [messages]);
 
-  if (isLoading) return <p>loading permission</p>;
+
   if (error) return <p>{error}</p>;
 
   return (

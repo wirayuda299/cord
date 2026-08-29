@@ -6,7 +6,3 @@ export type Channel = {
   topic: string
   created_by: string
 }
-
-export type ChannelsGrouped = {
-  channels: Channel[]
-}

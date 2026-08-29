@@ -6,6 +6,7 @@ import { X } from "lucide-react";
 import { Avatar, getInitials, avatarColorFromSeed } from "@/components/ui/avatar";
 import { apiFetcher } from "@/lib/fetcher";
 import { Member } from "@/types/server";
+import { Spinner } from "@/components/ui/spinner";
 
 const MemberRow = memo(
   ({
@@ -110,7 +111,9 @@ function MemberList({
         {error ? (
           <p className="p-2 text-sm text-red-500">Failed to load members</p>
         ) : isLoading ? (
-          <p className="p-2 text-sm text-zinc-500">Loading…</p>
+          <div className="flex justify-center py-6">
+            <Spinner size={18} />
+          </div>
         ) : (
           <>
             <SectionLabel setIsMemberOpen={setIsMemberOpen} label={`Online — ${onlineCount}`} />

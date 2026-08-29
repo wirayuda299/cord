@@ -16,13 +16,13 @@ import { createThread } from "@/lib/actions/messages";
 import { useRouter } from "next/navigation";
 import { Button } from "../ui/button";
 
-export const threadSchema = z.object({
+const threadSchema = z.object({
   name: z.string().min(4).max(50),
   message_id: z.string(),
   channel_id: z.string(),
 })
 
-export type CreateThreadSchemaType = z.infer<typeof threadSchema>
+type CreateThreadSchemaType = z.infer<typeof threadSchema>
 
 export default function CreateThreadForm({
   channel_id,

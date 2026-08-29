@@ -13,6 +13,7 @@ import { Track } from "livekit-client";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "@clerk/nextjs";
+import PulseLoader from "../shared/PulseLoader";
 
 export default function VideoCall({ room, serverId }: { room: string; serverId: string }) {
   const [token, setToken] = useState('');
@@ -34,7 +35,7 @@ export default function VideoCall({ room, serverId }: { room: string; serverId: 
     })();
   }, [room]);
 
-  if (!token) return <p>Loading...</p>;
+  if (!token) return <PulseLoader/>
 
   return (
     <LiveKitRoom

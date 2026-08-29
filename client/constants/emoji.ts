@@ -100,15 +100,3 @@ export const topEmojies = [
   { emoji: '🙏', code: 'U+1F64F' },
 ] as const;
 
-export const discordEmojis = [
-  { name: 'joy', emoji: '😂', code: 'U+1F602' },
-  { name: 'fire', emoji: '🔥', code: 'U+1F525' },
-  { name: 'thumbsup_tone1', emoji: '👍🏻', code: 'U+1F44D U+1F3FB' },
-  { name: 'pray_tone1', emoji: '🙏🏻', code: 'U+1F64F U+1F3FB' },
-  { name: 'v_tone1', emoji: '✌🏻', code: 'U+270C U+1F3FB' },
-  { name: 'kissing_heart', emoji: '😘', code: 'U+1F618' },
-  { name: 'smiley', emoji: '😃', code: 'U+1F603' },
-  { name: 'grinning', emoji: '😀', code: 'U+1F600' },
-  { name: 'black_large_square', emoji: '⬛', code: 'U+2B1B' },
-  { name: 'confused', emoji: '😕', code: 'U+1F615' },
-] as const;

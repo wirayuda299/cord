@@ -19,14 +19,14 @@ export type ActionType =
   | "message_pinned"
   | "safety_setup_updated"
 
-export type AuditActor = {
+type AuditActor = {
   id: number
   name: string
   initials: string
   color: string
 }
 
-export type AuditChange = {
+type AuditChange = {
   field: string
   before: string
   after: string
@@ -78,163 +78,3 @@ export const CATEGORY_LABELS: Record<ActionCategory, string> = {
   invite: "Invite",
   message: "Message",
 }
-
-
-const alexknight: AuditActor = { id: 1, name: "alexknight", initials: "AK", color: "bg-indigo-500/20 text-indigo-400" }
-const sakura: AuditActor = { id: 2, name: "sakura_r", initials: "SR", color: "bg-yellow-500/20 text-yellow-400" }
-const frostbyte: AuditActor = { id: 11, name: "frost_byte", initials: "FB", color: "bg-sky-500/20 text-sky-400" }
-
-
-const d = (daysAgo: number, hoursAgo = 0) => {
-  const t = new Date("2026-04-13T12:00:00Z")
-  t.setDate(t.getDate() - daysAgo)
-  t.setHours(t.getHours() - hoursAgo)
-  return t
-}
-
-export const AUDIT_LOG: AuditEntry[] = [
-  {
-    id: "1",
-    type: "member_banned",
-    category: "member",
-    actor: alexknight,
-    target: "draven_x",
-    timestamp: d(0, 1),
-  },
-  {
-    id: "2",
-    type: "role_updated",
-    category: "role",
-    actor: sakura,
-    target: "@Moderator",
-    timestamp: d(0, 2),
-    changes: [
-      { field: "Kick Members", before: "false", after: "true" },
-      { field: "Ban Members", before: "false", after: "true" },
-      { field: "Manage Messages", before: "true", after: "true" },
-    ],
-  },
-  {
-    id: "3",
-    type: "channel_created",
-    category: "channel",
-    actor: alexknight,
-    target: "#announcements",
-    timestamp: d(0, 3),
-  },
-  {
-    id: "4",
-    type: "invite_created",
-    category: "invite",
-    actor: sakura,
-    target: "aB3xK9mZ2Q (max 10)",
-    timestamp: d(0, 5),
-  },
-  {
-    id: "5",
-    type: "member_timeout",
-    category: "member",
-    actor: frostbyte,
-    target: "neon_ghost",
-    timestamp: d(0, 7),
-  },
-  {
-    id: "6",
-    type: "server_updated",
-    category: "server",
-    actor: alexknight,
-    target: "server settings",
-    timestamp: d(1, 0),
-    changes: [
-      { field: "Verification Level", before: "None", after: "Low" },
-      { field: "Content Filter", before: "Disabled", after: "Scan roleless members" },
-    ],
-  },
-  {
-    id: "7",
-    type: "channel_updated",
-    category: "channel",
-    actor: sakura,
-    target: "#general",
-    timestamp: d(1, 2),
-    changes: [
-      { field: "Topic", before: "", after: "Welcome to the server! Read #rules first." },
-      { field: "NSFW", before: "false", after: "false" },
-    ],
-  },
-  {
-    id: "8",
-    type: "member_kicked",
-    category: "member",
-    actor: frostbyte,
-    target: "wraithmode",
-    timestamp: d(1, 4),
-  },
-  {
-    id: "9",
-    type: "role_created",
-    category: "role",
-    actor: alexknight,
-    target: "@VIP",
-    timestamp: d(2, 1),
-  },
-  {
-    id: "10",
-    type: "message_deleted",
-    category: "message",
-    actor: sakura,
-    target: "#general",
-    timestamp: d(2, 3),
-  },
-  {
-    id: "11",
-    type: "member_role_updated",
-    category: "member",
-    actor: alexknight,
-    target: "frost_byte",
-    timestamp: d(2, 5),
-    changes: [
-      { field: "Added role", before: "", after: "@Moderator" },
-    ],
-  },
-  {
-    id: "12",
-    type: "invite_deleted",
-    category: "invite",
-    actor: alexknight,
-    target: "xR7pL2qN5T",
-    timestamp: d(3, 0),
-  },
-  {
-    id: "13",
-    type: "channel_deleted",
-    category: "channel",
-    actor: alexknight,
-    target: "#old-announcements",
-    timestamp: d(3, 2),
-  },
-  {
-    id: "14",
-    type: "member_unbanned",
-    category: "member",
-    actor: alexknight,
-    target: "riptide99",
-    timestamp: d(4, 1),
-  },
-  {
-    id: "15",
-    type: "message_pinned",
-    category: "message",
-    actor: sakura,
-    target: "#rules",
-    timestamp: d(5, 3),
-  },
-  {
-    id: "16",
-    type: "role_deleted",
-    category: "role",
-    actor: alexknight,
-    target: "@Trial-Mod",
-    timestamp: d(6, 0),
-  },
-]

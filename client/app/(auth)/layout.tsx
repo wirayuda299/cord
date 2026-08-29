@@ -24,6 +24,7 @@ const FEATURES = [
   },
 ]
 
+// eslint-disable-next-line @clerk/next/require-auth-protection
 export default async function AuthLayout({
   children,
 }: {

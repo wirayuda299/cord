@@ -5,8 +5,6 @@ import type { ResponseMessage } from "@/types/chat";
 import { useAuth } from "@clerk/nextjs";
 import { useCallback, useEffect, useRef, useState } from "react";
 
-export type { Message } from "@/types/chat";
-
 export type ConnectionStatus =
    | "connecting"
    | "connected"

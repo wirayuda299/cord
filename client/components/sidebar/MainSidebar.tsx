@@ -1,7 +1,7 @@
 import Image from "next/image"
 import Link from "next/link"
 import dynamic from "next/dynamic"
-import { Compass } from "lucide-react"
+import { Compass, MessageCircle } from "lucide-react"
 
 import { getAllServers } from "@/lib/queries/servers"
 import { cn } from "@/lib/utils"
@@ -16,9 +16,9 @@ export default async function MainSidebar() {
     <aside className="flex gap-5 min-w-20 flex-col items-center min-h-screen w-20 max-h-screen p-3 bg-overlay overflow-y-auto ">
       <Link
         href="/direct-messages"
-        className="flex items-center justify-center w-12 h-12 min-h-12 bg-(--server-item) transition-all duration-500 rounded-md hover:bg-discord-blue"
+        className="flex items-center justify-center w-12 h-12 min-h-12 bg-(--server-item) transition-all duration-300 rounded-full hover:bg-discord-blue"
       >
-        <Image className="size-7" src="/vercel.svg" width={28} height={28} alt="logo" />
+         <MessageCircle className="text-white" size={20}/>
       </Link>
       <ul className="space-y-4">
         {servers?.map((server) => (

@@ -3,7 +3,7 @@ import { Category } from "@/types/category"
 import type { Message } from "@/types/chat"
 import { create } from "zustand"
 
-export type StoreState = {
+type StoreState = {
   selectedMsg: Message | null
   isMemberOpen: boolean
   selectedCategory: Category | null
@@ -12,7 +12,7 @@ export type StoreState = {
   onlineUserIds: Set<string>
 }
 
-export type StoreActions = {
+type StoreActions = {
   setSelectedMsg: (m: Message | null) => void
   toggleMemberPanel: () => void
   setSelectedCategory: (c: Category | null) => void
@@ -25,7 +25,7 @@ export type StoreActions = {
 
 export type AppStore = StoreState & StoreActions
 
-export const defaultInitState: StoreState = {
+const defaultInitState: StoreState = {
   selectedMsg: null,
   isMemberOpen: false,
   selectedCategory: null,
