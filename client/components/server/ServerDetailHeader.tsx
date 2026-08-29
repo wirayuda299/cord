@@ -8,14 +8,14 @@ type ServerDetailHeaderProps = {
 }
 
 export default function ServerDetailHeader({ serverName }: ServerDetailHeaderProps) {
-  const setSidebarOpen = useAppStore((state) => state.setSidebarOpen)
+  const setChannelSidebarOpen = useAppStore((state) => state.setChannelSidebarOpen)
 
   return (
     <header className="h-14 shrink-0 px-4 bg-surface-chat/50 backdrop-blur-md border-b border-white/5 flex items-center justify-between sticky top-0 z-20">
       <div className="flex items-center gap-3 h-full">
         <button
-          onClick={() => setSidebarOpen(true)}
-          aria-label="Open navigation sidebar"
+          onClick={() => setChannelSidebarOpen(true)}
+          aria-label="Open channel list"
           className="flex items-center justify-center size-8 rounded-md text-gray-400 hover:text-white hover:bg-white/10 transition-colors shrink-0 md:hidden cursor-pointer"
         >
           <Menu size={20} />

@@ -31,9 +31,8 @@ const MemberRow = memo(
         />
         <div className="flex-1 min-w-0">
           <p
-            className={`text-sm font-medium truncate ${
-              isOffline ? "text-zinc-500" : "text-zinc-200"
-            }`}
+            className={`text-sm font-medium truncate ${isOffline ? "text-zinc-500" : "text-zinc-200"
+              }`}
           >
             {member.username}
             {member.role && !isOwner && (
@@ -56,15 +55,15 @@ MemberRow.displayName = "MemberRow";
 
 type SectionLabelProps = {
   label: string;
-  setIsMemberOpen:()=>void
+  setIsMemberOpen: () => void
 };
-const SectionLabel = memo(({ label,setIsMemberOpen }: SectionLabelProps) => {
+const SectionLabel = memo(({ label, setIsMemberOpen }: SectionLabelProps) => {
   return (
     <p className="text-[11px] flex items-center justify-between font-medium text-zinc-500 uppercase tracking-widest px-2 pt-2 pb-1">
       {label}
 
       <button className="md:hidden" onClick={setIsMemberOpen}>
-         <X size={15}/>
+        <X size={15} />
       </button>
     </p>
   );
@@ -96,14 +95,6 @@ function MemberList({
     : 0;
 
   return (
-    // Positioning/sizing wrapper — the only element that needs to care about
-    // "mobile vs desktop":
-    //  - below md: always `fixed`, fully outside ChatList's flex flow.
-    //    Open/closed only ever toggles `translate-x`, sliding it on/off
-    //    screen without ever touching the chat area's width.
-    //  - md and up: `static`, i.e. a normal flex item again. `width`
-    //    toggles between 0 and 15rem, which pushes the chat over to make
-    //    room.
     <div
       className={cn(
         "fixed inset-y-0 right-0 z-50 w-60 shrink-0",
@@ -112,8 +103,6 @@ function MemberList({
         isOpen ? "translate-x-0" : "translate-x-full md:w-0",
       )}
     >
-      {/* Constant-width inner content so nothing reflows during the
-          transition — the wrapper above just clips/reveals it. */}
       <ScrollArea className="h-full w-60 overflow-y-auto bg-zinc-800 px-2 pt-2 pb-20 font-sans">
         {error ? (
           <p className="p-2 text-sm text-red-500">Failed to load members</p>

@@ -8,7 +8,6 @@ import useSWR from "swr"
 import { createInvitationCode } from "@/lib/actions/invitations"
 import { Invitation } from "@/types/invitation"
 import { deleteInvitationCode, getAllInvitation } from "@/lib/api/invitation"
-import { getPublicApiUrl } from "@/lib/env"
 import { EmptyState } from "@/components/ui/empty-state"
 
 
@@ -73,7 +72,7 @@ function InviteRow({
   })
 
   const code = useMemo(() => {
-    return `${getPublicApiUrl()}/invite/${invite.code}?server_id=${invite.server_id}`
+    return `${window.location.origin}/invite/${invite.code}?server_id=${invite.server_id}`
   }, [invite.code, invite.server_id])
 
   return (

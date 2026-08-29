@@ -2,10 +2,11 @@
 
 
 import { copyText } from "@/lib/clipboard"
-import { getPublicApiUrl } from "@/lib/env"
+import { createInvitationCode } from "@/lib/actions/invitations"
+import { getAllInvitation } from "@/lib/api/invitation"
 import { Copy, Check, MessageSquare, ArrowRight, ShieldCheck, Sparkles } from "lucide-react"
 import Link from "next/link"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 
 type ServerQuickActionsProps = {
   serverId: string
@@ -13,7 +14,9 @@ type ServerQuickActionsProps = {
   firstChannelName?: string
 }
 
-
+function buildInviteLink(serverId: string, code: string) {
+  return `${window.location.origin}/invite/${code}?server_id=${serverId}`
+}
 
 export default function ServerQuickActions({
   serverId,
@@ -22,7 +25,53 @@ export default function ServerQuickActions({
 }: ServerQuickActionsProps) {
 
   const [copied, setCopied] = useState(false)
-  const uniqueLINK = `${getPublicApiUrl()}/invite/${serverId}}`
+  const [inviteLink, setInviteLink] = useState<string | null>(null)
+  const [linkError, setLinkError] = useState<string | null>(null)
+
+  useEffect(() => {
+    let cancelled = false
+
+    async function resolveInviteLink() {
+      try {
+        const existing = await getAllInvitation(serverId)
+        if (cancelled) return
+
+        const usable = existing.find((i) => i.uses < i.max_users)
+        if (usable) {
+          setInviteLink(buildInviteLink(serverId, usable.code))
+          return
+        }
+
+        const result = await createInvitationCode(serverId)
+        if (cancelled) return
+
+        if (!result.success) {
+          setLinkError(result.message || "Failed to create invite link")
+          return
+        }
+
+        const data = result.data as { code?: string; data?: { code?: string } } | string | undefined
+        const code =
+          typeof data === "string"
+            ? data
+            : (data?.code ?? data?.data?.code ?? null)
+
+        if (!code) {
+          setLinkError("Failed to create invite link")
+          return
+        }
+
+        setInviteLink(buildInviteLink(serverId, code))
+      } catch {
+        if (!cancelled) setLinkError("Failed to load invite link")
+      }
+    }
+
+    resolveInviteLink()
+    return () => {
+      cancelled = true
+    }
+  }, [serverId])
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -42,16 +91,17 @@ export default function ServerQuickActions({
 
         <div className="mt-5 flex items-center gap-2">
           <div className="flex-1 bg-overlay/50 border border-white/10 rounded-lg px-3 py-1.5 text-xs text-white/70 font-mono truncate select-all">
-            {uniqueLINK}
+            {linkError ?? inviteLink ?? "Generating link…"}
           </div>
           <button
-            onClick={() => copyText(uniqueLINK).then(() => {
+            disabled={!inviteLink}
+            onClick={() => inviteLink && copyText(inviteLink).then(() => {
               setCopied(true)
               setTimeout(() => {
                 setCopied(false)
               }, 2000)
             })}
-            className="p-2 bg-discord-blue hover:bg-discord-blue/80 text-white rounded-lg transition-colors cursor-pointer shrink-0 flex items-center gap-1.5 text-xs"
+            className="p-2 bg-discord-blue hover:bg-discord-blue/80 text-white rounded-lg transition-colors cursor-pointer shrink-0 flex items-center gap-1.5 text-xs disabled:opacity-50 disabled:cursor-not-allowed"
             title="Copy invite link"
           >
             {copied ? (

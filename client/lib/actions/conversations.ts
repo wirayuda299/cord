@@ -17,39 +17,31 @@ export async function startConversation(formData: FormData): Promise<void> {
     throw new Error("Target user id is missing")
   }
 
-  try {
-    const token = await getToken()
+  const token = await getToken()
 
-    const res = await fetch(`${getPublicApiUrl()}/conversation/create`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Accept: "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({
-        targeted_user_id: targetedUserId,
-      }),
-    })
+  const res = await fetch(`${getPublicApiUrl()}/conversation/create`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Accept: "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({
+      targeted_user_id: targetedUserId,
+    }),
+  })
 
-    const payload: APIResponse<{ channel_id: string }> =
-      await res.json().catch(() => ({
-        success: false,
-        message: "Invalid response from server",
-      }))
+  const payload: APIResponse<{ channel_id: string }> =
+    await res.json().catch(() => ({
+      success: false,
+      message: "Invalid response from server",
+    }))
 
-    if (!res.ok || !payload.success) {
-      throw new Error(
-        payload.message || "Failed to create conversation"
-      )
-    }
-
-    if (payload && payload.data) {
-      redirect(`/direct-messages/${payload.data.channel_id}`)
-    }
-  } catch (error) {
-    console.error("Failed to start conversation:", error)
-
-    throw error
+  if (!res.ok || !payload.success || !payload.data) {
+    throw new Error(payload.message || "Failed to create conversation")
   }
+
+  // redirect() throws internally to signal navigation — must stay outside
+  // any try/catch, or the throw gets treated as a real error instead.
+  redirect(`/direct-messages/${payload.data.channel_id}`)
 }

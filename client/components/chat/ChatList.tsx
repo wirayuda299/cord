@@ -44,16 +44,18 @@ export default function ChatList({
   currentUser,
   serverOwner,
 }: Props) {
+  const isServerChannel = Boolean(serverId) && serverId !== "dm";
+
   const {
     data: allowed,
     error,
     isLoading,
-  } = useSWR(serverId ? ["/api/has-perm", serverId] : null, () =>
+  } = useSWR(isServerChannel ? ["/api/has-perm", serverId] : null, () =>
     hasPermission(serverId, PermissionKey.ManageMessage),
   );
 
   const { data: memberBanned } = useSWR(
-    serverId ? ["/api/is-banned", serverId] : null,
+    isServerChannel ? ["/api/is-banned", serverId] : null,
     async () => {
       return isMemberBanned(serverId);
     },

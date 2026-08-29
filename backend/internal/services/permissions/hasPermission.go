@@ -15,11 +15,15 @@ type HasPermissionType struct {
 }
 
 // HasPermission checks if the user is the owner or has a role with the required permission on the server.
+// DMs have no server, so there's nothing to check permissions/bans against.
 func HasPermission(p *HasPermissionType) (bool, error) {
 	var hasPerm bool
 	userID, err := utils.GetSession(p.Ctx)
 	if err != nil {
 		return hasPerm, err
+	}
+	if p.ServerID == "" || p.ServerID == "dm" {
+		return false, nil
 	}
 	var isBanned bool
 	err = p.Db.Postgres.QueryRow(p.Ctx, "SELECT EXISTS(SELECT 1 FROM bans WHERE server_id = $1 AND user_id = $2)", p.ServerID, userID).Scan(&isBanned)

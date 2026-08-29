@@ -24,13 +24,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import useSWR from "swr";
-import {
-  getAllMembers,
-  kickMember,
-  banMember,
-  Member,
-} from "@/lib/api/members";
-import { unbanMember } from "@/lib/actions/servers";
+import { getAllMembers, Member } from "@/lib/api/members";
+import { kickMember, banMember, unbanMember } from "@/lib/actions/servers";
 import { getAllRoles, unassignRole } from "@/lib/api/roles";
 import { Role } from "@/types/role";
 import useToggleRoleMember from "@/hooks/useToggleRole";
@@ -166,18 +161,22 @@ function MemberRow({
 
   const handleKickMember = async (member: string) => {
     try {
-      const res = await kickMember(member, serverID).then((r) => {
-        onMutate();
-      });
-      console.log(res);
+      const res = await kickMember(member, serverID);
+      if (!res.success) {
+        throw new Error(res.message);
+      }
+      onMutate();
     } catch (e) {
-      alert(e);
+      alert(e instanceof Error ? e.message : String(e));
     }
   };
 
   const handleBanMember = async (reason: string) => {
     try {
-      await banMember(member.user_id, serverID, reason);
+      const res = await banMember(serverID, member.user_id, reason);
+      if (res.error) {
+        throw new Error(res.error);
+      }
       setShowBanDialog(false);
       onMutate();
     } catch (e) {

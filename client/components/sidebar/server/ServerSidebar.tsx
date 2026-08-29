@@ -19,6 +19,7 @@ import { unauthorized } from "next/navigation";
 import Image from "next/image";
 import { hasPermission } from "@/lib/queries/permissions";
 import { PermissionKey } from "@/constants/permissions";
+import MobileBackButton from "./MobileBackButton";
 
 export default async function ServerSidebar({
   serverId,
@@ -40,6 +41,7 @@ export default async function ServerSidebar({
     <aside className="bg-overlay min-w-64 w-64 h-screen flex flex-col rounded-l-2xl">
       <header className="h-14 shrink-0 flex items-center px-5 border-b border-white/10 justify-between">
         <div className="flex items-center gap-2">
+          <MobileBackButton />
           <h2 className="text-sm capitalize font-medium text-white">
             {channels.server.name}
           </h2>

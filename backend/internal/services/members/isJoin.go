@@ -90,6 +90,11 @@ func IsUserBannedFromServer(ctx context.Context, db *databases.Container, server
 		return false, &httputil.ErrorResponse{Err: errors.New("server ID is missing"), Code: http.StatusBadRequest}
 	}
 
+	// DMs have no server, so a user can never be "banned" from one.
+	if serverID == "dm" {
+		return false, nil
+	}
+
 	var banned bool
 	err = db.Postgres.QueryRow(ctx, "SELECT EXISTS(SELECT 1 FROM bans WHERE server_id = $1 AND user_id = $2)", serverID, userID).Scan(&banned)
 	if err != nil {

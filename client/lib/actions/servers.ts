@@ -217,9 +217,40 @@ export async function banMember(serverId: string, memberId: string, reason: stri
       return { error: (await res.json()).message }
     }
 
+    updateTag("servers")
     return { error: null }
   } catch (e) {
     throw e
+  }
+}
+
+export async function kickMember(memberId: string, serverId: string): Promise<APIResponse> {
+  const { getToken } = await auth.protect();
+  try {
+    const token = await getToken()
+
+    const res = await fetch(`${getPublicApiUrl()}/members/kick`, {
+      method: "DELETE",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+        "Authorization": `Bearer ${token}`
+      },
+      body: JSON.stringify({
+        member_id: memberId,
+        server_id: serverId,
+      }),
+    })
+
+    const json: APIResponse = await res.json().catch(() => null)
+    if (!res.ok) {
+      return { message: json?.message ?? "failed to kick member", success: false }
+    }
+
+    updateTag("servers")
+    return { message: "member kicked", success: true }
+  } catch (e) {
+    return { message: "failed to kick member", success: false }
   }
 }
 

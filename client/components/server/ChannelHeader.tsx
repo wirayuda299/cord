@@ -38,7 +38,7 @@ export default function ChannelHeader({
       error,
       isLoading,
    } = useSWR(thread_id ?? null, getThreadById);
-   const setSidebarOpen = useAppStore((state) => state.setSidebarOpen);
+   const setChannelSidebarOpen = useAppStore((state) => state.setChannelSidebarOpen);
 
    const threadName: string | null = threadData?.name ?? null;
 
@@ -54,8 +54,8 @@ export default function ChannelHeader({
             <div className="flex items-center gap-2 min-w-0">
                <div className="flex items-center gap-3 h-full">
                   <button
-                     onClick={() => setSidebarOpen(true)}
-                     aria-label="Open navigation sidebar"
+                     onClick={() => setChannelSidebarOpen(true)}
+                     aria-label="Open channel list"
                      className="flex items-center justify-center size-8 rounded-md text-gray-400 hover:text-white hover:bg-white/10 transition-colors shrink-0 md:hidden cursor-pointer"
                   >
                      <Menu size={20} />

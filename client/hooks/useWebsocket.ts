@@ -26,7 +26,7 @@ export function useWebSocket(
    channelId: string,
    options: Options,
 ) {
-   const { getToken } = useAuth();
+   const { getToken, userId } = useAuth();
    const wsRef = useRef<WebSocket | null>(null);
    const reconnectTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
    const optionsRef = useRef(options);
@@ -105,7 +105,11 @@ export function useWebSocket(
          wsRef.current = null;
          ws?.close(1000, "cleanup");
       };
-   }, [serverId, channelId]);
+      // userId is included so switching accounts tears down the old socket
+      // instead of leaving messages attributed to whoever connected first —
+      // the backend binds a connection's identity to the token at handshake
+      // and never re-checks it per message.
+   }, [serverId, channelId, userId]);
 
    const sendMessage = useCallback((msg: object): boolean => {
       if (wsRef.current?.readyState !== WebSocket.OPEN) return false;
