@@ -25,6 +25,10 @@ func GetServerSafetySettings(ctx context.Context, db *databases.Container, serve
 		}
 	}
 
+	if cached, ok := getCachedSafetySettings(server_id); ok {
+		return cached, nil
+	}
+
 	var s SafetySetup
 
 	err := db.Postgres.QueryRow(ctx, `
@@ -43,5 +47,7 @@ func GetServerSafetySettings(ctx context.Context, db *databases.Container, serve
 			Code: http.StatusInternalServerError,
 		}
 	}
+
+	setCachedSafetySettings(server_id, &s)
 	return &s, nil
 }

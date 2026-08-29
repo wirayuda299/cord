@@ -71,6 +71,8 @@ func UpdateServerSafetySettings(ctx context.Context, db *databases.Container, p 
 		return &httputil.ErrorResponse{Err: err, Code: http.StatusInternalServerError}
 	}
 
+	invalidateSafetyCache(p.ServerID)
+
 	// Record audit entry
 	var changes []audit.AuditChange
 	if beforeErr == nil {

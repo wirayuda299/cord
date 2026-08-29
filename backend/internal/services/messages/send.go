@@ -4,11 +4,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"sync"
 	"time"
 
 	"github.com/clerk/clerk-sdk-go/v2/user"
 	"github.com/jackc/pgx/v5"
 	"github.com/wirayuda299/backend/internal/databases"
+	"github.com/wirayuda299/backend/internal/httputil"
 	"github.com/wirayuda299/backend/internal/services"
 	"github.com/wirayuda299/backend/internal/services/members"
 	"github.com/wirayuda299/backend/internal/services/servers/safety"
@@ -30,6 +32,11 @@ type SaveMsgPayload struct {
 	channelID string
 	message   Message
 	userID    string
+	// username/avatar: pass these in when the caller already has them
+	// (e.g. resolved once at websocket handshake) to skip the per-message
+	// user lookup. Left empty, saveMsg falls back to querying for them.
+	username string
+	avatar   string
 }
 
 func saveMsg(p *SaveMsgPayload) (*services.MessageRow, error) {
@@ -101,13 +108,18 @@ func saveMsg(p *SaveMsgPayload) (*services.MessageRow, error) {
 	row.Threads = make([]services.ThreadRow, 0)
 	row.Reactions = make([]services.ReactionRow, 0)
 
-	err = p.db.Postgres.QueryRow(
-		p.ctx,
-		`SELECT username, COALESCE(avatar_url, '') FROM users WHERE id = $1`,
-		p.userID,
-	).Scan(&row.Username, &row.Avatar)
-	if err != nil {
-		return nil, fmt.Errorf("error fetching user: %w", err)
+	if p.username != "" {
+		row.Username = p.username
+		row.Avatar = p.avatar
+	} else {
+		err = p.db.Postgres.QueryRow(
+			p.ctx,
+			`SELECT username, COALESCE(avatar_url, '') FROM users WHERE id = $1`,
+			p.userID,
+		).Scan(&row.Username, &row.Avatar)
+		if err != nil {
+			return nil, fmt.Errorf("error fetching user: %w", err)
+		}
 	}
 
 	if parentMsgID != nil {
@@ -146,7 +158,10 @@ func getServerOwner(ctx context.Context, db *databases.Container, serverID strin
 
 }
 
-func Send(ctx context.Context, m Message, db *databases.Container, channelID string, serverID string) (*services.MessageRow, error) {
+// username/avatar are resolved once at websocket handshake time and passed
+// through so saveMsg can skip its own per-message lookup; pass "" for both
+// to fall back to querying (e.g. any future non-websocket caller).
+func Send(ctx context.Context, m Message, db *databases.Container, channelID string, serverID string, username string, avatar string) (*services.MessageRow, error) {
 	userID, err := utils.GetSession(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("error inserting message: %w", err)
@@ -167,6 +182,8 @@ func Send(ctx context.Context, m Message, db *databases.Container, channelID str
 			channelID: channelID,
 			message:   m,
 			userID:    userID,
+			username:  username,
+			avatar:    avatar,
 		})
 		if err != nil {
 			return nil, err
@@ -181,27 +198,70 @@ func Send(ctx context.Context, m Message, db *databases.Container, channelID str
 	- if highest, allow send message if they have verified phone number on their account
 	*/
 
-	isJoin, joinErr := members.IsUserJoinedServer(ctx, db, serverID)
+	// These five reads don't depend on each other, so fire them off
+	// together instead of paying for round-trip latency five times in a
+	// row on the hot path of every message send.
+	var (
+		wg sync.WaitGroup
+
+		isJoin  bool
+		joinErr *httputil.ErrorResponse
+
+		isBanned bool
+		banErr   error
+
+		owner    string
+		ownerErr error
+
+		safetySettings *safety.SafetySetup
+		safetyErr      *httputil.ErrorResponse
+
+		member    Member
+		memberErr error
+	)
+
+	wg.Add(5)
+	go func() {
+		defer wg.Done()
+		isJoin, joinErr = members.IsUserJoinedServer(ctx, db, serverID)
+	}()
+	go func() {
+		defer wg.Done()
+		banErr = db.Postgres.QueryRow(ctx, "SELECT EXISTS(SELECT 1 FROM bans WHERE server_id = $1 AND user_id = $2)", serverID, userID).Scan(&isBanned)
+	}()
+	go func() {
+		defer wg.Done()
+		owner, ownerErr = getServerOwner(ctx, db, serverID)
+	}()
+	go func() {
+		defer wg.Done()
+		safetySettings, safetyErr = safety.GetServerSafetySettings(ctx, db, serverID)
+	}()
+	go func() {
+		defer wg.Done()
+		// Only meaningful for the medium/high non-owner branches below;
+		// harmless (and ignored) otherwise, e.g. ErrNoRows for an owner
+		// who never got a `members` row of their own.
+		member, memberErr = getServerMember(ctx, db, userID, serverID)
+	}()
+	wg.Wait()
+
 	if joinErr != nil {
 		return nil, joinErr.Err
 	}
-
 	if !isJoin {
 		return nil, errors.New("you not member of this server")
 	}
 
-	var isBanned bool
-	err = db.Postgres.QueryRow(ctx, "SELECT EXISTS(SELECT 1 FROM bans WHERE server_id = $1 AND user_id = $2)", serverID, userID).Scan(&isBanned)
-	if err != nil {
-		return nil, fmt.Errorf("error checking ban status: %w", err)
+	if banErr != nil {
+		return nil, fmt.Errorf("error checking ban status: %w", banErr)
 	}
 	if isBanned {
 		return nil, errors.New("you are banned from this server")
 	}
 
-	owner, err := getServerOwner(ctx, db, serverID)
-	if err != nil {
-		return nil, fmt.Errorf("failed to fetch server owner: %w", err)
+	if ownerErr != nil {
+		return nil, fmt.Errorf("failed to fetch server owner: %w", ownerErr)
 	}
 
 	if owner == userID {
@@ -211,6 +271,8 @@ func Send(ctx context.Context, m Message, db *databases.Container, channelID str
 			channelID: channelID,
 			message:   m,
 			userID:    userID,
+			username:  username,
+			avatar:    avatar,
 		})
 
 		if err != nil {
@@ -219,10 +281,10 @@ func Send(ctx context.Context, m Message, db *databases.Container, channelID str
 
 		return row, nil
 	} else {
-		s, safetyErr := safety.GetServerSafetySettings(ctx, db, serverID)
 		if safetyErr != nil {
 			return nil, safetyErr.Err
 		}
+		s := safetySettings
 		switch s.Level {
 		case "low":
 			row, err := saveMsg(&SaveMsgPayload{
@@ -231,6 +293,8 @@ func Send(ctx context.Context, m Message, db *databases.Container, channelID str
 				channelID: channelID,
 				message:   m,
 				userID:    userID,
+				username:  username,
+				avatar:    avatar,
 			})
 
 			if err != nil {
@@ -240,12 +304,11 @@ func Send(ctx context.Context, m Message, db *databases.Container, channelID str
 			return row, nil
 		case "medium":
 
-			member, err := getServerMember(ctx, db, userID, serverID)
-			if err != nil {
-				if errors.Is(err, pgx.ErrNoRows) {
-					return nil, fmt.Errorf("member not found: %w", err)
+			if memberErr != nil {
+				if errors.Is(memberErr, pgx.ErrNoRows) {
+					return nil, fmt.Errorf("member not found: %w", memberErr)
 				}
-				return nil, err
+				return nil, memberErr
 			}
 
 			if time.Now().After(member.joined_at.Add(5 * time.Minute)) {
@@ -255,6 +318,8 @@ func Send(ctx context.Context, m Message, db *databases.Container, channelID str
 					channelID: channelID,
 					message:   m,
 					userID:    userID,
+					username:  username,
+					avatar:    avatar,
 				})
 
 				if err != nil {
@@ -267,12 +332,11 @@ func Send(ctx context.Context, m Message, db *databases.Container, channelID str
 				return nil, errors.New("you can send message if you join this server more than 5 minutes")
 			}
 		case "high":
-			member, err := getServerMember(ctx, db, userID, serverID)
-			if err != nil {
-				if errors.Is(err, pgx.ErrNoRows) {
-					return nil, fmt.Errorf("member not found: %w", err)
+			if memberErr != nil {
+				if errors.Is(memberErr, pgx.ErrNoRows) {
+					return nil, fmt.Errorf("member not found: %w", memberErr)
 				}
-				return nil, err
+				return nil, memberErr
 			}
 
 			if time.Now().After(member.joined_at.Add(10 * time.Minute)) {
@@ -282,6 +346,8 @@ func Send(ctx context.Context, m Message, db *databases.Container, channelID str
 					channelID: channelID,
 					message:   m,
 					userID:    userID,
+					username:  username,
+					avatar:    avatar,
 				})
 
 				if err != nil {
@@ -313,6 +379,8 @@ func Send(ctx context.Context, m Message, db *databases.Container, channelID str
 					channelID: channelID,
 					message:   m,
 					userID:    userID,
+					username:  username,
+					avatar:    avatar,
 				})
 
 				if err != nil {

@@ -45,8 +45,12 @@ type Client struct {
 	ServerID  string
 	ChannelID string
 	UserID    string
-	ctx       context.Context
-	cancel    context.CancelFunc
+	// Username/Avatar are resolved once at handshake time so sending a
+	// message doesn't need its own round trip to look them up.
+	Username string
+	Avatar   string
+	ctx      context.Context
+	cancel   context.CancelFunc
 }
 
 func (c *Client) ReadIncomingMessage(db *databases.Container) {
@@ -94,7 +98,7 @@ func (c *Client) ReadIncomingMessage(db *databases.Container) {
 		}
 
 		log.Println("Server ID -> ", c.ServerID)
-		row, err := messages.Send(c.ctx, m, db, c.ChannelID, c.ServerID)
+		row, err := messages.Send(c.ctx, m, db, c.ChannelID, c.ServerID, c.Username, c.Avatar)
 		if err != nil {
 			log.Println("error sending message", err.Error())
 			continue
@@ -218,6 +222,14 @@ func ServeWs(hub *Hub, db *databases.Container, w http.ResponseWriter, r *http.R
 		}
 	}
 
+	// Resolved once here instead of on every message send. Skipped for the
+	// global presence bucket (channelID == "") since those connections
+	// never send chat messages and vastly outnumber real chat ones.
+	var username, avatar string
+	if channelID != "" {
+		_ = db.Postgres.QueryRow(authCtx, "SELECT username, COALESCE(avatar_url, '') FROM users WHERE id = $1", userID).Scan(&username, &avatar)
+	}
+
 	// Upgrade only after successful auth and validation
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
@@ -238,6 +250,8 @@ func ServeWs(hub *Hub, db *databases.Container, w http.ResponseWriter, r *http.R
 		ServerID:  serverID,
 		ChannelID: channelID,
 		UserID:    userID,
+		Username:  username,
+		Avatar:    avatar,
 		ctx:       ctx,
 		cancel:    cancel,
 	}
