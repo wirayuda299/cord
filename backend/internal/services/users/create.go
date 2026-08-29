@@ -28,7 +28,19 @@ func CreateUser(ctx context.Context, db *databases.Container, p *CreateUserPaylo
 		return &httputil.ErrorResponse{Err: errors.New("username is missing"), Code: http.StatusBadRequest}
 	}
 
-	_, err := db.Postgres.Exec(ctx, `INSERT INTO users(id,username,avatar_url,avatar_id,bio,email_verified)
+	var userExist bool
+
+	err := db.Postgres.QueryRow(ctx, `SELECT EXISTS(select * from users where id = $1)`, p.ID).Scan(&userExist)
+
+	if err != nil {
+		return &httputil.ErrorResponse{Err: err, Code: http.StatusInternalServerError}
+	}
+
+	if userExist {
+		return &httputil.ErrorResponse{Err: errors.New("user exist"), Code: http.StatusConflict}
+	}
+
+	_, err = db.Postgres.Exec(ctx, `INSERT INTO users(id,username,avatar_url,avatar_id,bio,email_verified)
 		values($1,$2,$3,$4,$5,$6) ON CONFLICT (id) DO NOTHING;`, p.ID, p.Username, p.AvatarURL, p.AvatarID, p.Bio, p.EmailVerified)
 	if err != nil {
 		log.Println("Failed to create user -> ", err.Error())
