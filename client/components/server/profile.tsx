@@ -37,6 +37,7 @@ type PreviewProps = {
   server?: {
     name?: string;
     logo?: string;
+    online_count?: number;
   };
 };
 
@@ -71,7 +72,7 @@ function ServerProfilePreview({ selected, server }: PreviewProps) {
           <div className="flex items-center gap-3 mt-1">
             <p className="flex items-center text-xs gap-2">
               <span className="block size-2 rounded-full bg-green-500" />
-              0 online
+              {server?.online_count ?? 0} online
             </p>
             <p className="flex items-center text-xs gap-2">
               <span className="block size-2 rounded-full bg-gray-500" />1

@@ -19,10 +19,11 @@ type JoinServerWithCode struct {
 type ServerHandler struct {
 	db      *databases.Container
 	evictor servers.ServerEvictor
+	online  servers.OnlineCounter
 }
 
-func NewServerHandler(db *databases.Container, evictor servers.ServerEvictor) *ServerHandler {
-	return &ServerHandler{db: db, evictor: evictor}
+func NewServerHandler(db *databases.Container, evictor servers.ServerEvictor, online servers.OnlineCounter) *ServerHandler {
+	return &ServerHandler{db: db, evictor: evictor, online: online}
 }
 
 func (sh *ServerHandler) DeleteServer(w http.ResponseWriter, r *http.Request) {
@@ -65,7 +66,7 @@ func (sh *ServerHandler) JoinServer(w http.ResponseWriter, r *http.Request) {
 
 func (sh *ServerHandler) GetServerByID(w http.ResponseWriter, r *http.Request) {
 	serverID := r.URL.Query().Get("serverID")
-	server, err := servers.GetServerByID(sh.db, r.Context(), serverID)
+	server, err := servers.GetServerByID(sh.db, r.Context(), serverID, sh.online)
 	if err != nil {
 		httputil.WriteErrorResponse(w, err.Err.Error(), err.Code)
 		return

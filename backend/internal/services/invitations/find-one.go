@@ -15,22 +15,32 @@ type InvitationResponse struct {
 	ServerName  string   `json:"server_name"`
 	Username    string   `json:"username"`
 	MemberCount int      `json:"member_count"`
+	OnlineCount int      `json:"online_count"`
 	Logo        *string  `json:"logo"`
 	BannerColor []string `json:"banner_color"`
 }
 
-func FindInvitationByCode(ctx context.Context, db *databases.Container, code string) (*InvitationResponse, *httputil.ErrorResponse) {
+// OnlineCounter reports which users currently have the app open, so this
+// can be intersected against the invited server's member list. Satisfied
+// by *websocket.Hub.
+type OnlineCounter interface {
+	OnlineUserIDs() []string
+}
+
+func FindInvitationByCode(ctx context.Context, db *databases.Container, code string, online OnlineCounter) (*InvitationResponse, *httputil.ErrorResponse) {
 	if code == "" {
 		return nil, &httputil.ErrorResponse{Err: errors.New("invitation code is missing"), Code: http.StatusBadRequest}
 	}
 	var i InvitationResponse
 	err := db.Postgres.QueryRow(ctx, `
 		SELECT i.id,i.code,i.server_id,i.created_by,i.max_users,i.created_at,i.uses,u.username,s.name,s.logo,
-		(select count(*) from members as m where m.server_id = i.server_id) as member_count,s.banner_colors
+		(select count(*) from members as m where m.server_id = i.server_id) as member_count,
+		(select count(*) from members as m where m.server_id = i.server_id and m.user_id = ANY($2::text[])) as online_count,
+		s.banner_colors
 		from invitations as i
 		left join users as u on u.id = i.created_by
 		left join servers as s on s.id = i.server_id
-	 	where code = $1;`, code).Scan(&i.Id, &i.Code, &i.ServerID, &i.CreatedBy, &i.MaxUsers, &i.CreatedAt, &i.Uses, &i.Username, &i.ServerName, &i.Logo, &i.MemberCount, &i.BannerColor)
+	 	where code = $1;`, code, online.OnlineUserIDs()).Scan(&i.Id, &i.Code, &i.ServerID, &i.CreatedBy, &i.MaxUsers, &i.CreatedAt, &i.Uses, &i.Username, &i.ServerName, &i.Logo, &i.MemberCount, &i.OnlineCount, &i.BannerColor)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, &httputil.ErrorResponse{Err: err, Code: http.StatusNotFound}

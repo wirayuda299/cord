@@ -213,6 +213,31 @@ func (h *Hub) SendUserListToClient(serverId string, client *Client) {
 	}
 }
 
+// OnlineUserIDs returns a deduplicated snapshot of every user currently
+// connected via the global presence socket (see PresenceProvider on the
+// client, which connects with empty serverId/channelId).
+func (h *Hub) OnlineUserIDs() []string {
+	h.mu.RLock()
+	defer h.mu.RUnlock()
+
+	userSet := make(map[string]bool)
+	if channels, ok := h.clients[""]; ok {
+		for _, clients := range channels {
+			for c := range clients {
+				if c.UserID != "" {
+					userSet[c.UserID] = true
+				}
+			}
+		}
+	}
+
+	ids := make([]string, 0, len(userSet))
+	for id := range userSet {
+		ids = append(ids, id)
+	}
+	return ids
+}
+
 func (h *Hub) BroadcastDelete(serverId, channelId, messageId string) {
 	payload := DeletePayload{
 		Type:      "message_deleted",

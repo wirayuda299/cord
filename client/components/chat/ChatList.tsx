@@ -62,7 +62,7 @@ export default function ChatList({
 
   const currUser = currentUser ?? "";
   const [messages, setMessages] = useState<Message[]>(historyMessages);
-  const [onlineIds, setOnlineIds] = useState<Set<string>>(new Set());
+  const onlineIds = useAppStore((s) => s.onlineUserIds);
   const bottomRef = useRef<HTMLDivElement>(null);
   const isDirectMessage =
     variant === "dm" ||
@@ -172,22 +172,6 @@ export default function ChatList({
   const { sendMessage, status } = useWebSocket(serverId, channel.id, {
     onMessage: handleMessages,
     onDelete: handleDelete,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    onEvent: (ev: any) => {
-      if (ev && ev.type === "user_list") {
-        setOnlineIds(new Set(ev.user_ids));
-      } else if (ev && ev.type === "user_status") {
-        setOnlineIds((prev) => {
-          const next = new Set(prev);
-          if (ev.action === "connected") {
-            next.add(ev.user_id);
-          } else if (ev.action === "disconnected") {
-            next.delete(ev.user_id);
-          }
-          return next;
-        });
-      }
-    },
     onClose: () => console.log("disconnected"),
     onError: (e) => console.error("ws error", e),
   });

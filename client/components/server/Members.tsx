@@ -39,15 +39,17 @@ import { hasPermission } from "@/lib/api/permissions";
 import { PermissionKey } from "@/constants/permissions";
 import { Avatar, getInitials, avatarColorFromSeed } from "@/components/ui/avatar";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { useAppStore } from "@/stores/store";
 
 function MemberAvatar({ member }: { member: Member }) {
+  const isOnline = useAppStore((s) => s.onlineUserIds.has(member.user_id));
   return (
     <Avatar
       src={member.avatar_url}
       alt={member.username}
       fallback={getInitials(member.username)}
       fallbackStyle={{ background: avatarColorFromSeed(member.user_id) }}
-      indicator="online"
+      indicator={isOnline ? "online" : "offline"}
     />
   );
 }

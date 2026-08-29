@@ -8,6 +8,7 @@ export type StoreState = {
   isMemberOpen: boolean
   selectedCategory: Category | null
   isSidebarOpen: boolean
+  onlineUserIds: Set<string>
 }
 
 export type StoreActions = {
@@ -15,6 +16,9 @@ export type StoreActions = {
   toggleMemberPanel: () => void
   setSelectedCategory: (c: Category | null) => void
   setSidebarOpen: (isOpen: boolean) => void
+  setOnlineUserIds: (ids: string[]) => void
+  addOnlineUser: (id: string) => void
+  removeOnlineUser: (id: string) => void
 }
 
 export type AppStore = StoreState & StoreActions
@@ -23,7 +27,8 @@ export const defaultInitState: StoreState = {
   selectedMsg: null,
   isMemberOpen: false,
   selectedCategory: null,
-  isSidebarOpen: false
+  isSidebarOpen: false,
+  onlineUserIds: new Set()
 }
 
 export const useAppStore = create<AppStore>(
@@ -32,6 +37,17 @@ export const useAppStore = create<AppStore>(
     setSelectedMsg: (m: Message | null) => set({ selectedMsg: m }),
     toggleMemberPanel: () => set((state) => ({ isMemberOpen: !state.isMemberOpen })),
     setSelectedCategory: (c: Category | null) => set({ selectedCategory: c }),
-    setSidebarOpen: (isOpen: boolean) => set({ isSidebarOpen: isOpen })
+    setSidebarOpen: (isOpen: boolean) => set({ isSidebarOpen: isOpen }),
+    setOnlineUserIds: (ids: string[]) => set({ onlineUserIds: new Set(ids) }),
+    addOnlineUser: (id: string) => set((state) => {
+      if (state.onlineUserIds.has(id)) return state
+      return { onlineUserIds: new Set(state.onlineUserIds).add(id) }
+    }),
+    removeOnlineUser: (id: string) => set((state) => {
+      if (!state.onlineUserIds.has(id)) return state
+      const next = new Set(state.onlineUserIds)
+      next.delete(id)
+      return { onlineUserIds: next }
+    })
   }))
 )

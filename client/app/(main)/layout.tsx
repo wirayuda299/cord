@@ -1,12 +1,14 @@
 import { auth } from "@clerk/nextjs/server";
 import Sidebar from "@/components/sidebar/MainSidebar"
 import SidebarWrapper from "@/components/sidebar/SidebarWrapper"
+import PresenceProvider from "@/components/presence/PresenceProvider"
 import type { ReactNode } from "react"
 
 export default async function RootLayout({ children }: { children: ReactNode }) {
   await auth.protect();
   return (
     <div className="flex min-h-screen max-h-screen w-full overflow-hidden">
+      <PresenceProvider />
       <SidebarWrapper>
         <Sidebar />
       </SidebarWrapper>

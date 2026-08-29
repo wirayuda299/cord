@@ -8,6 +8,7 @@ type ServerDetail = {
   banner_colors: string[]
   private: boolean
   description: string
+  online_count: number
 }
 
 export default async function getServerById(serverID: string) {

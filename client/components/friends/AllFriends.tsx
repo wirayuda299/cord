@@ -1,63 +1,13 @@
 import { getAllFriends } from "@/lib/queries/friends";
-import { startConversation } from "@/lib/actions/conversations";
-import { FriendListItem } from "@/types/friends";
-import { MessageSquare } from "lucide-react";
-import Image from "next/image";
+import FriendsList from "./FriendsList";
 
-// Presence is only tracked per-server over the channel websocket connection
-// (see hooks/useWebsocket.ts + backend/internal/websocket/hub.go), so there is
-// no global online/offline signal available for an arbitrary friends list.
-function FriendRow({ avatar_url, username, user_id }: FriendListItem) {
-  return (
-    <li className="flex items-center justify-between px-3 py-3 rounded-lg hover:bg-surface-hover group transition-colors cursor-pointer">
-      <div className="flex items-center gap-3 min-w-0">
-        <div className="relative shrink-0">
-          <div className="w-9 h-9 rounded-full bg-discord-brand/70 flex items-center justify-center text-sm font-bold text-white">
-            {avatar_url ? (
-              <Image
-                quality={50}
-                className="object-cover size-full rounded-full"
-                src={avatar_url}
-                width={40}
-                height={40}
-                alt={username}
-              />
-            ) : (
-              username.charAt(0).toUpperCase()
-            )}
-          </div>
-        </div>
-        <div className="min-w-0">
-          <p className="text-sm font-semibold text-zinc-100 truncate">
-            {username}
-          </p>
-        </div>
-      </div>
-      <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
-        <form action={startConversation}>
-          <input type="hidden" name="targeted_user_id" value={user_id} />
-          <button
-            type="submit"
-            title={`Message ${username}`}
-            className="w-8 h-8 cursor-pointer flex items-center justify-center rounded-full bg-surface-raised hover:bg-surface-hover text-zinc-400 hover:text-zinc-200 transition-colors"
-          >
-            <MessageSquare size={15} />
-          </button>
-        </form>
-      </div>
-    </li>
-  );
-}
-
-export default async function AllFriends() {
+export default async function AllFriends({
+  filter = "all",
+}: {
+  filter?: "all" | "online";
+}) {
   const allFriend = await getAllFriends();
 
-  if (allFriend && allFriend.length <= 0) return "No friend yet";
-  return (
-    <ul className="space-y-1">
-      {allFriend?.map((f) => (
-        <FriendRow key={f.friendship_id} {...f} />
-      ))}
-    </ul>
-  );
+  if (!allFriend || allFriend.length <= 0) return "No friend yet";
+  return <FriendsList friends={allFriend} filter={filter} />;
 }

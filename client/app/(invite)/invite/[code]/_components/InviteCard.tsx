@@ -113,7 +113,7 @@ export default function InviteCard({
           <Circle size={8} className="fill-green-500 text-green-500" />
           <span className="text-xs text-text-dim">
             <span className="text-text-primary font-medium">
-              {formatCount(122)}
+              {formatCount(info.online_count)}
             </span>{" "}
             Online
           </span>

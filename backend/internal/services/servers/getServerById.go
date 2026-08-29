@@ -23,9 +23,17 @@ type Server struct {
 	Description  *string  `json:"description"`
 	Private      bool     `json:"private"`
 	BannerColors []string `json:"banner_colors"`
+	OnlineCount  int      `json:"online_count"`
 }
 
-func GetServerByID(db *databases.Container, ctx context.Context, serverID string) (*Server, *httputil.ErrorResponse) {
+// OnlineCounter reports which users currently have the app open, so
+// endpoints can intersect it against a server's member list. Satisfied by
+// *websocket.Hub.
+type OnlineCounter interface {
+	OnlineUserIDs() []string
+}
+
+func GetServerByID(db *databases.Container, ctx context.Context, serverID string, online OnlineCounter) (*Server, *httputil.ErrorResponse) {
 	_, err := utils.GetSession(ctx)
 	if err != nil {
 		return nil, &httputil.ErrorResponse{Err: err, Code: http.StatusUnauthorized}
@@ -50,6 +58,15 @@ func GetServerByID(db *databases.Container, ctx context.Context, serverID string
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, &httputil.ErrorResponse{Err: errors.New("server not found"), Code: http.StatusNotFound}
 		}
+		return nil, &httputil.ErrorResponse{Err: err, Code: http.StatusInternalServerError}
+	}
+
+	onlineIDs := online.OnlineUserIDs()
+	err = db.Postgres.QueryRow(ctx,
+		"SELECT count(*) FROM members WHERE server_id = $1 AND user_id = ANY($2::text[])",
+		serverID, onlineIDs,
+	).Scan(&server.OnlineCount)
+	if err != nil {
 		return nil, &httputil.ErrorResponse{Err: err, Code: http.StatusInternalServerError}
 	}
 

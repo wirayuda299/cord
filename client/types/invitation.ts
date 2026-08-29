@@ -10,6 +10,7 @@ export type Invitation = {
   username: string
   server_name: string
   member_count: number
+  online_count: number
   logo: string | null
   banner_color: string[]
 }

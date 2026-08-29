@@ -11,15 +11,16 @@ import (
 )
 
 type InvitationHandler struct {
-	db *databases.Container
+	db     *databases.Container
+	online invitations.OnlineCounter
 }
 
-func NewInvitationHandler(db *databases.Container) *InvitationHandler {
-	return &InvitationHandler{db: db}
+func NewInvitationHandler(db *databases.Container, online invitations.OnlineCounter) *InvitationHandler {
+	return &InvitationHandler{db: db, online: online}
 }
 
 func (ih *InvitationHandler) FindInvitationByCode(w http.ResponseWriter, r *http.Request) {
-	i, err := invitations.FindInvitationByCode(r.Context(), ih.db, r.URL.Query().Get("code"))
+	i, err := invitations.FindInvitationByCode(r.Context(), ih.db, r.URL.Query().Get("code"), ih.online)
 	if err != nil {
 		httputil.WriteErrorResponse(w, err.Err.Error(), err.Code)
 		return

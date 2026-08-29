@@ -69,6 +69,9 @@ export default async function DirectMessagesPage() {
         <p className="text-xs font-semibold uppercase tracking-widest text-zinc-500 mb-3">
           Online
         </p>
+        <Suspense defer fallback={<p>Loading....</p>}>
+          <AllFriends filter="online" />
+        </Suspense>
       </TabsContent>
 
       <TabsContent value="add" className="flex-1 overflow-y-auto px-4 py-4">
