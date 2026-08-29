@@ -32,9 +32,12 @@ type SaveMsgPayload struct {
 	channelID string
 	message   Message
 	userID    string
-	// username/avatar: pass these in when the caller already has them
-	// (e.g. resolved once at websocket handshake) to skip the per-message
-	// user lookup. Left empty, saveMsg falls back to querying for them.
+	serverID  string
+	// username/avatar: pass these in when the caller already has them and
+	// is certain they can't be stale (e.g. a DM, which has no per-server
+	// profile override) to skip the per-message user lookup. Left empty,
+	// saveMsg falls back to querying for them — always the case for server
+	// channels, since a per-server profile override can change mid-session.
 	username string
 	avatar   string
 }
@@ -112,10 +115,18 @@ func saveMsg(p *SaveMsgPayload) (*services.MessageRow, error) {
 		row.Username = p.username
 		row.Avatar = p.avatar
 	} else {
+		// Prefer the per-server profile override (nickname/avatar for this
+		// server) over the global user profile, same as the members list.
 		err = p.db.Postgres.QueryRow(
 			p.ctx,
-			`SELECT username, COALESCE(avatar_url, '') FROM users WHERE id = $1`,
+			`SELECT
+				COALESCE(sp.username, u.username),
+				COALESCE(sp.avatar, u.avatar_url, '')
+			FROM users u
+			LEFT JOIN server_profile sp ON sp.server_id = $2 AND sp.user_id = u.id
+			WHERE u.id = $1`,
 			p.userID,
+			p.serverID,
 		).Scan(&row.Username, &row.Avatar)
 		if err != nil {
 			return nil, fmt.Errorf("error fetching user: %w", err)
@@ -182,8 +193,11 @@ func Send(ctx context.Context, m Message, db *databases.Container, channelID str
 			channelID: channelID,
 			message:   m,
 			userID:    userID,
-			username:  username,
-			avatar:    avatar,
+			serverID:  serverID,
+			// DMs have no per-server profile override, so the identity
+			// resolved once at connect time can't go stale here.
+			username: username,
+			avatar:   avatar,
 		})
 		if err != nil {
 			return nil, err
@@ -271,8 +285,7 @@ func Send(ctx context.Context, m Message, db *databases.Container, channelID str
 			channelID: channelID,
 			message:   m,
 			userID:    userID,
-			username:  username,
-			avatar:    avatar,
+			serverID:  serverID,
 		})
 
 		if err != nil {
@@ -293,8 +306,7 @@ func Send(ctx context.Context, m Message, db *databases.Container, channelID str
 				channelID: channelID,
 				message:   m,
 				userID:    userID,
-				username:  username,
-				avatar:    avatar,
+				serverID:  serverID,
 			})
 
 			if err != nil {
@@ -318,8 +330,7 @@ func Send(ctx context.Context, m Message, db *databases.Container, channelID str
 					channelID: channelID,
 					message:   m,
 					userID:    userID,
-					username:  username,
-					avatar:    avatar,
+					serverID:  serverID,
 				})
 
 				if err != nil {
@@ -346,8 +357,7 @@ func Send(ctx context.Context, m Message, db *databases.Container, channelID str
 					channelID: channelID,
 					message:   m,
 					userID:    userID,
-					username:  username,
-					avatar:    avatar,
+					serverID:  serverID,
 				})
 
 				if err != nil {
@@ -379,8 +389,7 @@ func Send(ctx context.Context, m Message, db *databases.Container, channelID str
 					channelID: channelID,
 					message:   m,
 					userID:    userID,
-					username:  username,
-					avatar:    avatar,
+					serverID:  serverID,
 				})
 
 				if err != nil {

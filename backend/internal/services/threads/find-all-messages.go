@@ -15,7 +15,7 @@ import (
 const queryAllThreadMessages = `SELECT
     m.id,
     m.content,
-    u.username,
+    COALESCE(sp.username, u.username) as username,
     COALESCE(m.image_url, '') AS image_url,
     COALESCE(m.image_asset_id, '') AS image_asset_id,
     m.user_id,
@@ -24,8 +24,8 @@ const queryAllThreadMessages = `SELECT
     m.updated_at,
     m.parent_msg_id,
     pm.content AS parent_content,
-    pu.username AS parent_username,
-    COALESCE(u.avatar_url, '') as avatar,
+    COALESCE(psp.username, pu.username) AS parent_username,
+    COALESCE(sp.avatar, u.avatar_url, '') as avatar,
     COALESCE(
         (SELECT json_agg(json_build_object('user_id', r.user_id, 'emoji', r.emoji))
          FROM reactions r WHERE r.message_id = m.id),
@@ -39,9 +39,12 @@ const queryAllThreadMessages = `SELECT
     th.id as thread_id
     FROM messages as m
     JOIN threads AS th ON th.id = m.thread_id
+    LEFT JOIN channels as ch ON ch.id = th.channel_id
+    LEFT JOIN server_profile as sp ON sp.server_id = ch.server_id AND sp.user_id = m.user_id
     LEFT JOIN messages as pm ON m.parent_msg_id = pm.id
     JOIN users as u ON m.user_id = u.id
     LEFT JOIN users as pu ON pm.user_id = pu.id
+    LEFT JOIN server_profile as psp ON psp.server_id = ch.server_id AND psp.user_id = pm.user_id
     WHERE m.thread_id = $1
     ORDER BY m.created_at ASC;`
 

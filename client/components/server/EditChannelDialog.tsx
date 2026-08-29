@@ -63,9 +63,7 @@ export default function EditChannelDialog({ channel, serverID, categoryID }: Edi
           <p className="text-[10px] md:text-[11px] md:font-bold text-text-secondary uppercase tracking-[0.06em] mb-2">
             Channel Type
           </p>
-          {/* Type can't be changed after creation (backend doesn't accept it on
-              update) - shown locked to the channel's current type for context,
-              same list as Create Channel. */}
+
           <div className="flex flex-col gap-0.5 mb-5">
             {channelTypes.map((type) => {
               const isSelected = type.id === channel.channel_type
