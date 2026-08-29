@@ -5,6 +5,7 @@ import { updateChannel } from "@/lib/actions/channels"
 import { Controller, SubmitHandler, useForm } from "react-hook-form"
 import { Field, FieldError, FieldLabel } from "@/components/ui/field"
 import { channelTypes } from "@/constants/channel-type"
+import { toast } from "@/components/ui/toast"
 
 type EditChannelForm = {
   name: string
@@ -41,10 +42,10 @@ export default function EditChannelDialog({ channel, serverID, categoryID }: Edi
     })
 
     if (!res.success) {
-      alert(res.message)
+      toast.add({ title: res.message, type: "error" })
       return
     }
-    alert("channel updated")
+    toast.add({ title: "Channel updated", type: "success" })
   }
 
   return (

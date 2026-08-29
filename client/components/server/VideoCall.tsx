@@ -14,6 +14,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "@clerk/nextjs";
 import PulseLoader from "../shared/PulseLoader";
+import { toast } from "@/components/ui/toast";
 
 export default function VideoCall({ room, serverId }: { room: string; serverId: string }) {
   const [token, setToken] = useState('');
@@ -30,7 +31,7 @@ export default function VideoCall({ room, serverId }: { room: string; serverId: 
         const data = await resp.json();
         setToken(data.token);
       } catch (e) {
-        alert(e)
+        toast.add({ title: e instanceof Error ? e.message : String(e), type: "error" })
       }
     })();
   }, [room]);

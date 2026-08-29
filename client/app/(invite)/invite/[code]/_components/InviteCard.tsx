@@ -8,6 +8,7 @@ import { Invitation } from "@/types/invitation";
 import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { toast } from "@/components/ui/toast";
 
 function formatCount(n: number) {
   if (n >= 1000) return `${(n / 1000).toFixed(1)}k`;
@@ -70,13 +71,13 @@ export default function InviteCard({
     try {
       const res = await joinServerByCode(code);
       if (res && !res.success) {
-        alert(res.message);
+        toast.add({ title: res.message, type: "error" });
         return;
       }
-      alert(`you are now member of ${info.server_name} server`);
+      toast.add({ title: `You are now a member of ${info.server_name}`, type: "success" });
       router.push("/direct-messages");
     } catch (e) {
-      alert(e);
+      toast.add({ title: e instanceof Error ? e.message : String(e), type: "error" });
     } finally {
       setJoining(false);
     }

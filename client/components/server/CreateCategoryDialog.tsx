@@ -5,6 +5,7 @@ import { DialogContent, Dialog, DialogTrigger, DialogClose } from "@/components/
 import { Controller, useForm } from "react-hook-form"
 import { createCategory } from "@/lib/actions/categories"
 import type { CreateCategoryPayload } from "@/types/category"
+import { toast } from "@/components/ui/toast"
 
 export default function CreateCategoryDialog({ serverId }: { serverId: string }) {
   const { handleSubmit, reset, control, formState: { isSubmitting } } = useForm<CreateCategoryPayload>({
@@ -14,9 +15,10 @@ export default function CreateCategoryDialog({ serverId }: { serverId: string })
   const onSubmit = async (data: CreateCategoryPayload) => {
     const res = await createCategory(data)
     if (!res.success) {
-      alert(res.message)
+      toast.add({ title: res.message, type: "error" })
       return
     }
+    toast.add({ title: "Category created", type: "success" })
     reset()
   }
 

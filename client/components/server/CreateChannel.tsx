@@ -8,6 +8,7 @@ import { Field, FieldError, FieldLabel } from "@/components/ui/field"
 import type { CreateChannelPayload } from "@/lib/validations/channel"
 import { channelTypes } from "@/constants/channel-type"
 import { useAppStore } from "@/stores/store"
+import { toast } from "@/components/ui/toast"
 
 export default function CreateChannel({ serverID }: { serverID: string }) {
   const selectedCategory = useAppStore(c => c.selectedCategory)
@@ -29,10 +30,10 @@ export default function CreateChannel({ serverID }: { serverID: string }) {
     })
 
     if (!res.success) {
-      alert(res.message)
+      toast.add({ title: res.message, type: "error" })
       return
     }
-    alert("channel created")
+    toast.add({ title: "Channel created", type: "success" })
     reset()
   }
 

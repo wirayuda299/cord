@@ -36,6 +36,7 @@ import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { useAppStore } from "@/stores/store";
 import { Member } from "@/types/server";
 import { apiFetcher } from "@/lib/fetcher";
+import { toast } from "@/components/ui/toast";
 
 function MemberAvatar({ member }: { member: Member }) {
   const isOnline = useAppStore((s) => s.onlineUserIds.has(member.user_id));
@@ -200,7 +201,7 @@ function MemberRow({
       onMutate();
       globalMutate("/api/members");
     } catch (e) {
-      alert(e instanceof Error ? e.message : String(e));
+      toast.add({ title: e instanceof Error ? e.message : String(e), type: "error" });
     }
   };
 
@@ -214,7 +215,7 @@ function MemberRow({
       onMutate();
       globalMutate("/api/members");
     } catch (e) {
-      alert(e instanceof Error ? e.message : String(e));
+      toast.add({ title: e instanceof Error ? e.message : String(e), type: "error" });
     }
   };
 
@@ -226,7 +227,7 @@ function MemberRow({
       }
       onMutate();
     } catch (e) {
-      alert(e instanceof Error ? e.message : String(e));
+      toast.add({ title: e instanceof Error ? e.message : String(e), type: "error" });
     }
   };
 

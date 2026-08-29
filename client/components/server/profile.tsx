@@ -18,6 +18,7 @@ import { useParams } from "next/navigation";
 import { uploadImage } from "@/lib/actions/images";
 import { updateServerSchema, UpdateServerType } from "@/lib/validations/server";
 import { updateServer } from "@/lib/actions/servers";
+import { toast } from "@/components/ui/toast";
 
 const gradients: [string, string][] = [
   ["#1f1f1f", "#3a3a3a"], // dark gray
@@ -205,7 +206,7 @@ export default function ServerProfile() {
         iconUrl = uploaded.data.url;
         iconAssetId = uploaded.data.public_id;
       } else {
-        alert(uploaded.message)
+        toast.add({ title: uploaded.message, type: "error" })
         return
       }
     }

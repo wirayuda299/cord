@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 
 import { findUsersByName, Friend } from "@/lib/api/users";
 import { sendFriendRequest } from "@/lib/actions/friends";
+import { toast } from "@/components/ui/toast";
 
 function useDebouncedValue<T>(value: T, delay = 500) {
   const [debouncedValue, setDebouncedValue] = useState(value);
@@ -77,9 +78,10 @@ export default function AddFriendPanel() {
 
       const res = await triggerSendFriendRequest({ userId: user.id })
       if (!res.success) {
-        alert(res.message)
+        toast.add({ title: res.message, type: "error" })
         return
       }
+      toast.add({ title: "Friend request sent", type: "success" })
 
       await mutate(
         (currentUsers) =>

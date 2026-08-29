@@ -29,6 +29,7 @@ import {
    DialogTrigger,
 } from "../ui/dialog";
 import { deleteThread } from "@/lib/actions/threads";
+import { toast } from "@/components/ui/toast";
 
 type ChatItemVariant = "channel" | "thread-parent" | "thread-reply";
 
@@ -287,7 +288,7 @@ function ChatItem({
             }
             onToggleReaction(message.id, emoji);
          } catch (e) {
-            alert(e);
+            toast.add({ title: e instanceof Error ? e.message : String(e), type: "error" });
          }
       },
       [currentUser, message.id, message.reactions, onToggleReaction, isBanned],
@@ -308,7 +309,7 @@ function ChatItem({
          onEdit?.(message.id, editContent.trim());
          setIsEditing(false);
       } catch (e) {
-         alert(e instanceof Error ? e.message : "Failed to edit message");
+         toast.add({ title: e instanceof Error ? e.message : "Failed to edit message", type: "error" });
       } finally {
          setIsSaving(false);
       }
@@ -469,18 +470,20 @@ function ChatItem({
                                                    t.id,
                                                    serverId,
                                                 ).then(() => {
-                                                   alert(
-                                                      "Thread deleted successfully",
-                                                   );
+                                                   toast.add({
+                                                      title: "Thread deleted successfully",
+                                                      type: "success",
+                                                   });
                                                 });
                                              } catch (error) {
                                                 console.error(
                                                    "Failed to delete thread",
                                                    error,
                                                 );
-                                                alert(
-                                                   "Failed to delete thread",
-                                                );
+                                                toast.add({
+                                                   title: "Failed to delete thread",
+                                                   type: "error",
+                                                });
                                              }
                                           }}
                                        >

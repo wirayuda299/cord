@@ -9,6 +9,7 @@ import useSWR from "swr"
 import { EmptyState } from "@/components/ui/empty-state"
 import { Avatar } from "@/components/ui/avatar"
 import { ConfirmDialog } from "@/components/ui/confirm-dialog"
+import { toast } from "@/components/ui/toast"
 
 
 type BannedMember = {
@@ -120,7 +121,7 @@ export default function Bans({ serverId }: { serverId: string }) {
     if (res && res.success) {
       mutate()
     } else {
-      alert(res.message)
+      toast.add({ title: res.message, type: "error" })
     }
     setConfirmId(null)
   }

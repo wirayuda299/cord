@@ -5,6 +5,7 @@ import type { Metadata } from "next"
 import { ClerkProvider } from '@clerk/nextjs'
 import Script from "next/script"
 import type { ReactNode } from "react"
+import { Toaster } from "@/components/ui/toast";
 
 const notoSans = Noto_Sans({
   variable: "--font-noto-sans",
@@ -29,6 +30,7 @@ export default function RootLayout({
       >
         <body className="min-h-dvh max-h-dvh bg-overlay overflow-hidden">
           {children}
+           <Toaster />
         </body>
         <Script
           src="https://cdn.jsdelivr.net/npm/@aejkatappaja/phantom-ui/dist/phantom-ui.cdn.js" />

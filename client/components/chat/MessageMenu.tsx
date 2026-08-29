@@ -19,6 +19,7 @@ import { deleteMessage, pinMessage } from "@/lib/actions/messages";
 import type { Message } from "@/types/chat";
 import { usePathname } from "next/navigation";
 import { useAppStore } from "@/stores/store";
+import { toast } from "@/components/ui/toast";
 
 import CreateThreadForm from "./CreateThreadForm";
 
@@ -233,11 +234,11 @@ function useMenuActions(
               serverId
             );
             if (res && !res.success) {
-              alert(res.message)
+              toast.add({ title: res.message, type: "error" })
               return
             };
 
-            alert("message pinned")
+            toast.add({ title: "Message pinned", type: "success" })
           },
         },
       ] : []),
@@ -255,7 +256,9 @@ function useMenuActions(
         icon: <Copy size={15} />,
         label: "Copy Text",
         onClick: () =>
-          copyText(message.content).then(() => alert("Text copied!")).catch(e => alert(e)),
+          copyText(message.content)
+            .then(() => toast.add({ title: "Text copied!", type: "success" }))
+            .catch(e => toast.add({ title: e instanceof Error ? e.message : String(e), type: "error" })),
       },
       {
         icon: <MoreHorizontal size={15} />,
@@ -277,11 +280,11 @@ function useMenuActions(
             });
             onDelete(message.id);
             if (res && !res.success) {
-              alert(res.message)
+              toast.add({ title: res.message, type: "error" })
               return
             }
 
-            alert("message deleted")
+            toast.add({ title: "Message deleted", type: "success" })
           },
           danger: true,
         },

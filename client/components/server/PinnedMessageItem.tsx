@@ -4,6 +4,7 @@ import { deletePinnedMessage } from "@/lib/actions/messages";
 import type { PinnedMessage } from "@/types/chat";
 import { X } from "lucide-react";
 import { useCallback } from "react";
+import { toast } from "@/components/ui/toast";
 
 export default function PinnedMessageItem({
   pinnedMessages,
@@ -19,11 +20,11 @@ export default function PinnedMessageItem({
     e.stopPropagation();
     const res = await deletePinnedMessage(id, serverId)
     if (res && !res.success) {
-      alert(res.message)
+      toast.add({ title: res.message, type: "error" })
       return
     }
 
-    alert(res.message)
+    toast.add({ title: res.message, type: "success" })
   }, [serverId])
 
   const handleJumpToMessage = useCallback((messageId: string) => {

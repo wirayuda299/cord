@@ -16,6 +16,7 @@ import { useParams } from "next/navigation"
 import { PERMISSIONS } from "@/constants/permissions"
 import { ROLE_COLORS } from "@/constants/role"
 import Image from "next/image";
+import { toast } from "@/components/ui/toast";
 
 const roleFormSchema = z.object({
   name: z.string().min(1, "Name is required").max(50, "Max 50 characters"),
@@ -108,7 +109,7 @@ export default function RoleFormView(props: Props) {
       }
 
       if (res && res.success) {
-        alert("role created")
+        toast.add({ title: "Role created", type: "success" })
         form.reset()
         onBack()
       }

@@ -15,6 +15,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { createThread } from "@/lib/actions/messages";
 import { useRouter } from "next/navigation";
 import { Button } from "../ui/button";
+import { toast } from "@/components/ui/toast";
 
 const threadSchema = z.object({
   name: z.string().min(4).max(50),
@@ -52,10 +53,10 @@ export default function CreateThreadForm({
     })
 
     if (!res.success) {
-      alert(res.message)
+      toast.add({ title: res.message, type: "error" })
       return
     }
-    alert("thread created")
+    toast.add({ title: "Thread created", type: "success" })
     router.refresh()
   }
 

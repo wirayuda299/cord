@@ -4,6 +4,7 @@ import { useRouter, usePathname } from "next/navigation";
 import { mutate as globalMutate } from "swr";
 import { useWebSocket } from "@/hooks/useWebsocket";
 import { useAppStore } from "@/stores/store";
+import { toast } from "@/components/ui/toast";
 
 /**
  * App-wide presence socket, separate from the per-channel chat socket.
@@ -34,11 +35,13 @@ export default function PresenceProvider() {
         // us) — refresh so our own sidebar picks up the fresh list, and
         // bounce out if we're currently sitting inside that server.
         if (pathname?.startsWith(`/${ev.server_id}`)) {
-          alert(
-            ev.reason === "banned"
-              ? "You were banned from this server."
-              : "You were kicked from this server.",
-          );
+          toast.add({
+            title:
+              ev.reason === "banned"
+                ? "You were banned from this server."
+                : "You were kicked from this server.",
+            type: "warning",
+          });
           router.push("/direct-messages");
         }
         router.refresh();

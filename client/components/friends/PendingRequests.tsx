@@ -5,6 +5,7 @@ import { Check, X, Clock } from "lucide-react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import useSWR from "swr";
+import { toast } from "@/components/ui/toast";
 
 function Avatar({ name, avatarURL }: { name: string; avatarURL: string }) {
   return (
@@ -37,7 +38,7 @@ export default function PendingRequests({ currentUser }: { currentUser: string }
         mutate();
       });
     } catch (e) {
-      alert(e);
+      toast.add({ title: e instanceof Error ? e.message : String(e), type: "error" });
     }
   };
 
@@ -49,7 +50,7 @@ export default function PendingRequests({ currentUser }: { currentUser: string }
         router.refresh();
       });
     } catch (e) {
-      alert(e);
+      toast.add({ title: e instanceof Error ? e.message : String(e), type: "error" });
     }
   };
 
@@ -60,7 +61,7 @@ export default function PendingRequests({ currentUser }: { currentUser: string }
         mutate();
       });
     } catch (e) {
-      alert(e);
+      toast.add({ title: e instanceof Error ? e.message : String(e), type: "error" });
     }
   };
 

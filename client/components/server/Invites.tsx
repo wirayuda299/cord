@@ -9,6 +9,7 @@ import { createInvitationCode } from "@/lib/actions/invitations"
 import { Invitation } from "@/types/invitation"
 import { deleteInvitationCode, getAllInvitation } from "@/lib/api/invitation"
 import { EmptyState } from "@/components/ui/empty-state"
+import { toast } from "@/components/ui/toast"
 
 
 
@@ -194,9 +195,9 @@ export default function Invites({ serverID }: { serverID: string }) {
   const handleDelete = async (code: string) => {
     try {
 
-      return await deleteInvitationCode(code).then(() => alert("Code deleted"))
+      return await deleteInvitationCode(code).then(() => toast.add({ title: "Code deleted", type: "success" }))
     } catch (e) {
-      alert(e)
+      toast.add({ title: e instanceof Error ? e.message : String(e), type: "error" })
     }
   }
 
@@ -205,13 +206,13 @@ export default function Invites({ serverID }: { serverID: string }) {
     try {
       const res = await createInvitationCode(serverID, maxUsers)
       if (res && !res.success) {
-        alert(res.message)
+        toast.add({ title: res.message, type: "error" })
         return
       }
-      alert("Invitation code created")
+      toast.add({ title: "Invitation code created", type: "success" })
 
     } catch (e) {
-      alert(e)
+      toast.add({ title: e instanceof Error ? e.message : String(e), type: "error" })
 
     }
     setCreating(false)

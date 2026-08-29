@@ -20,6 +20,7 @@ import { createServerSchema, type CreateServerSchemaType } from "@/lib/validatio
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useAttachedFiles } from "@/hooks/useAttachedFiles"
 import { ALLOWED_FILE_EXTENSIONS } from "@/lib/file-validation"
+import { toast } from "@/components/ui/toast"
 
 export default function CreateServerForm() {
   const { attachedFiles, addFiles, isDragging, onDragOver, onDragLeave, onDrop } = useAttachedFiles()
@@ -35,10 +36,10 @@ export default function CreateServerForm() {
 
     const res = await createServer(data.name)
     if (res && !res.success) {
-      alert(res.message)
+      toast.add({ title: res.message, type: "error" })
       return
     }
-    alert("Server created")
+    toast.add({ title: "Server created", type: "success" })
   }
 
   return (

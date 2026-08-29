@@ -8,6 +8,7 @@ import { cn } from '@/lib/utils'
 import { joinServer } from '@/lib/actions/servers'
 import type { BrowsableServer } from '@/types/server'
 import { useAuth } from '@clerk/nextjs'
+import { toast } from '@/components/ui/toast'
 
 const PALETTE = [
   '#5865f2', '#3ba55d', '#faa61a', '#ed4245', '#9c84ef',
@@ -33,14 +34,14 @@ export default function ServerCard({ server }: { server: BrowsableServer }) {
 
   const handleJoin = () => {
     if (!userId) {
-      alert('You must be signed in to join a server')
+      toast.add({ title: 'You must be signed in to join a server', type: 'warning' })
       return
     }
 
     startTransition(async () => {
       const res = await joinServer(server.id, userId)
       if (res && !res.success) {
-        alert(res.message)
+        toast.add({ title: res.message, type: 'error' })
         return
       }
       setJoined(true)
