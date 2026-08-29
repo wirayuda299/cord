@@ -41,7 +41,6 @@ export async function POST(req: Request) {
   console.log("[webhook] Received event type:", evt.type);
 
   if (evt.type === "user.created") {
-    console.log("user created event triggered -> ", evt.data);
     const { id, username, image_url, email_addresses } = evt.data as UserJSON;
 
     const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080";

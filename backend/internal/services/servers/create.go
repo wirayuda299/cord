@@ -49,7 +49,7 @@ func CreateServer(ctx context.Context, container *databases.Container, srv *Serv
 
 	if serverID == "" {
 		return &httputil.ErrorResponse{
-			Err:  errors.New("failed to create server"),
+			Err:  errors.New("server id is missing, failed to create server"),
 			Code: http.StatusInternalServerError,
 		}
 	}
