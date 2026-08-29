@@ -114,7 +114,7 @@ export default function ChannelHeader({
                )}
 
                {!isInThread && channel.topic && (
-                  <p className="text-xs truncate text-gray-400 hidden md:block capitalize border-l border-gray-600 pl-3">
+                  <p className="text-xs truncate text-gray-400 hidden md:block lowercase border-l border-gray-600 pl-3">
                      {channel?.topic}
                   </p>
                )}
