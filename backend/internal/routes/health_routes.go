@@ -12,5 +12,5 @@ func RegisterHealthRoutes(r *mux.Router) {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
 		json.NewEncoder(w).Encode(map[string]string{"status": "ok"})
-	}).Methods(http.MethodGet)
+	}).Methods(http.MethodGet, http.MethodHead)
 }
