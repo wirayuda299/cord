@@ -72,6 +72,7 @@ func (s *Server) Run() {
 	th := handlers.NewThreadHandler(s.db, hub)
 	ssh := handlers.NewSafetySetupHandler(s.db, hub)
 
+	routes.RegisterHealthRoutes(r)
 	routes.RegisterThreadRoute(r, th, middleware.ClerkAuth())
 	routes.RegisterConversationRoute(r, crh, middleware.ClerkAuth())
 	routes.RegisterFriendRoutes(r, fh, middleware.ClerkAuth())
