@@ -3,7 +3,7 @@ import type { NextRequest } from 'next/server'
 
 // createRouteMatcher is deprecated (path-based auth in middleware can diverge
 // from actual routing); matching the same public paths by hand instead.
-function isPublicRoute(req: NextRequest) {
+export function isPublicRoute(req: NextRequest) {
   const { pathname } = req.nextUrl
   return (
     pathname === "/" ||

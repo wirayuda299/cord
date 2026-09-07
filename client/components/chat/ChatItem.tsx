@@ -15,11 +15,7 @@ import {
 
 import MessageMenu from "./MessageMenu";
 import type { Message } from "@/types/chat";
-import {
-   addReaction,
-   editMessage,
-   removeReaction,
-} from "@/lib/api/messages";
+import { addReaction, editMessage, removeReaction } from "@/lib/api/messages";
 import Link from "next/link";
 import {
    Dialog,
@@ -288,7 +284,10 @@ function ChatItem({
             }
             onToggleReaction(message.id, emoji);
          } catch (e) {
-            toast.add({ title: e instanceof Error ? e.message : String(e), type: "error" });
+            toast.add({
+               title: e instanceof Error ? e.message : String(e),
+               type: "error",
+            });
          }
       },
       [currentUser, message.id, message.reactions, onToggleReaction, isBanned],
@@ -309,18 +308,14 @@ function ChatItem({
          onEdit?.(message.id, editContent.trim());
          setIsEditing(false);
       } catch (e) {
-         toast.add({ title: e instanceof Error ? e.message : "Failed to edit message", type: "error" });
+         toast.add({
+            title: e instanceof Error ? e.message : "Failed to edit message",
+            type: "error",
+         });
       } finally {
          setIsSaving(false);
       }
-   }, [
-      editContent,
-      message.content,
-      message.id,
-      message.channel_id,
-      serverId,
-      onEdit,
-   ]);
+   }, [editContent, message.content, message.id, message.channel_id, onEdit]);
 
    const handleCancelEdit = useCallback(() => {
       setEditContent(message.content);

@@ -6,10 +6,7 @@ import { useAuth } from "@clerk/nextjs";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 export type ConnectionStatus =
-   | "connecting"
-   | "connected"
-   | "disconnected"
-   | "error";
+   "connecting" | "connected" | "disconnected" | "error";
 
 type Options = {
    onMessage: (msg: ResponseMessage) => void;
@@ -107,7 +104,7 @@ export function useWebSocket(
       // instead of leaving messages attributed to whoever connected first —
       // the backend binds a connection's identity to the token at handshake
       // and never re-checks it per message.
-   }, [serverId, channelId, userId]);
+   }, [serverId, channelId, userId, getToken]);
 
    const sendMessage = useCallback((msg: object): boolean => {
       if (wsRef.current?.readyState !== WebSocket.OPEN) return false;

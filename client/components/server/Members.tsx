@@ -208,8 +208,8 @@ function MemberRow({
   const handleBanMember = async (reason: string) => {
     try {
       const res = await banMember(serverID, member.user_id, reason);
-      if (res.error) {
-        throw new Error(res.error);
+      if (!res.success) {
+        throw new Error(res.message);
       }
       setShowBanDialog(false);
       onMutate();
