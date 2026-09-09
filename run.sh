@@ -114,7 +114,7 @@ cleanup() {
     done
 
     start_spinner "Stopping containers..."
-    podman stop postgres redis >/dev/null 2>&1 || true
+    podman compose stop >/dev/null 2>&1 || true
     stop_spinner
     log_ok "Containers stopped"
 
@@ -201,12 +201,23 @@ kill_port 8000
 # --- Containers ---
 log_section "🐳 Containers"
 
-start_spinner "Restarting postgres & redis..."
-podman stop postgres redis >/dev/null 2>&1 || true
-podman start postgres redis >/dev/null 2>&1
-stop_spinner
-log_ok "postgres container started"
-log_ok "redis container started"
+REQUIRED_CONTAINERS=(cord-postgres cord-redis)
+NEED_COMPOSE=false
+for c in "${REQUIRED_CONTAINERS[@]}"; do
+    if [[ -z "$(podman ps --filter "name=^${c}\$" --filter status=running -q)" ]]; then
+        NEED_COMPOSE=true
+        break
+    fi
+done
+
+if [[ "$NEED_COMPOSE" == true ]]; then
+    start_spinner "postgres/redis not running — starting via podman compose..."
+    podman compose up -d >/dev/null 2>&1
+    stop_spinner
+    log_ok "postgres & redis containers started"
+else
+    log_ok "postgres & redis already running — skipping compose up"
+fi
 
 start_spinner "Waiting for postgres & redis to accept connections..."
 wait_for_port 127.0.0.1 5432 "postgres" 20 || true
@@ -214,6 +225,20 @@ wait_for_port 127.0.0.1 6379 "redis" 20 || true
 stop_spinner
 log_ok "postgres ready"
 log_ok "redis ready"
+
+# --- Migrations ---
+log_section "🗃️  Migrations"
+
+start_spinner "Applying database migrations..."
+if (cd backend && go run ./cmd/migrate) >"$LOG_DIR/migrate.log" 2>&1; then
+    stop_spinner
+    log_ok "Migrations up to date"
+else
+    stop_spinner
+    log_error "Migrations failed — see $LOG_DIR/migrate.log"
+    cat "$LOG_DIR/migrate.log"
+    exit 1
+fi
 
 # --- Services ---
 log_section "⚙️  Services"
@@ -232,8 +257,7 @@ else
 fi
 
 start_service "Backend API    " "backend" "$LOG_DIR/backend-api.log"    $GO_RUNNER run cmd/api/main.go
-start_service "Backend Worker " "backend" "$LOG_DIR/backend-worker.log" $GO_RUNNER run cmd/worker/main.go
-start_service "Frontend Client" "client"  "$LOG_DIR/frontend.log"        pnpm run dev
+start_service "Frontend Client" "client"  "$LOG_DIR/frontend.log"        bun run dev
 
 # --- ngrok ---
 log_section "🌐 ngrok Tunnel"
@@ -290,9 +314,8 @@ echo -e "  ${BOLD}${YELLOW}  ${NGROK_URL}/api/webhook${RESET}"
 echo ""
 echo -e "  ${BOLD}${WHITE}📄  Log Files${RESET}"
 echo -e "  ${DIM}─────────────────────────────────────────────────────${RESET}"
-echo -e "  ${CYAN}Backend API   ${RESET} $LOG_DIR/backend-api.log"
-echo -e "  ${CYAN}Backend Worker${RESET} $LOG_DIR/backend-worker.log"
-echo -e "  ${CYAN}Frontend      ${RESET} $LOG_DIR/frontend.log"
+echo -e "  ${CYAN}Backend API${RESET} $LOG_DIR/backend-api.log"
+echo -e "  ${CYAN}Frontend   ${RESET} $LOG_DIR/frontend.log"
 echo ""
 print_divider
 echo ""
@@ -304,7 +327,6 @@ tail -F \
     --pid="$$" \
     -q \
     "$LOG_DIR/backend-api.log" \
-    "$LOG_DIR/backend-worker.log" \
     "$LOG_DIR/frontend.log" 2>/dev/null | awk '
     /^./ {
         print "  " $0

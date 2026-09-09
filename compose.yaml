@@ -1,0 +1,34 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: cord-postgres
+    environment:
+      POSTGRES_USER: cord
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: cord
+    ports:
+      - "5432:5432"
+    volumes:
+      - cord-postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U cord -d cord"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: cord-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - cord-redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  cord-postgres-data:
+  cord-redis-data:

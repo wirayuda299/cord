@@ -29,12 +29,6 @@ type ChatFormProps = {
 };
 
 
-type UploadState =
-  | "idle"
-  | "uploading"
-  | "completed"
-  | "consumed"
-
 type UploadContext = {
   id: number
   promise: Promise<
@@ -44,6 +38,9 @@ type UploadContext = {
     }>
   >
   result: UploadResult | null
+  // set once handleSubmit takes ownership of this upload, so the
+  // attach-time cleanup paths below know not to delete its asset
+  consumed: boolean
 }
 
 export default function ChatForm({
@@ -65,9 +62,6 @@ export default function ChatForm({
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const uploadPromiseRef = useRef<Promise<APIResponse<UploadResult | null>> | null>(null);
-  const uploadResultRef = useRef<APIResponse<UploadResult> | null>(null);
-  const uploadStateRef = useRef<UploadState>("idle");
   const router = useRouter();
   const isConnected = status === "connected";
 
@@ -98,7 +92,8 @@ export default function ChatForm({
 
       uploadRef.current = null
 
-      if (upload?.result) {
+      // Don't delete an asset handleSubmit already took ownership of.
+      if (upload?.result && !upload.consumed) {
         void deleteImage(upload.result.public_id).catch((error) => {
           console.error("Failed to cleanup uploaded image:", error)
         })
@@ -112,17 +107,25 @@ export default function ChatForm({
 
     const promise = uploadImage(file)
 
-    uploadRef.current = {
+    // Captured by identity in the closure below so staleness/consumed
+    // checks still work even after uploadRef.current has moved on or
+    // been nulled out (e.g. by the "no file" branch above, or by
+    // handleSubmit's clearFiles()).
+    const thisUpload: UploadContext = {
       id: uploadId,
       promise,
       result: null,
+      consumed: false,
     }
 
+    uploadRef.current = thisUpload
+
     void promise.then(async (response) => {
-      const currentUpload = uploadRef.current
+      const isReplaced = uploadRef.current !== thisUpload
 
       /*
-       * This upload is no longer the current upload.
+       * This upload is no longer the current one AND nothing consumed
+       * it (via submit) in the meantime — it's abandoned.
        *
        * Example:
        * A.jpg started uploading
@@ -130,7 +133,7 @@ export default function ChatForm({
        * B.jpg becomes current upload
        * A.jpg finishes later
        */
-      if (!currentUpload || currentUpload.id !== uploadId) {
+      if (isReplaced && !thisUpload.consumed) {
         if (response.success && response.data) {
           await deleteImage(response.data.public_id).catch((error) => {
             console.error(
@@ -143,9 +146,12 @@ export default function ChatForm({
         return
       }
 
+      // Already consumed by a submit — nothing left to do here.
+      if (isReplaced && thisUpload.consumed) return
+
       // Upload failed
       if (!response.success || !response.data) {
-        uploadRef.current = null
+        if (uploadRef.current === thisUpload) uploadRef.current = null
 
         console.error(
           "Failed to upload image:",
@@ -156,7 +162,7 @@ export default function ChatForm({
       }
 
       // Upload succeeded
-      currentUpload.result = {
+      thisUpload.result = {
         public_id: response.data.public_id,
         url: response.data.url,
       }
@@ -165,11 +171,12 @@ export default function ChatForm({
 
   useEffect(() => {
     const handleBeforeUnload = () => {
-      if (uploadResultRef.current && uploadStateRef.current !== "consumed") {
+      const upload = uploadRef.current;
+      if (upload?.result && !upload.consumed) {
         fetch(`${getPublicApiUrl()}/image/delete`, {
           method: "DELETE",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(uploadResultRef.current.data?.public_id),
+          body: JSON.stringify(upload.result.public_id),
           keepalive: true,
         });
       }
@@ -195,12 +202,16 @@ export default function ChatForm({
     const fileToUpload = attachedFiles[0]?.file;
     const trimmed = message.trim();
 
-    // Capture upload refs before clearFiles() nulls them via useEffect
-    const cachedResult = uploadResultRef.current;
-    const cachedPromise = uploadPromiseRef.current;
+    // Capture the attach-time upload before clearFiles() nulls uploadRef via
+    // useEffect. Marking it consumed tells that cleanup (and the upload's
+    // own .then handler, if still pending) not to delete the asset we're
+    // about to use below.
+    const currentUpload = uploadRef.current;
+    if (currentUpload) currentUpload.consumed = true;
+    const cachedResult = currentUpload?.result;
+    const cachedPromise = currentUpload?.promise;
 
     setMessage("");
-    uploadStateRef.current = "consumed"; // prevent cleanup from deleting the asset we're about to use
     clearFiles();
     clearErrors();
     if (textareaRef.current) textareaRef.current.style.height = "auto";
@@ -221,13 +232,14 @@ export default function ChatForm({
       let attachmentId = "";
 
       if (blobPreview && fileToUpload) {
-        // Use cached result/promise (started on file attach) — avoids double upload
-        const result =
+        // Use the cached result/promise (started on file attach) — avoids double upload
+        const result: UploadResult | null =
           cachedResult ??
-          (await (cachedPromise ?? uploadImage(fileToUpload)));
-        if (result.data) {
-          attachmentUrl = result.data?.url;
-          attachmentId = result.data?.public_id;
+          (await (cachedPromise ?? uploadImage(fileToUpload))).data ??
+          null;
+        if (result) {
+          attachmentUrl = result.url;
+          attachmentId = result.public_id;
         }
       }
 

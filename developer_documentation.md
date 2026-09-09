@@ -66,7 +66,7 @@ erDiagram
 
 ### 2.1 Schema Breakdown
 
-The persistent layer is defined in [schema.sql](schema.sql):
+The persistent layer is defined in [backend/internal/migrations/00001_init_schema.sql](backend/internal/migrations/00001_init_schema.sql), applied via `go run ./cmd/migrate` (goose):
 
 1.  **`users`**: Represents Clerk authenticated accounts synced locally.
 2.  **`servers`**: Guild containers initialized with banner colors and created by an owner.

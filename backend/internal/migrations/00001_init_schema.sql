@@ -1,6 +1,7 @@
+-- +goose Up
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
-
+-- +goose StatementBegin
 CREATE OR REPLACE FUNCTION set_updated_at()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -8,18 +9,14 @@ BEGIN
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
+-- +goose StatementEnd
 
 
 -- =========================================================
 -- enums
 -- =========================================================
 
-DO $$
-BEGIN
-  IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'channel_types') THEN
-    CREATE TYPE channel_types AS ENUM ('text', 'audio', 'forum', 'dm', 'group_dm');
-  END IF;
-END $$;
+CREATE TYPE channel_types AS ENUM ('text', 'audio', 'forum', 'dm', 'group_dm');
 
 
 -- =========================================================
@@ -41,7 +38,9 @@ CREATE INDEX idx_users_username ON users(username);
 
 create extension if not exists pg_trgm;
 create index username_trgm_idx on users using gin (username gin_trgm_ops);
- set pg_trgm.similarity_threshold = 0.2;
+-- pg_trgm.similarity_threshold is a per-session GUC, not schema state — set
+-- it per-connection in application code (or via ALTER DATABASE) if needed,
+-- not here; a bare SET in this file was a no-op that never persisted.
 
 CREATE TRIGGER trg_users_updated_at
 BEFORE UPDATE ON users
@@ -232,7 +231,7 @@ CREATE TABLE threads (
   channel_id uuid NOT NULL REFERENCES channels(id) ON DELETE CASCADE,
   name varchar(255),
   created_by varchar(100) NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-  message_id uuid not null references messages(id) on delete cascade,
+  message_id uuid not null, -- FK to messages(id) added below, after messages is created (circular dependency)
   is_archived boolean NOT NULL DEFAULT false,
   is_locked boolean NOT NULL DEFAULT false,
   created_at timestamptz NOT NULL DEFAULT NOW(),
@@ -305,6 +304,10 @@ CREATE TRIGGER trg_messages_updated_at
 BEFORE UPDATE ON messages
 FOR EACH ROW EXECUTE FUNCTION set_updated_at();
 
+ALTER TABLE threads
+ADD CONSTRAINT threads_message_id_fkey
+FOREIGN KEY (message_id) REFERENCES messages(id) ON DELETE CASCADE;
+
 
 -- =========================================================
 -- pinned messages
@@ -363,7 +366,7 @@ FOR EACH ROW EXECUTE FUNCTION set_updated_at();
 CREATE TABLE permissions (
   id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
   role_id uuid NOT NULL REFERENCES roles(id) ON DELETE CASCADE,
-  list varchar(50)[] NOT NULL DEFAULT ARRAY[]::varchar[],
+  list varchar(50)[] NOT NULL DEFAULT '{}',
   created_at timestamptz NOT NULL DEFAULT NOW(),
   updated_at timestamptz NOT NULL DEFAULT NOW(),
 
@@ -454,37 +457,33 @@ CREATE TRIGGER trg_friends_updated_at
 BEFORE UPDATE ON friends
 FOR EACH ROW EXECUTE FUNCTION set_updated_at();
 
- CREATE TABLE reactions (
-    id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
-    message_id uuid NOT NULL REFERENCES messages(id) ON DELETE
-  CASCADE,
-    user_id varchar(100) NOT NULL REFERENCES users(id) ON DELETE
-  CASCADE,
-    emoji varchar(10) NOT NULL,
-    created_at timestamptz NOT NULL DEFAULT NOW(),
-    CONSTRAINT unique_reaction UNIQUE (message_id, user_id,
-  emoji)
-  );
-
-  CREATE INDEX idx_reactions_message_id ON reactions(message_id);
-  CREATE INDEX idx_reactions_user_id ON reactions(user_id);
-
-
-create table safety_setup(
-   id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
-   level varchar(20) default 'low',
-   created_by varchar(100) NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-   server_id uuid NOT NULL REFERENCES servers(id) ON DELETE CASCADE,
-   created_at timestamptz NOT NULL DEFAULT NOW(),
-   updated_at timestamptz NOT NULL DEFAULT NOW()
+CREATE TABLE reactions (
+  id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+  message_id uuid NOT NULL REFERENCES messages(id) ON DELETE CASCADE,
+  user_id varchar(100) NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  emoji varchar(10) NOT NULL,
+  created_at timestamptz NOT NULL DEFAULT NOW(),
+  CONSTRAINT unique_reaction UNIQUE (message_id, user_id, emoji)
 );
 
+CREATE INDEX idx_reactions_message_id ON reactions(message_id);
+CREATE INDEX idx_reactions_user_id ON reactions(user_id);
 
-alter table safety_setup
-add column content_filter varchar(10) default 'no_role',
-add column default_notifications varchar(20) default 'only_mentions',
-add column dm_spam_filter boolean default false,
-add column require2FA boolean default false;
+
+CREATE TABLE safety_setup(
+  id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+  level varchar(20) default 'low',
+  created_by varchar(100) NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  server_id uuid NOT NULL REFERENCES servers(id) ON DELETE CASCADE,
+  created_at timestamptz NOT NULL DEFAULT NOW(),
+  updated_at timestamptz NOT NULL DEFAULT NOW(),
+  content_filter varchar(10) default 'no_role',
+  default_notifications varchar(20) default 'only_mentions',
+  dm_spam_filter boolean default false,
+  require2FA boolean default false,
+
+  CONSTRAINT unique_safety_setup_server UNIQUE (server_id)
+);
 
 
 -- =========================================================
@@ -505,8 +504,6 @@ CREATE TABLE bans (
 CREATE INDEX idx_bans_server_id ON bans(server_id);
 CREATE INDEX idx_bans_user_id ON bans(user_id);
 
-ALTER TABLE safety_setup ADD CONSTRAINT unique_safety_setup_server UNIQUE (server_id);
-
 -- =========================================================
 -- audit logs
 -- =========================================================
@@ -522,3 +519,9 @@ CREATE TABLE audit_logs (
 );
 
 CREATE INDEX idx_audit_logs_server_id ON audit_logs(server_id);
+
+-- +goose Down
+-- Full reset: this is the baseline migration, so its down is "wipe everything"
+-- rather than a careful reverse-order set of drops.
+DROP SCHEMA public CASCADE;
+CREATE SCHEMA public;
