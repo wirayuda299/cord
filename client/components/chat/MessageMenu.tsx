@@ -188,7 +188,6 @@ function useMenuActions(
   isBanned?: boolean,
 ): MenuAction[] {
   const selectMessage = useAppStore((m) => m.setSelectedMsg);
-  const pathname = usePathname();
 
   return useMemo(
     () => [
@@ -290,7 +289,7 @@ function useMenuActions(
         },
       ] : [])
     ],
-    [hasPermissionManageMessages, userId, message, onEdit, onForward, toggleEmojiPicker, onBookmark, onMore, selectMessage, serverId, pathname, onDelete, isBanned],
+    [hasPermissionManageMessages, userId, message, onEdit, onForward, toggleEmojiPicker, onBookmark, onMore, selectMessage, serverId, onDelete, isBanned],
   );
 }
 

@@ -1,30 +1,32 @@
 import ChatItem from "@/components/chat/ChatItem";
-import { act, cleanup, render, screen } from "@testing-library/react";
+import { toast } from "@/components/ui/toast";
+import { addReaction, editMessage, removeReaction } from "@/lib/api/messages";
+import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 // TODO: still need coverage for —
 //
 // Edit flow (handleSaveEdit / handleCancelEdit):
-// - saving with empty/unchanged content: exits edit mode WITHOUT calling editMessage
-// - saving successfully: editMessage called, onEdit prop called with (id, content), exits edit mode
-// - saving fails: shows error toast, and (per current code) stays IN edit mode — confirm this is intended
-// - pressing Escape while editing: handleCancelEdit resets content and exits edit mode
+// - (done) saving with empty/unchanged content: exits edit mode WITHOUT calling editMessage
+// - (done) saving successfully: editMessage called, onEdit prop called with (id, content), exits edit mode
+// - (done) saving fails: shows error toast, and (per current code) stays IN edit mode — confirm this is intended
+// - (done) pressing Escape while editing: handleCancelEdit resets content and exits edit mode
 //
 // Reactions (handleToggleReaction):
-// - isBanned=true: clicking a reaction does nothing, no addReaction/removeReaction call
-// - already reacted with that emoji: calls removeReaction, not addReaction
-// - not yet reacted: calls addReaction, not removeReaction
-// - API call fails: shows error toast
+// - (done) isBanned=true: clicking a reaction does nothing, no addReaction/removeReaction call
+// - (done) already reacted with that emoji: calls removeReaction, not addReaction
+// - (done) not yet reacted: calls addReaction, not removeReaction
+// - A(done) PI call fails: shows error toast
 //
 // Failed message state (message._status === "failed"):
-// - shows "Failed to send." + Dismiss button instead of normal content
-// - MessageMenu is not rendered at all when isFailed
-// - clicking Dismiss calls handleDelete(message.id)
+// - (done) shows "Failed to send." + Dismiss button instead of normal content
+// - (done) MessageMenu is not rendered at all when isFailed
+// - (done) clicking Dismiss calls handleDelete(message.id)
 //
 // Guard clauses (quick one-liners):
-// - ReplyThread renders nothing unless parent_content AND parent_msg_id AND parent_username are all present
-// - MessageContent renders nothing when there's no image and content is empty/whitespace-only
-// - MessageHeader shows no time string when created_at is an invalid date
+// - (done) ReplyThread renders nothing unless parent_content AND parent_msg_id AND parent_username are all present
+// - (done) MessageContent renders nothing when there's no image and content is empty/whitespace-only
+// - (done) MessageHeader shows no time string when created_at is an invalid date
 //
 // Consider: stub out MessageMenu (vi.mock) for these instead of using the
 // real one, so these tests only assert what ChatItem itself computed and
@@ -63,7 +65,7 @@ const msg = {
    image_url: "",
    image_asset_id: "",
    channel_id: "channel_001",
-   created_at: "2026-09-08T02:15:00.000Z",
+   created_at: new Date(Date.now() - 60 * 1000).toISOString(),
    updated_at: "2026-09-08T02:15:00.000Z",
    parent_msg_id: null,
    parent_content: null,
@@ -92,6 +94,255 @@ const msg = {
 };
 
 describe("Chat item test", () => {
+
+   it("MessageHeader shows no time when created_at is invalid", async () => {
+      render(<ChatItem
+         isBanned={false}
+         variant="channel"
+         currentUser="user_001"
+         message={{
+            ...msg,
+            created_at: "not-a-real-date"
+         }}
+         serverId="srv-1"
+         hasPermissionManageMessages={true}
+         onToggleReaction={vi.fn()}
+      />);
+
+      // header itself still renders (username), only the formatted time is omitted
+      expect(screen.queryByTitle("msg-header")).not.toBeNull()
+      expect(screen.queryByText(/\d{1,2}:\d{2}\s?[AP]M/i)).toBeNull()
+   });
+   it("MessageContent not visible if no image and no content", async () => {
+      render(<ChatItem
+         isBanned={false}
+         variant="channel"
+         currentUser="user_001"
+         message={{
+            ...msg,
+            content: "",
+            image_url: ""
+         }}
+         serverId="srv-1"
+         hasPermissionManageMessages={true}
+         onToggleReaction={vi.fn()}
+      />);
+
+      expect(screen.queryByTitle("content")).toBeNull()
+   });
+
+
+   it("ReplyThread not visible if no parent content", async () => {
+      render(<ChatItem
+         isBanned={false}
+         variant="channel"
+         currentUser="user_001"
+         message={{
+            ...msg,
+            parent_content: null,
+            parent_msg_id: null,
+            parent_username: null,
+         }}
+         serverId="srv-1"
+         hasPermissionManageMessages={true}
+         onToggleReaction={vi.fn()}
+      />);
+
+      expect(screen.queryByTitle("thread-reply")).toBeNull()
+   });
+
+   it("shows Failed to send. + Dismiss button instead of normal content", async () => {
+      const handleDelete = vi.fn()
+      const failedMsg = { ...msg, _status: "failed" as const }
+      render(<ChatItem
+         isBanned={false}
+         variant="channel"
+         currentUser="user_001"
+         message={failedMsg}
+         handleDelete={handleDelete}
+         serverId="srv-1"
+         hasPermissionManageMessages={true}
+         onToggleReaction={vi.fn()}
+      />);
+
+      expect(screen.getByText(/Failed to send/i)).not.toBeFalsy()
+
+      fireEvent.click(await screen.findByText("Dismiss"));
+
+      expect(handleDelete).toHaveBeenCalledWith(failedMsg.id);
+      expect(screen.queryByText(/Add Reaction/i)).toBeNull();
+
+   });
+
+   it("API calls failed, show toast", async () => {
+      render(<ChatItem
+         isBanned={false}
+         variant="channel"
+         currentUser="user_001"
+         message={msg}
+         serverId="srv-1"
+         hasPermissionManageMessages={true}
+         onToggleReaction={vi.fn()}
+      />);
+      vi.mocked(addReaction).mockRejectedValue(new Error("network error"))
+
+      const badge = await screen.findByText("👋");
+      fireEvent.click(badge);
+
+      expect(addReaction).toHaveBeenCalled();
+
+      await waitFor(() => expect(toast.add).toHaveBeenCalled());
+   });
+
+   it("calls addreaction when not reacted with that emoji", async () => {
+      render(<ChatItem
+         isBanned={false}
+         variant="channel"
+         currentUser="user_001"
+         message={msg}
+         serverId="srv-1"
+         hasPermissionManageMessages={true}
+         onToggleReaction={vi.fn()}
+      />);
+
+      const badge = await screen.findByText("👋");
+      fireEvent.click(badge);
+
+      await waitFor(() => expect(addReaction).toHaveBeenCalledWith({
+         message_id: msg.id,
+         emoji: "👋",
+      }));
+   });
+
+
+   it("calls removeReaction when already reacted with that emoji", async () => {
+      render(<ChatItem
+         isBanned={false}
+         variant="channel"
+         currentUser="user_002"
+         message={msg}
+         serverId="srv-1"
+         hasPermissionManageMessages={true}
+         onToggleReaction={vi.fn()}
+      />);
+
+      const badge = await screen.findByText("👋");
+      fireEvent.click(badge);
+
+      await waitFor(() => expect(removeReaction).toHaveBeenCalledWith({
+         message_id: msg.id,
+         emoji: "👋",
+      }));
+      expect(addReaction).not.toHaveBeenCalled();
+   });
+
+   it("should not be able to give reaction if user banned", async () => {
+      render(<ChatItem
+         isBanned={true}
+         variant="channel"
+         currentUser="user_001"
+         message={msg}
+         serverId="srv-1"
+         hasPermissionManageMessages={true}
+      />);
+
+      expect(screen.queryByText(/Add Reaction/i)).toBeNull();
+      expect(addReaction).not.toHaveBeenCalled()
+      expect(removeReaction).not.toHaveBeenCalled()
+   });
+
+   it("show toast and stay in edit mode if submit fail", async () => {
+      render(<ChatItem
+         isBanned={false}
+         variant="channel"
+         currentUser="user_001"
+         message={msg}
+         serverId="srv-1"
+         hasPermissionManageMessages={true}
+      />);
+      vi.mocked(editMessage).mockRejectedValueOnce(new Error("network error"));
+
+      fireEvent.click(await screen.findByText(/Edit Message/i));
+      const textarea = await screen.findByTitle("edit");
+      fireEvent.change(textarea, { target: { value: "hiii" } });
+
+      fireEvent.keyDown(textarea, { key: "Enter" });
+
+
+      await waitFor(() => expect(toast.add).toHaveBeenCalled());
+      expect(editMessage).toHaveBeenCalled();
+
+      expect(screen.queryByTitle("edit")).not.toBeNull();
+   });
+
+   it("press escape should exit edit mode", async () => {
+      render(<ChatItem
+         isBanned={false}
+         variant="channel"
+         currentUser="user_001"
+         message={msg}
+         serverId="srv-1"
+         hasPermissionManageMessages={true}
+      />);
+      fireEvent.click(await screen.findByText(/Edit Message/i));
+      const textarea = await screen.findByTitle("edit");
+
+      fireEvent.change(textarea, { target: { value: "hi" } })
+      fireEvent.keyDown(textarea, { key: 'Escape', code: 'Escape', keyCode: 27 })
+      expect(screen.queryByTitle("edit")).toBeNull();
+
+
+      expect(editMessage).not.toHaveBeenCalled();
+
+      fireEvent.click(await screen.findByText(/Edit Message/i));
+      const reopened = await screen.findByTitle("edit");
+      expect((reopened as HTMLTextAreaElement).value).toBe(msg.content);
+
+   });
+
+   it("skips save on unchanged content", async () => {
+      render(<ChatItem
+         isBanned={false}
+         variant="channel"
+         currentUser="user_001"
+         message={msg}
+         serverId="srv-1"
+         hasPermissionManageMessages={true}
+      />);
+      fireEvent.click(await screen.findByText(/Edit Message/i));
+      const textarea = await screen.findByTitle("edit");
+
+      fireEvent.keyDown(textarea, { key: "Enter" }); // content unchanged
+      expect(editMessage).not.toHaveBeenCalled();
+      // edit mode closed → textarea gone
+      expect(screen.queryByTitle("edit")).toBeNull();
+   });
+
+   it("should success edit message", async () => {
+      render(
+         <ChatItem
+            isBanned={false}
+            variant="channel"
+            currentUser="user_001"
+            message={msg}
+            serverId="srv-1"
+            hasPermissionManageMessages={true}
+         />
+      );
+      const el = await screen.findByText(/Edit Message/i);
+      fireEvent.click(el)
+
+
+      const input = (await screen.findByTitle("edit"))
+
+
+      fireEvent.change(input, { target: { value: "hiii" } });
+      fireEvent.keyDown(input, { key: 'Enter', code: 'Enter', keyCode: 13 });
+      expect(editMessage).toHaveBeenCalledWith({ id: "msg_001", content: "hiii", channel_id: "channel_001" })
+
+      expect(screen.queryByText("hiii")).not.toBeNull()
+
+   })
    it("should be able to edit text", async () => {
       render(
          <ChatItem

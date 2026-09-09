@@ -15,7 +15,7 @@ describe("categories test", async () => {
    it("expect return invalid payload", async () => {
       vi.mocked(auth.protect).mockResolvedValue({
          getToken: vi.fn().mockResolvedValue("token"),
-      } as any);
+      } as never);
 
       await expect(
          createCategory({
@@ -29,7 +29,7 @@ describe("categories test", async () => {
    it("expect return invalid payload when missmatch type", async () => {
       vi.mocked(auth.protect).mockResolvedValue({
          getToken: vi.fn().mockResolvedValue("token"),
-      } as any);
+      } as never);
 
       await expect(
          createCategory({
@@ -44,7 +44,7 @@ describe("categories test", async () => {
    it("should call API when token is not null", async () => {
       vi.mocked(auth.protect).mockResolvedValue({
          getToken: vi.fn().mockResolvedValue("token"),
-      } as any);
+      } as never);
 
       vi.spyOn(global, "fetch").mockResolvedValue(
          new Response(

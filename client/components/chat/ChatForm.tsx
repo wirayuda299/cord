@@ -384,6 +384,7 @@ export default function ChatForm({
           <textarea
             ref={textareaRef}
             rows={1}
+            title="chatinput"
             value={message}
             onChange={(e) => setMessage(e.target.value)}
             onInput={handleInput}

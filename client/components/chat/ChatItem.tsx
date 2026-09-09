@@ -57,6 +57,7 @@ function ReplyThread({
 
    return (
       <a
+         title="thread-reply"
          href={`#${parent_msg_id}`}
          className="mb-1 flex items-center gap-3 hover:underline"
       >
@@ -132,7 +133,7 @@ function MessageContent({ message }: MessageContentProps) {
    }
 
    return (
-      <div className="space-y-1">
+      <div id="content" title="content" className="space-y-1">
          {message.image_url && (
             <AttachmentImage src={message.image_url} status={message._status} />
          )}
@@ -164,7 +165,7 @@ function MessageHeader({ username, isBot, created_at }: MessageHeaderProps) {
    }, [created_at]);
 
    return (
-      <div className="flex items-center gap-2">
+      <div id="msg-header" title="msg-header" className="flex items-center gap-2">
          <span className="cursor-pointer text-sm font-semibold text-white hover:underline">
             {username}
          </span>
@@ -213,11 +214,10 @@ function ReactionBar({
                className={`
             flex items-center gap-1 px-1.5 py-0.5 rounded text-xs
             transition-colors cursor-pointer
-            ${
-               self
-                  ? "bg-discord-blue/20 border border-discord-blue/40 text-white"
-                  : "bg-white/5 border border-white/10 text-gray-300 hover:bg-white/10"
-            }
+            ${self
+                     ? "bg-discord-blue/20 border border-discord-blue/40 text-white"
+                     : "bg-white/5 border border-white/10 text-gray-300 hover:bg-white/10"
+                  }
           `}
             >
                <span>{emoji}</span>
@@ -327,9 +327,8 @@ function ChatItem({
          id={message.id}
          data-chat-item
          data-chat-item-variant={variant}
-         className={`group relative px-4 py-1 transition-colors rounded-md hover:bg-white/5 ${
-            isFailed ? "opacity-60" : ""
-         }`}
+         className={`group relative px-4 py-1 transition-colors rounded-md hover:bg-white/5 ${isFailed ? "opacity-60" : ""
+            }`}
       >
          {message.parent_content && (
             <ReplyThread
@@ -365,6 +364,7 @@ function ChatItem({
                {isEditing ? (
                   <div className="flex flex-col gap-2">
                      <textarea
+                        title="edit"
                         value={editContent}
                         onChange={(e) => setEditContent(e.target.value)}
                         onKeyDown={(e) => {
@@ -428,7 +428,6 @@ function ChatItem({
                                     className="cursor-pointer"
                                     onClick={(e) => {
                                        e.preventDefault();
-
                                        e.stopPropagation();
                                     }}
                                  >
@@ -521,7 +520,7 @@ function ChatItem({
                   currentUser={currentUser}
                   message={message}
                   serverId={serverId}
-                  onDelete={handleDelete ?? (() => {})}
+                  onDelete={handleDelete ?? (() => { })}
                   onEdit={canEdit ? () => setIsEditing(true) : undefined}
                   onToggleReaction={handleToggleReaction}
                   isBanned={isBanned}

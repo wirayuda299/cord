@@ -24,7 +24,7 @@ describe("channel server action test", () => {
       vi.mocked(auth.protect).mockResolvedValue({
          getToken: vi.fn().mockResolvedValue(null),
          userId: null,
-      } as any);
+      } as never);
 
       await expect(
          createChannel({
