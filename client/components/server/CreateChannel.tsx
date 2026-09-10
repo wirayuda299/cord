@@ -62,6 +62,7 @@ export default function CreateChannel({ serverID }: { serverID: string }) {
             <Controller
               control={control}
               name="type"
+              rules={{ required: true }}
               render={() => (
                 <div className="flex flex-col gap-0.5 mb-5">
                   {channelTypes.map((type) => (

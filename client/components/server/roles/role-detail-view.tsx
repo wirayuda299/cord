@@ -223,7 +223,11 @@ export default function RoleDetailView({
     setDeleteError(null)
     try {
       await deleteRole(role.id, serverID)
-      onDeleted?.() ?? onBack()
+      if (onDeleted) {
+        onDeleted()
+      } else {
+        onBack()
+      }
     } catch (e) {
       setDeleteState("error")
       setDeleteError(e instanceof Error ? e.message : "Failed to delete role. Please try again.")

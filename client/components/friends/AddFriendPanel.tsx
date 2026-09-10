@@ -94,6 +94,11 @@ export default function AddFriendPanel() {
           revalidate: false,
         },
       );
+    } catch {
+      // triggerSendFriendRequest rejects on !success — useSWRMutation's own
+      // `error` state (surfaced via errorMessage below) already reflects
+      // this, so there's nothing more to do here beyond not letting the
+      // rejection go unhandled.
     } finally {
       setSendingId(null);
     }

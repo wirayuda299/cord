@@ -9,6 +9,11 @@ export default defineConfig({
    test: {
       environment: "jsdom",
       clearMocks: true,
+      server: {
+         deps: {
+            inline: ["zod"],
+         },
+      },
       coverage: {
          provider: "v8", // or 'istanbul'
       },

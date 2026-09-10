@@ -1,27 +1,27 @@
-"use client"
+"use client";
 
-import { MessageSquare, Users } from "lucide-react"
-import Image from "next/image"
-import Link from "next/link"
-import { usePathname } from "next/navigation"
-import { useEffect } from "react"
-import { cn } from "@/lib/utils"
-import { useAppStore } from "@/stores/store"
-import MobileBackButton from "@/components/sidebar/server/MobileBackButton"
-import type { Conversation } from "@/types/conversation"
+import { MessageSquare, Users } from "lucide-react";
+import Image from "next/image";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { useEffect } from "react";
+import { cn } from "@/lib/utils";
+import { useAppStore } from "@/stores/store";
+import MobileBackButton from "@/components/sidebar/server/MobileBackButton";
+import type { Conversation } from "@/types/conversation";
 
 export default function ConversationListDrawer({
   conversations,
 }: {
-  conversations: Conversation[]
+  conversations: Conversation[];
 }) {
-  const isOpen = useAppStore((state) => state.isChannelSidebarOpen)
-  const setOpen = useAppStore((state) => state.setChannelSidebarOpen)
-  const pathname = usePathname()
+  const isOpen = useAppStore((state) => state.isChannelSidebarOpen);
+  const setOpen = useAppStore((state) => state.setChannelSidebarOpen);
+  const pathname = usePathname();
 
   useEffect(() => {
-    setOpen(false)
-  }, [pathname, setOpen])
+    setOpen(false);
+  }, [pathname, setOpen]);
 
   return (
     <>
@@ -108,5 +108,5 @@ export default function ConversationListDrawer({
         </div>
       </aside>
     </>
-  )
+  );
 }

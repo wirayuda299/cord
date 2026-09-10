@@ -421,7 +421,7 @@ export default function Members({
     error: kickMemberError,
     isLoading: kickMemberLoading,
   } = useSWR(
-    `/api/permissions/${serverID}`,
+    `/api/permissions/${serverID}/kick`,
     () => hasPermission(serverID, PermissionKey.KickMember),
     { suspense: true },
   );
@@ -431,7 +431,7 @@ export default function Members({
     error: banMemberError,
     isLoading: banMemberLoading,
   } = useSWR(
-    `/api/permissions/${serverID}`,
+    `/api/permissions/${serverID}/ban`,
     () => hasPermission(serverID, PermissionKey.BanMember),
     { suspense: true },
   );

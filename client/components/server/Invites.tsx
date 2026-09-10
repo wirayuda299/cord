@@ -202,7 +202,6 @@ export default function Invites({ serverID }: { serverID: string }) {
   }
 
   const handleCreate = async (maxUsers: number) => {
-
     try {
       const res = await createInvitationCode(serverID, maxUsers)
       if (res && !res.success) {
@@ -214,8 +213,9 @@ export default function Invites({ serverID }: { serverID: string }) {
     } catch (e) {
       toast.add({ title: e instanceof Error ? e.message : String(e), type: "error" })
 
+    } finally {
+      setCreating(false)
     }
-    setCreating(false)
   }
 
 
