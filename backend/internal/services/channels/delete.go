@@ -75,7 +75,7 @@ func DeleteChannel(ctx context.Context, db *databases.Container, p *DeleteChanne
 	}
 
 	for _, id := range assetIDs {
-		_ = queue.PushJob(ctx, db.Redis, queue.DeleteImage, &queue.DeleteImagePayload{PublicID: id})
+		_ = queue.PushJob(ctx, db.Jobs, queue.DeleteImage, &queue.DeleteImagePayload{PublicID: id})
 	}
 
 	return nil

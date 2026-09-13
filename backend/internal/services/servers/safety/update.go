@@ -94,7 +94,7 @@ func UpdateServerSafetySettings(ctx context.Context, db *databases.Container, p 
 	} else {
 		changes = append(changes, audit.AuditChange{Field: "safety_setup", After: "initialized"})
 	}
-	_ = audit.EnqueueAuditEntry(ctx, db.Redis, p.ServerID, userID, "safety_setup_updated", "Server Safety Settings", changes)
+	_ = audit.EnqueueAuditEntry(ctx, db.Jobs, p.ServerID, userID, "safety_setup_updated", "Server Safety Settings", changes)
 
 	return nil
 }

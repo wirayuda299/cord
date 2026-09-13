@@ -2,16 +2,17 @@ package databases
 
 import (
 	"context"
-	"fmt"
 	"log"
 
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/redis/go-redis/v9"
+	"github.com/wirayuda299/backend/internal/queue"
 )
+
+const jobQueueBufferSize = 500
 
 type Container struct {
 	Postgres *pgxpool.Pool
-	Redis    *redis.Client
+	Jobs     *queue.Queue
 }
 
 func NewContainer(ctx context.Context) (*Container, error) {
@@ -21,25 +22,12 @@ func NewContainer(ctx context.Context) (*Container, error) {
 		return nil, err
 	}
 
-	rdb, err := NewRedisClient(ctx)
-	if err != nil {
-
-		log.Println("REDIS ERROR -> ", err.Error())
-		pool.Close()
-		return nil, err
-	}
-
 	return &Container{
 		Postgres: pool,
-		Redis:    rdb,
+		Jobs:     queue.NewQueue(jobQueueBufferSize),
 	}, nil
 }
 
 func (c *Container) Close() {
 	c.Postgres.Close()
-	err := c.Redis.Close()
-	if err != nil {
-		fmt.Println("REDIS ERROR -> ", err.Error())
-		return
-	}
 }

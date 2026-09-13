@@ -54,7 +54,7 @@ func UpdateServerProfile(ctx context.Context, db *databases.Container, p *Update
 		idx += 2
 
 		if oldAvatarID != nil && *oldAvatarID != "" && *oldAvatarID != *p.AvatarAssetID {
-			if err := queue.PushJob(ctx, db.Redis, queue.DeleteImage, queue.DeleteImagePayload{PublicID: *oldAvatarID}); err != nil {
+			if err := queue.PushJob(ctx, db.Jobs, queue.DeleteImage, queue.DeleteImagePayload{PublicID: *oldAvatarID}); err != nil {
 				return &httputil.ErrorResponse{Err: err, Code: http.StatusInternalServerError}
 			}
 		}

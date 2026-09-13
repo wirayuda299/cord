@@ -67,7 +67,7 @@ func JoinServerWithInvitationCode(ctx context.Context, db *databases.Container, 
 		}
 	}
 
-	if err := queue.PushJob(ctx, db.Redis, queue.CreateDefaultServerProfile, &queue.CreateDefaultServerProfilePayload{
+	if err := queue.PushJob(ctx, db.Jobs, queue.CreateDefaultServerProfile, &queue.CreateDefaultServerProfilePayload{
 		ServerID: serverID,
 		MemberID: memberID,
 		UserID:   userID,

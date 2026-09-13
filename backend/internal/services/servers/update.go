@@ -87,7 +87,7 @@ func UpdateServer(ctx context.Context, db *databases.Container, p *UpdateServerP
 	}
 
 	if oldLogoID != nil && *oldLogoID != "" {
-		if err := queue.PushJob(ctx, db.Redis, queue.DeleteImage, queue.DeleteImagePayload{
+		if err := queue.PushJob(ctx, db.Jobs, queue.DeleteImage, queue.DeleteImagePayload{
 			PublicID: *oldLogoID,
 			ServerID: p.ServerID,
 		}); err != nil {

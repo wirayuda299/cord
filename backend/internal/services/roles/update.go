@@ -93,7 +93,7 @@ func UpdateRole(ctx context.Context, db *databases.Container, p UpdatePayload) *
 	}
 
 	if len(p.PermissionIDs) > 0 {
-		if err := queue.PushJob(ctx, db.Redis, queue.UpdateRolePermission, queue.UpdateRolePermissionPayload{
+		if err := queue.PushJob(ctx, db.Jobs, queue.UpdateRolePermission, queue.UpdateRolePermissionPayload{
 			Permission: p.PermissionIDs,
 			RoleID:     p.RoleID,
 		}); err != nil {

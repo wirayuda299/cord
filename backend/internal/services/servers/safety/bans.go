@@ -112,7 +112,7 @@ func BanMember(ctx context.Context, db *databases.Container, hub Evictor, p *Ban
 			After: p.Reason,
 		})
 	}
-	_ = audit.EnqueueAuditEntry(ctx, db.Redis, p.ServerID, currentUser, "member_banned", targetUsername, changes)
+	_ = audit.EnqueueAuditEntry(ctx, db.Jobs, p.ServerID, currentUser, "member_banned", targetUsername, changes)
 
 	// Evict from active websockets immediately
 	if hub != nil {
@@ -162,7 +162,7 @@ func UnbanMember(ctx context.Context, db *databases.Container, serverID string, 
 		return &httputil.ErrorResponse{Err: err, Code: http.StatusInternalServerError}
 	}
 
-	_ = audit.EnqueueAuditEntry(ctx, db.Redis, serverID, currentUser, "member_unbanned", targetUsername, nil)
+	_ = audit.EnqueueAuditEntry(ctx, db.Jobs, serverID, currentUser, "member_unbanned", targetUsername, nil)
 
 	return nil
 }

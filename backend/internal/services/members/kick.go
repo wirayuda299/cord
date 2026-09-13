@@ -128,7 +128,7 @@ func KickMember(ctx context.Context, db *databases.Container, hub Evictor, p Kic
 
 	var targetUsername string
 	_ = db.Postgres.QueryRow(ctx, "SELECT username FROM users WHERE id = $1", p.MemberID).Scan(&targetUsername)
-	_ = audit.EnqueueAuditEntry(ctx, db.Redis, p.ServerID, currentUser, "member_kicked", targetUsername, nil)
+	_ = audit.EnqueueAuditEntry(ctx, db.Jobs, p.ServerID, currentUser, "member_kicked", targetUsername, nil)
 
 	if hub != nil {
 		hub.EvictUser(p.ServerID, p.MemberID)

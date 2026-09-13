@@ -55,12 +55,12 @@ func DeleteServer(ctx context.Context, db *databases.Container, evictor ServerEv
 
 	// Queue background jobs to delete logo and banner from Cloudinary if present
 	if logoID != "" {
-		_ = queue.PushJob(ctx, db.Redis, queue.DeleteImage, &queue.DeleteImagePayload{
+		_ = queue.PushJob(ctx, db.Jobs, queue.DeleteImage, &queue.DeleteImagePayload{
 			PublicID: logoID,
 		})
 	}
 	if bannerID != "" {
-		_ = queue.PushJob(ctx, db.Redis, queue.DeleteImage, &queue.DeleteImagePayload{
+		_ = queue.PushJob(ctx, db.Jobs, queue.DeleteImage, &queue.DeleteImagePayload{
 			PublicID: bannerID,
 		})
 	}

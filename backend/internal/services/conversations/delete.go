@@ -91,7 +91,7 @@ func DeleteConversation(ctx context.Context, db *databases.Container, p DeleteCo
 	// still in use.
 	if deleteCmd.RowsAffected() > 0 {
 		for _, id := range assetIDs {
-			_ = queue.PushJob(ctx, db.Redis, queue.DeleteImage, &queue.DeleteImagePayload{PublicID: id})
+			_ = queue.PushJob(ctx, db.Jobs, queue.DeleteImage, &queue.DeleteImagePayload{PublicID: id})
 		}
 	}
 

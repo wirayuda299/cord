@@ -7,7 +7,6 @@ import (
 	"log"
 	"time"
 
-	"github.com/redis/go-redis/v9"
 	"github.com/wirayuda299/backend/internal/databases"
 	"github.com/wirayuda299/backend/internal/queue"
 	"github.com/wirayuda299/backend/internal/services/channels"
@@ -25,68 +24,41 @@ func StartWorker(ctx context.Context, db *databases.Container) {
 		case <-ctx.Done():
 			log.Println("Worker shutting down...")
 			return
-		default:
-		}
-
-		res, err := db.Redis.BRPop(ctx, 5*time.Second, "jobs").Result()
-		if err == redis.Nil {
-			continue
-		}
-		if err != nil {
-			if ctx.Err() != nil {
-				log.Println("Worker shutting down...")
-				return
+		case job := <-db.Jobs.Jobs:
+			if job.MaxRetry == 0 {
+				job.MaxRetry = 3
 			}
-			log.Println("Error getting job from redis:", err)
-			continue
-		}
 
-		var job queue.Job
-		if err := json.Unmarshal([]byte(res[1]), &job); err != nil {
-			log.Printf("Error unmarshalling job: %s", err)
-			continue
-		}
+			log.Printf("📥 Got job: %s", job.Type)
 
-		if job.MaxRetry == 0 {
-			job.MaxRetry = 3
-		}
+			if err := safeHandleJob(ctx, db, job); err != nil {
+				log.Printf("❌ Error handling job: %s", err)
+				job.Attempts++
 
-		log.Printf("📥 Got job: %s", job.Type)
+				if job.Attempts < job.MaxRetry {
+					delay := time.Duration(job.Attempts) * 5 * time.Second
+					select {
+					case <-time.After(delay):
+					case <-ctx.Done():
+						return
+					}
 
-		if err := safeHandleJob(ctx, db, job); err != nil {
-			log.Printf("❌ Error handling job: %s", err)
-			job.Attempts++
-
-			if job.Attempts < job.MaxRetry {
-				delay := time.Duration(job.Attempts) * 5 * time.Second
-				select {
-				case <-time.After(delay):
-				case <-ctx.Done():
-					return
-				}
-				data, err := json.Marshal(job)
-				if err != nil {
-					log.Printf("❌ Failed to marshal job %s for retry: %v", job.Type, err)
+					select {
+					case db.Jobs.Jobs <- job:
+						log.Printf("🔁 Retrying job %s (attempt %d/%d)", job.Type, job.Attempts, job.MaxRetry)
+					case <-ctx.Done():
+						return
+					}
 					continue
 				}
 
-				db.Redis.LPush(ctx, queue.JobsQueue, data)
-				log.Printf("🔁 Retrying job %s (attempt %d/%d)", job.Type, job.Attempts, job.MaxRetry)
+				// max retries exceeded — log and drop
+				log.Printf("💀 Job %s exceeded max retries, dropping: %+v", job.Type, job)
 				continue
 			}
 
-			// max retries exceeded — move to dead letter queue
-			data, err := json.Marshal(job)
-			if err != nil {
-				log.Printf("❌ Failed to marshal job %s for dead letter: %v", job.Type, err)
-				continue
-			}
-			db.Redis.LPush(ctx, queue.DeadLetterQueue, data)
-			log.Printf("💀 Job %s moved to dead letter queue", job.Type)
-			continue
+			log.Printf("✅ Job %s completed successfully", job.Type)
 		}
-
-		log.Printf("✅ Job %s completed successfully", job.Type)
 	}
 }
 

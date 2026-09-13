@@ -58,7 +58,7 @@ func DeleteMessage(p *DeleteMessagePayload) *httputil.ErrorResponse {
 		return &httputil.ErrorResponse{Err: errors.New("message not found"), Code: http.StatusNotFound}
 	}
 	if p.DeleteImgPayload.PublicID != "" {
-		if err := queue.PushJob(p.Ctx, p.DB.Redis, queue.DeleteImage, p.DeleteImgPayload); err != nil {
+		if err := queue.PushJob(p.Ctx, p.DB.Jobs, queue.DeleteImage, p.DeleteImgPayload); err != nil {
 			return &httputil.ErrorResponse{
 				Err:  err,
 				Code: http.StatusInternalServerError,

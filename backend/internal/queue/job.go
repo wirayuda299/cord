@@ -37,11 +37,6 @@ type RecordAuditLogEntryPayload struct {
 	Changes    []AuditChange `json:"changes"`
 }
 
-const (
-	JobsQueue       = "jobs"
-	DeadLetterQueue = "jobs:dead"
-)
-
 type UploadImagePayload struct {
 	FileBytes []byte `json:"file_bytes"`
 	MessageID string `json:"message_id"`

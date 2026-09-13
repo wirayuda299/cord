@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/redis/go-redis/v9"
 	"github.com/wirayuda299/backend/internal/databases"
 	"github.com/wirayuda299/backend/internal/httputil"
 	"github.com/wirayuda299/backend/internal/queue"
@@ -50,7 +49,7 @@ func RecordAuditEntry(ctx context.Context, db *databases.Container, serverID, ac
 	return err
 }
 
-func EnqueueAuditEntry(ctx context.Context, redisClient *redis.Client, serverID, actorID, actionType, target string, changes []AuditChange) error {
+func EnqueueAuditEntry(ctx context.Context, jobs *queue.Queue, serverID, actorID, actionType, target string, changes []AuditChange) error {
 	if serverID == "" || actorID == "" || actionType == "" {
 		return errors.New("missing required fields for audit log")
 	}
@@ -64,7 +63,7 @@ func EnqueueAuditEntry(ctx context.Context, redisClient *redis.Client, serverID,
 		})
 	}
 
-	return queue.PushJob(ctx, redisClient, queue.RecordAuditLogEntry, queue.RecordAuditLogEntryPayload{
+	return queue.PushJob(ctx, jobs, queue.RecordAuditLogEntry, queue.RecordAuditLogEntryPayload{
 		ServerID:   serverID,
 		ActorID:    actorID,
 		ActionType: actionType,
