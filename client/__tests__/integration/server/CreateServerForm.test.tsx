@@ -5,12 +5,17 @@
 
 import CreateServerForm from "@/components/server/CreateServerForm";
 import { createServer } from "@/lib/actions/servers";
+import { uploadImage } from "@/lib/actions/images";
 import { toast } from "@/components/ui/toast";
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("@/lib/actions/servers", () => ({
    createServer: vi.fn(),
+}));
+
+vi.mock("@/lib/actions/images", () => ({
+   uploadImage: vi.fn(),
 }));
 
 vi.mock("@/components/ui/toast", () => ({
@@ -64,7 +69,9 @@ describe("CreateServerForm", () => {
 
       fireEvent.change(nameInput, { target: { value: "My Server" } });
       submit();
-      await waitFor(() => expect(createServer).toHaveBeenCalledWith("My Server"));
+      await waitFor(() =>
+         expect(createServer).toHaveBeenCalledWith("My Server", "", ""),
+      );
    });
 
    it("successful createServer shows a success toast (dialog does not auto-close)", async () => {
@@ -105,6 +112,58 @@ describe("CreateServerForm", () => {
 
       await screen.findByAltText("Server icon");
       expect(screen.queryByText("Upload")).toBeNull();
+   });
+
+   // Regression test: the attached icon used to be shown in the preview but
+   // never actually uploaded or sent to createServer at all — a server
+   // created with an icon selected would silently come out with no icon.
+   it("uploads the attached icon and passes the url/public_id to createServer", async () => {
+      vi.mocked(uploadImage).mockResolvedValue({
+         success: true,
+         data: { url: "https://cdn.example.com/icon.png", public_id: "asset_1" },
+      });
+
+      const { nameInput } = await openDialog();
+      const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
+      fireEvent.change(fileInput, { target: { files: [makeImage()] } });
+      await screen.findByAltText("Server icon");
+
+      fireEvent.change(nameInput, { target: { value: "My Server" } });
+      fireEvent.click(screen.getByRole("button", { name: "Create" }));
+
+      await waitFor(() => expect(uploadImage).toHaveBeenCalledWith(expect.any(File)));
+      await waitFor(() =>
+         expect(createServer).toHaveBeenCalledWith(
+            "My Server",
+            "https://cdn.example.com/icon.png",
+            "asset_1",
+         ),
+      );
+   });
+
+   it("still creates the server (without an icon) and shows an error toast when the icon upload fails", async () => {
+      vi.mocked(uploadImage).mockResolvedValue({
+         success: false,
+         message: "Failed to upload image",
+      });
+
+      const { nameInput } = await openDialog();
+      const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
+      fireEvent.change(fileInput, { target: { files: [makeImage()] } });
+      await screen.findByAltText("Server icon");
+
+      fireEvent.change(nameInput, { target: { value: "My Server" } });
+      fireEvent.click(screen.getByRole("button", { name: "Create" }));
+
+      await waitFor(() =>
+         expect(toast.add).toHaveBeenCalledWith({
+            title: "Failed to upload image",
+            type: "error",
+         }),
+      );
+      await waitFor(() =>
+         expect(createServer).toHaveBeenCalledWith("My Server", "", ""),
+      );
    });
 
    it('drag-over/drag-leave toggles the dashed-border "drop here" visual state', async () => {
