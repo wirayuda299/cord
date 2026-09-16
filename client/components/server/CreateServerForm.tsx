@@ -1,6 +1,6 @@
 "use client";
 
-import { Edit, ImagePlus, Plus } from "lucide-react";
+import { Edit, ImagePlus, Loader2, Plus } from "lucide-react";
 import Image from "next/image";
 
 import { Button } from "@/components/ui/button";
@@ -41,6 +41,10 @@ export default function CreateServerForm() {
       resolver: zodResolver(createServerSchema as any),
       defaultValues: { name: "" },
    });
+   // React Hook Form flips this to true for the whole duration of the async
+   // handleSubmit callback below (icon upload + create call), so it doesn't
+   // need its own separate useState.
+   const { isSubmitting } = form.formState;
 
    const handleSubmit = async (data: CreateServerSchemaType) => {
       if (!data.name.trim()) return;
@@ -86,7 +90,7 @@ export default function CreateServerForm() {
             <form onSubmit={form.handleSubmit(handleSubmit)}>
                <div className="flex flex-col items-center gap-4 pt-8 px-6">
                   <label
-                     className="cursor-pointer group"
+                     className={`group ${isSubmitting ? "pointer-events-none opacity-60" : "cursor-pointer"}`}
                      onDragOver={onDragOver}
                      onDragLeave={onDragLeave}
                      onDrop={onDrop}
@@ -96,6 +100,7 @@ export default function CreateServerForm() {
                         type="file"
                         accept={ALLOWED_FILE_EXTENSIONS}
                         className="hidden"
+                        disabled={isSubmitting}
                         onChange={(e) =>
                            e.target.files &&
                            addFiles(Array.from(e.target.files))
@@ -157,7 +162,8 @@ export default function CreateServerForm() {
                               {...field}
                               autoComplete="off"
                               placeholder="Enter server name"
-                              className="bg-bg-input border-none text-white placeholder-gray-500 focus-visible:ring-1 focus-visible:ring-indigo-500"
+                              disabled={isSubmitting}
+                              className="bg-bg-input border-none text-white placeholder-gray-500 focus-visible:ring-1 focus-visible:ring-indigo-500 disabled:opacity-60"
                            />
                         </Field>
                      )}
@@ -174,15 +180,24 @@ export default function CreateServerForm() {
                   <div className="flex justify-between items-center pt-2">
                      <DialogClose
                         type="button"
-                        className="text-gray-300 hover:text-white"
+                        disabled={isSubmitting}
+                        className="text-gray-300 hover:text-white disabled:opacity-50 disabled:pointer-events-none"
                      >
                         Back
                      </DialogClose>
                      <Button
                         type="submit"
+                        disabled={isSubmitting}
                         className="bg-indigo-500 hover:bg-indigo-600 text-white px-6 disabled:opacity-50 disabled:cursor-not-allowed"
                      >
-                        Create
+                        {isSubmitting ? (
+                           <>
+                              <Loader2 size={14} className="animate-spin" />
+                              Creating...
+                           </>
+                        ) : (
+                           "Create"
+                        )}
                      </Button>
                   </div>
                </div>

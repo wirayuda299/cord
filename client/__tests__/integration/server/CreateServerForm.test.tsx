@@ -7,6 +7,7 @@ import CreateServerForm from "@/components/server/CreateServerForm";
 import { createServer } from "@/lib/actions/servers";
 import { uploadImage } from "@/lib/actions/images";
 import { toast } from "@/components/ui/toast";
+import type { APIResponse } from "@/types/response";
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -120,6 +121,7 @@ describe("CreateServerForm", () => {
    it("uploads the attached icon and passes the url/public_id to createServer", async () => {
       vi.mocked(uploadImage).mockResolvedValue({
          success: true,
+         message: "uploaded",
          data: { url: "https://cdn.example.com/icon.png", public_id: "asset_1" },
       });
 
@@ -164,6 +166,33 @@ describe("CreateServerForm", () => {
       await waitFor(() =>
          expect(createServer).toHaveBeenCalledWith("My Server", "", ""),
       );
+   });
+
+   // Regression test: there was previously no loading state at all — the
+   // form gave no feedback while the (icon upload +) create request was in
+   // flight, so nothing stopped a user from clicking "Create" repeatedly.
+   it("shows a spinner and disables the form while the request is in flight", async () => {
+      let resolveCreate!: (value: APIResponse) => void;
+      vi.mocked(createServer).mockReturnValue(
+         new Promise<APIResponse>((resolve) => {
+            resolveCreate = resolve;
+         }),
+      );
+
+      const { nameInput } = await openDialog();
+      fireEvent.change(nameInput, { target: { value: "My Server" } });
+      fireEvent.click(screen.getByRole("button", { name: "Create" }));
+
+      await screen.findByText("Creating...");
+      expect(nameInput.disabled).toBe(true);
+      expect((screen.getByText("Back") as HTMLButtonElement).disabled).toBe(true);
+      const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
+      expect(fileInput.disabled).toBe(true);
+
+      resolveCreate({ success: true, message: "created" });
+
+      await waitFor(() => expect(screen.queryByText("Creating...")).toBeNull());
+      expect(nameInput.disabled).toBe(false);
    });
 
    it('drag-over/drag-leave toggles the dashed-border "drop here" visual state', async () => {
