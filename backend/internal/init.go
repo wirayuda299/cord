@@ -56,7 +56,7 @@ func (s *Server) Run() {
 	hub := websocket.NewHub()
 	go hub.Run()
 
-	middleware.SetupMiddleware(r)
+	middleware.SetupMiddleware(r, s.db.Config.ClientURL)
 
 	ch := handlers.NewChannelHandler(s.db)
 	cth := handlers.NewCategoryHandler(s.db)
@@ -71,6 +71,7 @@ func (s *Server) Run() {
 	crh := handlers.NewConversationHandler(s.db)
 	th := handlers.NewThreadHandler(s.db, hub)
 	ssh := handlers.NewSafetySetupHandler(s.db, hub)
+	imgh := handlers.NewImageHandler(s.db)
 
 	routes.RegisterHealthRoutes(r)
 	routes.RegisterThreadRoute(r, th, middleware.ClerkAuth())
@@ -82,7 +83,7 @@ func (s *Server) Run() {
 	routes.RegisterPermissionRoute(r, ph, middleware.ClerkAuth())
 	routes.RegisterRoleRoute(r, rh, middleware.ClerkAuth())
 	routes.RegisterChannelRoutes(r, ch, middleware.ClerkAuth())
-	routes.RegisterImagesRoutes(r, middleware.ClerkAuth())
+	routes.RegisterImagesRoutes(r, imgh, middleware.ClerkAuth())
 	routes.ServerRoutes(r, sh, ssh, middleware.ClerkAuth())
 	routes.WebSocketRoutes(r, hub, s.db)
 	routes.MessagesRoutes(r, mh, hub, middleware.ClerkAuth())
@@ -91,7 +92,7 @@ func (s *Server) Run() {
 	done := make(chan bool, 1)
 
 	server := &http.Server{
-		Handler:      middleware.CORSHandler(r),
+		Handler:      middleware.CORSHandler(s.db.Config.ClientURL, r),
 		Addr:         ":" + "8080",
 		WriteTimeout: 20 * time.Second,
 		ReadTimeout:  15 * time.Second,

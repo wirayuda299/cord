@@ -10,6 +10,7 @@ import (
 	"github.com/wirayuda299/backend/internal/databases"
 	"github.com/wirayuda299/backend/internal/httputil"
 	"github.com/wirayuda299/backend/internal/queue"
+	"github.com/wirayuda299/backend/internal/services/permissions"
 	"github.com/wirayuda299/backend/internal/utils"
 )
 
@@ -30,6 +31,22 @@ func UpdateServer(ctx context.Context, db *databases.Container, p *UpdateServerP
 	}
 	if p.ServerID == "" {
 		return &httputil.ErrorResponse{Err: errors.New("server ID is required"), Code: http.StatusBadRequest}
+	}
+
+	// Same gate as the other server-settings endpoint (safety.UpdateServerSafetySettings):
+	// owner or a role with manage_server. Without this, any authenticated
+	// user could rewrite any server's name/description/privacy/banner by ID.
+	hasPerm, err := permissions.HasPermission(&permissions.HasPermissionType{
+		Ctx:        ctx,
+		Db:         db,
+		ServerID:   p.ServerID,
+		Permission: "manage_server",
+	})
+	if err != nil {
+		return &httputil.ErrorResponse{Err: err, Code: http.StatusInternalServerError}
+	}
+	if !hasPerm {
+		return &httputil.ErrorResponse{Err: errors.New("you not allowed to update this server"), Code: http.StatusForbidden}
 	}
 
 	setClauses := []string{}

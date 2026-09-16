@@ -19,6 +19,7 @@ type JoinServerPayload struct {
 
 type ServerInfo struct {
 	CreatedBy string
+	Private   bool
 }
 
 func JoinServer(ctx context.Context, db *databases.Container, p *JoinServerPayload) *httputil.ErrorResponse {
@@ -40,7 +41,7 @@ func JoinServer(ctx context.Context, db *databases.Container, p *JoinServerPaylo
 	}()
 
 	var server ServerInfo
-	err = tx.QueryRow(ctx, "SELECT created_by from servers where id = $1", p.ServerId).Scan(&server.CreatedBy)
+	err = tx.QueryRow(ctx, "SELECT created_by, private from servers where id = $1", p.ServerId).Scan(&server.CreatedBy, &server.Private)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return &httputil.ErrorResponse{Err: errors.New("Server not found"), Code: http.StatusNotFound}
@@ -50,6 +51,14 @@ func JoinServer(ctx context.Context, db *databases.Container, p *JoinServerPaylo
 
 	if server.CreatedBy == userID {
 		return &httputil.ErrorResponse{Err: errors.New("you are own the server"), Code: http.StatusBadRequest}
+	}
+
+	// This endpoint takes only a server ID (no invitation code) and is the
+	// backing call for BrowseServers, which already filters to public
+	// servers only. Without this check, anyone who learns a private
+	// server's ID could join it directly, bypassing invitations entirely.
+	if server.Private {
+		return &httputil.ErrorResponse{Err: errors.New("this server is private, an invitation is required to join"), Code: http.StatusForbidden}
 	}
 
 	var isBanned bool

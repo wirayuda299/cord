@@ -23,6 +23,8 @@ class FakeWebSocket {
   readyState = FakeWebSocket.CONNECTING;
   onopen: ((e: Event) => void) | null = null;
   onmessage: ((e: MessageEvent) => void) | null = null;
+  onclose: ((e: Event) => void) | null = null;
+  onerror: ((e: Event) => void) | null = null;
   sentMessages: string[] = [];
   closedWith: [number | undefined, string | undefined] | null = null;
 
@@ -46,6 +48,18 @@ class FakeWebSocket {
 
   triggerMessage(data: string) {
     this.onmessage?.({ data } as MessageEvent);
+  }
+
+  // Simulates the server/network dropping the connection out from under us
+  // (server restart, network blip, idle timeout) — distinct from close(),
+  // which is *this side* intentionally closing.
+  triggerClose() {
+    this.readyState = FakeWebSocket.CLOSED;
+    this.onclose?.(new Event("close"));
+  }
+
+  triggerError() {
+    this.onerror?.(new Event("error"));
   }
 }
 
@@ -164,5 +178,50 @@ describe("useWebSocket", () => {
     unmount();
 
     expect(ws.closedWith).toEqual([1000, "cleanup"]);
+  });
+
+  it("sets status to disconnected, calls onClose, and automatically reconnects when the socket drops", async () => {
+    vi.useFakeTimers();
+    try {
+      mockAuth("tok123");
+      const onClose = vi.fn();
+
+      const { result } = renderHook(() =>
+        useWebSocket("srv1", "chan1", { onMessage: vi.fn(), onClose }),
+      );
+
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(0); // flush the getToken() microtask
+      });
+      expect(FakeWebSocket.instances).toHaveLength(1);
+      const first = FakeWebSocket.instances[0];
+      act(() => first.triggerOpen());
+      expect(result.current.status).toBe("connected");
+
+      act(() => first.triggerClose());
+      expect(result.current.status).toBe("disconnected");
+      expect(onClose).toHaveBeenCalledTimes(1);
+      expect(FakeWebSocket.instances).toHaveLength(1); // no reconnect attempt yet
+
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(2000);
+      });
+
+      expect(FakeWebSocket.instances).toHaveLength(2); // reconnected
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("calls onError when the socket errors", async () => {
+    mockAuth("tok123");
+    const onError = vi.fn();
+
+    renderHook(() => useWebSocket("srv1", "chan1", { onMessage: vi.fn(), onError }));
+
+    await waitFor(() => expect(FakeWebSocket.instances).toHaveLength(1));
+    act(() => FakeWebSocket.instances[0].triggerError());
+
+    expect(onError).toHaveBeenCalledTimes(1);
   });
 });

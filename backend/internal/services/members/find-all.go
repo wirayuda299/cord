@@ -64,7 +64,7 @@ func FindMembersInServer(ctx context.Context, db *databases.Container, serverID 
 			EXISTS(SELECT 1 FROM bans WHERE server_id = m.server_id AND user_id = m.user_id) as is_banned
 			from members as m
 			left join server_profile as sp on sp.user_id = m.user_id and sp.server_id = m.server_id
-			left join user_roles as ur on ur.user_id = m.user_id
+			left join user_roles as ur on ur.user_id = m.user_id and ur.server_id = m.server_id
 			left join roles as r on r.id = ur.role_id
 			where m.server_id = $1
 		`, serverID)

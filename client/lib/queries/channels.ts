@@ -20,7 +20,7 @@ export type GroupedChannels = {
   uncategorized: Channel[]
   categories: CategoryWithChannels[]
 }
-export async function getAllChannel(serverID: string): Promise<GroupedChannels> {
+export async function getAllChannel(serverID: string): Promise<GroupedChannels | null> {
   const { getToken, userId } = await auth()
   try {
     if (!userId) {
@@ -39,6 +39,11 @@ export async function getAllChannel(serverID: string): Promise<GroupedChannels> 
     })
     return await res.json().then((d) => d.data)
   } catch (e) {
-    return [] as unknown as Promise<GroupedChannels>
+    // Callers must treat this as "couldn't load" and render their own
+    // fallback — previously this returned `[]` mis-cast as GroupedChannels,
+    // so `channels.server` silently became `undefined` instead of the
+    // failure being visible, which crashed callers with no null-check
+    // (e.g. ServerSidebar) instead of falling back gracefully.
+    return null
   }
 }

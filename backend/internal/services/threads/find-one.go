@@ -8,6 +8,7 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/wirayuda299/backend/internal/databases"
 	"github.com/wirayuda299/backend/internal/httputil"
+	"github.com/wirayuda299/backend/internal/services/members"
 	"github.com/wirayuda299/backend/internal/utils"
 )
 
@@ -48,6 +49,17 @@ func FindThreadByID(ctx context.Context, db *databases.Container, id string) (*T
 			return nil, &httputil.ErrorResponse{Err: err, Code: http.StatusNotFound}
 		}
 		return nil, &httputil.ErrorResponse{Err: err, Code: http.StatusInternalServerError}
+	}
+
+	// Threads inherit their parent channel's access boundary — without this,
+	// any authenticated user who obtains a thread ID (from any server,
+	// public or private) could read its metadata.
+	allowed, accessErr := members.VerifyChannelAccess(ctx, db, t.ChannelID)
+	if accessErr != nil {
+		return nil, &httputil.ErrorResponse{Err: accessErr, Code: http.StatusInternalServerError}
+	}
+	if !allowed {
+		return nil, &httputil.ErrorResponse{Err: errors.New("forbidden: you do not have access to this thread"), Code: http.StatusForbidden}
 	}
 
 	return &t, nil

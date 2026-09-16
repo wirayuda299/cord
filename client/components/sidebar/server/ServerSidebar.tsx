@@ -36,6 +36,13 @@ export default async function ServerSidebar({
     getAllChannel(serverId)
   ])
 
+  if (!channels) {
+    return (
+      <aside className="bg-overlay min-w-64 w-64 h-screen flex flex-col items-center justify-center rounded-l-2xl text-white/50 text-xs p-4 text-center">
+        Couldn&apos;t load this server. Please try again.
+      </aside>
+    )
+  }
 
   return (
     <aside className="bg-overlay min-w-64 w-64 h-screen flex flex-col rounded-l-2xl">

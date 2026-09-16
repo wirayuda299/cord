@@ -278,132 +278,71 @@ func Send(ctx context.Context, m Message, db *databases.Container, channelID str
 		return nil, fmt.Errorf("failed to fetch server owner: %w", ownerErr)
 	}
 
-	if owner == userID {
-		row, err := saveMsg(&SaveMsgPayload{
-			ctx:       ctx,
-			db:        db,
-			channelID: channelID,
-			message:   m,
-			userID:    userID,
-			serverID:  serverID,
-		})
-
-		if err != nil {
-			return nil, err
-		}
-
-		return row, nil
-	} else {
+	if owner != userID {
 		if safetyErr != nil {
 			return nil, safetyErr.Err
 		}
-		s := safetySettings
-		switch s.Level {
-		case "low":
-			row, err := saveMsg(&SaveMsgPayload{
-				ctx:       ctx,
-				db:        db,
-				channelID: channelID,
-				message:   m,
-				userID:    userID,
-				serverID:  serverID,
-			})
-
-			if err != nil {
-				return nil, err
-			}
-
-			return row, nil
-		case "medium":
-
-			if memberErr != nil {
-				if errors.Is(memberErr, pgx.ErrNoRows) {
-					return nil, fmt.Errorf("member not found: %w", memberErr)
-				}
-				return nil, memberErr
-			}
-
-			if time.Now().After(member.joined_at.Add(5 * time.Minute)) {
-				row, err := saveMsg(&SaveMsgPayload{
-					ctx:       ctx,
-					db:        db,
-					channelID: channelID,
-					message:   m,
-					userID:    userID,
-					serverID:  serverID,
-				})
-
-				if err != nil {
-					return nil, err
-				}
-
-				return row, nil
-
-			} else {
-				return nil, errors.New("you can send message if you join this server more than 5 minutes")
-			}
-		case "high":
-			if memberErr != nil {
-				if errors.Is(memberErr, pgx.ErrNoRows) {
-					return nil, fmt.Errorf("member not found: %w", memberErr)
-				}
-				return nil, memberErr
-			}
-
-			if time.Now().After(member.joined_at.Add(10 * time.Minute)) {
-				row, err := saveMsg(&SaveMsgPayload{
-					ctx:       ctx,
-					db:        db,
-					channelID: channelID,
-					message:   m,
-					userID:    userID,
-					serverID:  serverID,
-				})
-
-				if err != nil {
-					return nil, err
-				}
-
-				return row, nil
-
-			} else {
-				return nil, errors.New("you can send message if you join this server more than 10 minutes")
-			}
-		case "highest":
-			usr, err := user.Get(ctx, userID)
-			if err != nil {
-				return nil, err
-			}
-
-			var verified bool
-			for _, v := range usr.PhoneNumbers {
-				if v.Verification.Status == "verified" {
-					verified = true
-				}
-			}
-
-			if verified {
-				row, err := saveMsg(&SaveMsgPayload{
-					ctx:       ctx,
-					db:        db,
-					channelID: channelID,
-					message:   m,
-					userID:    userID,
-					serverID:  serverID,
-				})
-
-				if err != nil {
-					return nil, err
-				}
-
-				return row, nil
-			} else {
-				return nil, errors.New("you must have verified phone number to be able send message in this server")
-			}
-		default:
-			return nil, errors.New("invalid member level")
-
+		if err := authorizeSafetyLevel(ctx, safetySettings.Level, userID, member, memberErr); err != nil {
+			return nil, err
 		}
 	}
 
+	row, err := saveMsg(&SaveMsgPayload{
+		ctx:       ctx,
+		db:        db,
+		channelID: channelID,
+		message:   m,
+		userID:    userID,
+		serverID:  serverID,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return row, nil
+}
+
+// authorizeSafetyLevel returns nil if a non-owner member is allowed to send
+// under the server's safety level, or the same denial error Send previously
+// returned inline for each level.
+func authorizeSafetyLevel(ctx context.Context, level string, userID string, member Member, memberErr error) error {
+	switch level {
+	case "low":
+		return nil
+	case "medium":
+		if memberErr != nil {
+			if errors.Is(memberErr, pgx.ErrNoRows) {
+				return fmt.Errorf("member not found: %w", memberErr)
+			}
+			return memberErr
+		}
+		if !time.Now().After(member.joined_at.Add(5 * time.Minute)) {
+			return errors.New("you can send message if you join this server more than 5 minutes")
+		}
+		return nil
+	case "high":
+		if memberErr != nil {
+			if errors.Is(memberErr, pgx.ErrNoRows) {
+				return fmt.Errorf("member not found: %w", memberErr)
+			}
+			return memberErr
+		}
+		if !time.Now().After(member.joined_at.Add(10 * time.Minute)) {
+			return errors.New("you can send message if you join this server more than 10 minutes")
+		}
+		return nil
+	case "highest":
+		usr, err := user.Get(ctx, userID)
+		if err != nil {
+			return err
+		}
+		for _, v := range usr.PhoneNumbers {
+			if v.Verification.Status == "verified" {
+				return nil
+			}
+		}
+		return errors.New("you must have verified phone number to be able send message in this server")
+	default:
+		return errors.New("invalid member level")
+	}
 }

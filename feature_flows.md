@@ -1,6 +1,6 @@
 # Cord: Application Feature Flows Documentation
 
-This document describes the step-by-step technical execution flows for all features in the **Cord** platform. It details how operations trigger from the Next.js frontend, execute in the Go backend, trigger Redis jobs, affect PostgreSQL tables, and broadcast real-time events to connected clients.
+This document describes the step-by-step technical execution flows for all features in the **Cord** platform. It details how operations trigger from the Next.js frontend, execute in the Go backend, enqueue background jobs on Cord's in-process worker queue (no external broker — see `developer_documentation.md` section 3.4), affect PostgreSQL tables, and broadcast real-time events to connected clients.
 
 ---
 
@@ -14,20 +14,16 @@ graph TD
     ClerkService -->|Event Trigger| SvixWebhook[client/app/api/webhook/route.ts]
     SvixWebhook -->|Svix Verify Signature| ValidRequest{Valid Signature?}
     ValidRequest -->|No| Reject[HTTP 400 Invalid Signature]
-    ValidRequest -->|Yes| ApiCall[PostgreSQL User Sync Endpoint]
-    ApiCall -->|POST /users/create| CreateUser[DB INSERT: users]
-    ApiCall -->|PATCH /users/update| UpdateUser[DB UPDATE: users]
-    ApiCall -->|DELETE /users/delete| DeleteUser[DB DELETE: users]
+    ValidRequest -->|Yes| ApiCall[POST /users/create + X-Internal-Secret header]
+    ApiCall -->|Secret matches INTERNAL_API_SECRET| CreateUser[DB INSERT: users]
+    ApiCall -->|Secret missing/mismatched| RejectInternal[HTTP 401 Unauthorized]
 ```
 
 ### Flow Breakdown
-1.  **Trigger**: User signs up, logs in, edits their profile, or deletes their account via Clerk SSO components.
+1.  **Trigger**: User signs up or logs in via Clerk SSO components. (Only `user.created` is currently handled — there is no `/users/update` or `/users/delete` route; profile edits and deletions aren't synced back to Postgres today.)
 2.  **Auth Webhook**: Clerk issues a webhook event containing payload parameters (`id`, `username`, `image_url`).
 3.  **Signature Verification**: [route.ts](client/app/api/webhook/route.ts) validates signature headers (`svix-id`, `svix-timestamp`, `svix-signature`) using the configuration secret `CLERK_WEBHOOK_SIGNING_SECRET`.
-4.  **Database Synchronization**:
-    *   **Create**: Forwards a payload to the Go REST API `/users/create`. Triggers database statement `INSERT INTO users (id, username, avatar_url, bio, email_verified) VALUES (...)` inside [users.go](backend/internal/handlers/users.go).
-    *   **Update**: Forwards payload to `/users/update`. Triggers SQL query `UPDATE users SET username = ..., avatar_url = ..., updated_at = NOW() WHERE id = ...`.
-    *   **Delete**: Forwards user ID to `/users/delete`. Triggers `DELETE FROM users WHERE id = ...`. Database constraints cascade deletions across members, servers, profile cards, and messages.
+4.  **Database Synchronization**: Forwards a payload, plus an `X-Internal-Secret` header, to the Go REST API `/users/create`. The Go handler ([users.go](backend/internal/handlers/users.go)) compares that header against `INTERNAL_API_SECRET` before doing anything else — this is what stops the endpoint being called directly, since `NEXT_PUBLIC_API_URL` is a public, client-bundled value. On a match, it triggers `INSERT INTO users (id, username, avatar_url, bio, email_verified) VALUES (...)`.
 
 ---
 
@@ -42,31 +38,28 @@ sequenceDiagram
     participant Client as Next.js Client
     participant API as Go REST API
     participant DB as PostgreSQL
-    participant Worker as Go Job Worker
-    participant Redis as Redis Broker
+    participant Worker as Queue-worker goroutine
 
     Client->>API: POST /server/create { "name": "GuildName" }
     Note over API: Extracts User ID from context (Clerk Token Claims)
-    API->>DB: INSERT INTO servers (name, created_by) RETURNING server_id
-    API->>DB: INSERT INTO members (server_id, user_id) RETURNING member_id
-    API->>Redis: Enqueue jobs (create_channel, create_default_server_profile, create_default_server_safety)
+    API->>DB: BEGIN; INSERT INTO servers (name, created_by) RETURNING server_id
+    API->>DB: INSERT INTO members (server_id, user_id) RETURNING member_id; COMMIT
+    Note over API,DB: Server + owner-membership rows commit together —\na failure between them would otherwise leave an\nownerless, unreachable server.
+    API->>Worker: Enqueue jobs (create_channel, create_default_server_profile, create_default_server_safety)
     API-->>Client: HTTP 201 Created
     
     Note over Worker: Asynchronous setup
-    Worker->>Redis: Pop create_channel
     Worker->>DB: INSERT categories ("text channels", "audio channels") & channels ("general")
-    Worker->>Redis: Pop create_default_server_profile
     Worker->>DB: INSERT server_profile
-    Worker->>Redis: Pop create_default_server_safety
     Worker->>DB: INSERT safety_setup
 ```
 
 #### Flow Steps:
 1.  **Request Initiation**: Client calls `/server/create` REST path in [server_routes.go](backend/internal/routes/server_routes.go).
-2.  **Synchronous Setup**:
-    *   Inserts record into `servers` table returning `server_id` via [create.go](backend/internal/services/servers/create.go).
+2.  **Synchronous Setup** (single transaction, via [create.go](backend/internal/services/servers/create.go)):
+    *   Inserts record into `servers` table returning `server_id`.
     *   Inserts the owner member row into the `members` table.
-3.  **Asynchronous Setup**: Enqueues three tasks inside the Redis queue broker via [enqueue.go](backend/internal/queue/enqueue.go):
+3.  **Asynchronous Setup**: After the transaction commits, enqueues three tasks onto the in-process worker queue via [enqueue.go](backend/internal/queue/enqueue.go):
     *   `create_channel`: [defaults.go](backend/internal/services/channels/defaults.go) inserts two categories (`"text channels"` & `"audio channels"`) and creates the `#general` channel for each type.
     *   `create_default_server_profile`: Inserts standard user nickname and avatar into the `server_profile` table.
     *   `create_default_server_safety`: Inserts default settings into `safety_setup` table (Default safety level: `low`).
@@ -226,8 +219,7 @@ sequenceDiagram
     participant Route as client/app/(invite)/[code]
     participant API as Go REST API
     participant DB as PostgreSQL
-    participant Worker as Go Job Worker
-    participant Redis as Redis Broker
+    participant Worker as Queue-worker goroutine
 
     User->>Route: Load page link
     Route->>API: POST /invitation/join { "code": "invite_code" }
@@ -235,9 +227,8 @@ sequenceDiagram
     Note over API: Verify uses < max_users
     API->>DB: INSERT INTO members (server_id, user_id)
     API->>DB: UPDATE invitations SET uses = uses + 1
-    API->>Redis: Enqueue job (create_default_server_profile)
+    API->>Worker: Enqueue job (create_default_server_profile)
     API-->>Route: HTTP 200 Success & redirect to /[serverId]
-    Worker->>Redis: Pop create_default_server_profile
     Worker->>DB: INSERT server_profile
 ```
 
@@ -272,8 +263,8 @@ graph TD
     InsertRole --> InsertPerms[DB INSERT: permissions empty list]
     Client -->|PATCH /roles/update| APIUpdate[roles/update.go]
     APIUpdate --> SyncUpdate[DB UPDATE: roles fields]
-    APIUpdate -->|Optional perms changes| RedisQueue[Redis queue: update_role_permission]
-    RedisQueue --> GoWorker[Worker DB UPDATE: permissions list]
+    APIUpdate -->|Optional perms changes| JobQueue[In-process queue: update_role_permission]
+    JobQueue --> GoWorker[Worker DB UPDATE: permissions list]
 ```
 
 ### Flow Breakdown

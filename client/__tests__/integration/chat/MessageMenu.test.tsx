@@ -284,7 +284,7 @@ describe("MessageMenu", () => {
       });
     });
 
-    it("still calls onDelete and shows an error toast when deleteMessage fails", async () => {
+    it("does not call onDelete and shows an error toast when deleteMessage fails", async () => {
       vi.mocked(deleteMessage).mockResolvedValue({
         success: false,
         message: "server error",
@@ -299,13 +299,15 @@ describe("MessageMenu", () => {
 
       fireEvent.click(screen.getByText("Delete Message"));
 
-      await waitFor(() => expect(onDelete).toHaveBeenCalledWith("msg_6"));
       await waitFor(() =>
         expect(toast.add).toHaveBeenCalledWith({
           title: "server error",
           type: "error",
         }),
       );
+      // A failed delete must not remove the message from the sender's own
+      // view — it's still on the server and visible to everyone else.
+      expect(onDelete).not.toHaveBeenCalled();
     });
   });
 

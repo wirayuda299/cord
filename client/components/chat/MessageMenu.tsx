@@ -276,12 +276,12 @@ function useMenuActions(
               channel_id: message.channel_id,
               server_id: serverId,
             });
-            onDelete(message.id);
             if (res && !res.success) {
               toast.add({ title: res.message, type: "error" })
               return
             }
 
+            onDelete(message.id);
             toast.add({ title: "Message deleted", type: "success" })
           },
           danger: true,

@@ -36,12 +36,12 @@ rm -f "$LOG_DIR"/*.log   # start every run with clean logs, not last run's lefto
 # ─────────────────────────────────────────────
 print_banner() {
     echo ""
-    echo -e "${BOLD}${MAGENTA}  ██████╗ ██████╗ ██████╗ ██████╗ ${RESET}"
-    echo -e "${BOLD}${MAGENTA} ██╔════╝██╔═══██╗██╔══██╗██╔══██╗${RESET}"
-    echo -e "${BOLD}${CYAN} ██║     ██║   ██║██████╔╝██║  ██║${RESET}"
-    echo -e "${BOLD}${CYAN} ██║     ██║   ██║██╔══██╗██║  ██║${RESET}"
-    echo -e "${BOLD}${BLUE} ╚██████╗╚██████╔╝██║  ██║██████╔╝${RESET}"
-    echo -e "${BOLD}${BLUE}  ╚═════╝ ╚═════╝ ╚═╝  ╚═╝╚═════╝ ${RESET}"
+    echo -e "${BOLD}${MAGENTA}  ██████╗ ██████╗  ██████╗ ██████╗ ${RESET}"
+    echo -e "${BOLD}${MAGENTA}  ██╔════╝██╔═██╗  ██╔══██╗██╔══██╗${RESET}"
+    echo -e "${BOLD}${CYAN}     ██║     ██║ ██║  ██████╔╝██║  ██║${RESET}"
+    echo -e "${BOLD}${CYAN}     ██║     ██║ ██║  ██╔══██╗██║  ██║${RESET}"
+    echo -e "${BOLD}${BLUE}    ╚██████╗╚██████╔ ╝██║  ██║██████╔╝${RESET}"
+    echo -e "${BOLD}${BLUE}     ╚═════╝ ╚═════╝  ╚═╝  ╚═╝╚═════╝ ${RESET}"
     echo ""
     echo -e "  ${DIM}${WHITE}Dev environment launcher${RESET}"
     echo ""
@@ -146,7 +146,7 @@ kill_port() {
 # ─────────────────────────────────────────────
 # Polls a TCP port until something is actually accepting connections.
 # `podman start` returns as soon as the container process launches,
-# not once the app inside (e.g. Redis replaying its AOF file) is
+# not once the app inside (e.g. Postgres finishing crash recovery) is
 # actually ready to accept connections — this closes that gap so the
 # Go services don't race the containers on startup.
 wait_for_port() {
@@ -201,7 +201,7 @@ kill_port 8000
 # --- Containers ---
 log_section "🐳 Containers"
 
-REQUIRED_CONTAINERS=(cord-postgres cord-redis)
+REQUIRED_CONTAINERS=(cord-postgres)
 NEED_COMPOSE=false
 for c in "${REQUIRED_CONTAINERS[@]}"; do
     if [[ -z "$(podman ps --filter "name=^${c}\$" --filter status=running -q)" ]]; then
@@ -211,20 +211,18 @@ for c in "${REQUIRED_CONTAINERS[@]}"; do
 done
 
 if [[ "$NEED_COMPOSE" == true ]]; then
-    start_spinner "postgres/redis not running — starting via podman compose..."
+    start_spinner "postgres not running — starting via podman compose..."
     podman compose up -d >/dev/null 2>&1
     stop_spinner
-    log_ok "postgres & redis containers started"
+    log_ok "postgres container started"
 else
-    log_ok "postgres & redis already running — skipping compose up"
+    log_ok "postgres already running — skipping compose up"
 fi
 
-start_spinner "Waiting for postgres & redis to accept connections..."
+start_spinner "Waiting for postgres to accept connections..."
 wait_for_port 127.0.0.1 5432 "postgres" 20 || true
-wait_for_port 127.0.0.1 6379 "redis" 20 || true
 stop_spinner
 log_ok "postgres ready"
-log_ok "redis ready"
 
 # --- Migrations ---
 log_section "🗃️  Migrations"
@@ -262,14 +260,16 @@ start_service "Frontend Client" "client"  "$LOG_DIR/frontend.log"        bun run
 # --- ngrok ---
 log_section "🌐 ngrok Tunnel"
 
-log_step "Launching ngrok on port ${BOLD}8080${RESET}..."
+log_step "Launching ngrok on port ${BOLD}3000${RESET}..."
 
-podman run --net=host -d \
-    -e NGROK_AUTHTOKEN=29KCw1McLRinJcMWuWiIbUJA5hF_2FHVdoSVXap5Cgd66cBPn \
-    --name ngrok_tunnel \
-    --rm \
-    ngrok/ngrok:latest http --url=enough-foal-definitely.ngrok-free.app 3000 \
-    >/dev/null 2>&1 || true
+# Run ngrok natively rather than in a Podman container: on Windows/WSL
+# podman machines, --net=host shares the WSL VM's network namespace (not
+# Windows'), so the container can never reach a dev server bound on the
+# Windows host — every webhook request fails with a 502. The native
+# ngrok binary talks to localhost:3000 directly with no VM hop.
+nohup ngrok http --url=enough-foal-definitely.ngrok-free.app 3000 \
+    >"$LOG_DIR/ngrok.log" 2>&1 &
+PIDS+=("$!")
 
 start_spinner "Waiting for ngrok tunnel to be ready..."
 

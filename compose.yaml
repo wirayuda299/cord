@@ -16,19 +16,5 @@ services:
       timeout: 5s
       retries: 5
 
-  redis:
-    image: redis:7-alpine
-    container_name: cord-redis
-    ports:
-      - "6379:6379"
-    volumes:
-      - cord-redis-data:/data
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
-
 volumes:
   cord-postgres-data:
-  cord-redis-data:

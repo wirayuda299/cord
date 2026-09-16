@@ -50,6 +50,19 @@ func AssignRole(ctx context.Context, db *databases.Container, p *AssignRolePaylo
 		return &httputil.ErrorResponse{Err: errors.New("member user ID is missing"), Code: http.StatusBadRequest}
 	}
 
+	// HasPermission only proves the caller manages *a* role on p.ServerID —
+	// without this, they could assign a role_id belonging to a different
+	// server, granting that foreign role's permissions (hasPermission's
+	// role-permission join filters by user_roles.server_id, not the role's
+	// own server_id) to a member of this one.
+	var roleBelongsToServer bool
+	if err := db.Postgres.QueryRow(ctx, "SELECT EXISTS(SELECT 1 FROM roles WHERE id = $1 AND server_id = $2)", p.RoleID, p.ServerID).Scan(&roleBelongsToServer); err != nil {
+		return &httputil.ErrorResponse{Err: err, Code: http.StatusInternalServerError}
+	}
+	if !roleBelongsToServer {
+		return &httputil.ErrorResponse{Err: errors.New("role not found"), Code: http.StatusNotFound}
+	}
+
 	_, err = db.Postgres.Exec(ctx, "INSERT INTO user_roles(user_id,server_id,role_id,assigned_by) values($1,$2,$3,$4)", p.MemberUserID, p.ServerID, p.RoleID, userID)
 	if err != nil {
 		return &httputil.ErrorResponse{Err: err, Code: http.StatusInternalServerError}

@@ -47,6 +47,10 @@ export function useWebSocket(
          }
 
          const token = await getToken();
+         // The effect can be torn down (or a reconnect superseded by a new
+         // one) while this await is pending — without this guard a stale
+         // connect() could still open a socket after cleanup ran.
+         if (!active) return;
          if (!token) {
             setStatus("error");
             return;
@@ -86,6 +90,22 @@ export function useWebSocket(
                   console.warn("ws: failed to parse message part", err, part);
                }
             }
+         };
+
+         ws.onerror = (e) => {
+            if (!active || wsRef.current !== ws) return;
+            setStatus("error");
+            optionsRef.current.onError?.(e);
+         };
+
+         ws.onclose = () => {
+            if (!active || wsRef.current !== ws) return;
+            setStatus("disconnected");
+            optionsRef.current.onClose?.();
+            // A dropped socket (server restart, network blip, idle timeout)
+            // must not leave the chat stuck showing stale state forever —
+            // reconnect automatically instead of requiring a page refresh.
+            reconnectTimeout.current = setTimeout(connect, 2000);
          };
       }
 

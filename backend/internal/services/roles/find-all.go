@@ -7,6 +7,7 @@ import (
 
 	"github.com/wirayuda299/backend/internal/databases"
 	"github.com/wirayuda299/backend/internal/httputil"
+	"github.com/wirayuda299/backend/internal/services/members"
 )
 
 type Role struct {
@@ -22,6 +23,17 @@ type Role struct {
 func GetAllRoles(ctx context.Context, db *databases.Container, serverID string) ([]Role, *httputil.ErrorResponse) {
 	if serverID == "" {
 		return nil, &httputil.ErrorResponse{Err: errors.New("server ID is missing"), Code: http.StatusBadRequest}
+	}
+
+	// Without this, any authenticated user could enumerate any server's role
+	// list (names, colors, IDs usable in roles/assign) without being a
+	// member of it.
+	joined, joinErr := members.IsUserJoinedServer(ctx, db, serverID)
+	if joinErr != nil {
+		return nil, joinErr
+	}
+	if !joined {
+		return nil, &httputil.ErrorResponse{Err: errors.New("forbidden: you are not a member of this server"), Code: http.StatusForbidden}
 	}
 
 	rows, err := db.Postgres.Query(ctx, "select id,name,server_id,color,icon,hoist,mentionable from roles where server_id = $1", serverID)

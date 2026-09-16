@@ -13,6 +13,7 @@ import { FilePreview } from "./FilePreview";
 import { isMemberJoined } from "@/lib/actions/members";
 import { useRouter } from "next/navigation";
 import { APIResponse } from "@/types/response";
+import { toast } from "@/components/ui/toast";
 
 type UploadResult = { url: string; public_id: string };
 
@@ -256,7 +257,14 @@ export default function ChatForm({
       const sent = sendMessage(payload);
       if (!sent) throw new Error("websocket is not connected");
     } catch {
-      // message send failed — could show toast here
+      // sendMessage failing (socket dropped between the isConnected check
+      // and here, or mid-reconnect) must not silently discard what the user
+      // typed — restore the text so they can retry once reconnected.
+      // (The attachment, if any, isn't restored — re-attaching would need
+      // to redo the consumed-upload bookkeeping above safely, which is a
+      // separate, larger change.)
+      setMessage(trimmed);
+      toast.add({ title: "Message not sent — check your connection", type: "error" });
     } finally {
       setIsSubmitting(false);
     }

@@ -3,7 +3,6 @@ package databases
 import (
 	"context"
 	"fmt"
-	"os"
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -17,18 +16,14 @@ type postgresConfig struct {
 	healthCheckPeriod time.Duration
 }
 
-func newPostgresConfig() (*postgresConfig, error) {
-	addr := os.Getenv("DATABASE_URL")
-	if addr == "" {
-		return nil, fmt.Errorf("DATABASE_URL is not set")
-	}
+func newPostgresConfig(databaseURL string) *postgresConfig {
 	return &postgresConfig{
-		address:           addr,
+		address:           databaseURL,
 		maxConns:          100,
 		minConns:          2,
 		maxConnIdleTime:   5 * time.Minute,
 		healthCheckPeriod: time.Minute,
-	}, nil
+	}
 }
 
 func (cfg *postgresConfig) buildPoolConfig() (*pgxpool.Config, error) {
@@ -45,11 +40,8 @@ func (cfg *postgresConfig) buildPoolConfig() (*pgxpool.Config, error) {
 	return poolCfg, nil
 }
 
-func NewPool(ctx context.Context) (*pgxpool.Pool, error) {
-	cfg, err := newPostgresConfig()
-	if err != nil {
-		return nil, err
-	}
+func NewPool(ctx context.Context, databaseURL string) (*pgxpool.Pool, error) {
+	cfg := newPostgresConfig(databaseURL)
 
 	poolCfg, err := cfg.buildPoolConfig()
 	if err != nil {

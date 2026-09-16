@@ -1,12 +1,12 @@
 # cord
 
-Discord clone built with Next.js, Go, PostgreSQL, Redis, and Cloudinary.
+Discord clone built with Next.js, Go, PostgreSQL, and Cloudinary.
 
 ## Stack
 
 - **Frontend** — Next.js 16, Tailwind CSS, Zustand, SWR, React Hook Form, Zod
-- **Backend** — Go, Gorilla Mux, WebSocket, Redis queue
-- **Storage** — PostgreSQL, Redis, Cloudinary
+- **Backend** — Go, Gorilla Mux, WebSocket, in-process job queue (see Notes)
+- **Storage** — PostgreSQL, Cloudinary
 
 ## Getting Started
 
@@ -61,7 +61,7 @@ routes/handlers), not from memory — last checked 2026-08-29 (post presence/DM/
   confirm dialog, now actually removes membership like a kick — the
   dedicated ban list still shows them via the separate `bans` table),
   unban (confirm dialog), ban list with search, audit log (filterable,
-  real backend-persisted events via a Redis queue + worker). Both kick
+  real backend-persisted events via the in-process job queue + worker). Both kick
   and ban push a live `removed_from_server` event over the kicked/
   banned user's own presence socket, so their sidebar drops the server
   and they're bounced out immediately if they were inside it — no

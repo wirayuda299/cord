@@ -50,6 +50,18 @@ func UpdateRole(ctx context.Context, db *databases.Container, p UpdatePayload) *
 		return &httputil.ErrorResponse{Err: errors.New("role ID is required"), Code: http.StatusBadRequest}
 	}
 
+	// HasPermission only proves the caller manages *a* role on p.ServerID —
+	// without this, they could pass a role_id belonging to a different
+	// server and mutate (or push permission changes to) a role they have no
+	// authority over.
+	var roleBelongsToServer bool
+	if err := db.Postgres.QueryRow(ctx, "SELECT EXISTS(SELECT 1 FROM roles WHERE id = $1 AND server_id = $2)", p.RoleID, p.ServerID).Scan(&roleBelongsToServer); err != nil {
+		return &httputil.ErrorResponse{Err: err, Code: http.StatusInternalServerError}
+	}
+	if !roleBelongsToServer {
+		return &httputil.ErrorResponse{Err: errors.New("role not found"), Code: http.StatusNotFound}
+	}
+
 	setClauses := []string{}
 	var args []any
 	idx := 1

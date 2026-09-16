@@ -8,6 +8,7 @@ import (
 	"github.com/wirayuda299/backend/internal/databases"
 	"github.com/wirayuda299/backend/internal/httputil"
 	"github.com/wirayuda299/backend/internal/services"
+	"github.com/wirayuda299/backend/internal/services/members"
 	"github.com/wirayuda299/backend/internal/services/messageutil"
 	"github.com/wirayuda299/backend/internal/utils"
 )
@@ -57,15 +58,21 @@ func GetAllThreadMessages(ctx context.Context, db *databases.Container, threadID
 		return nil, &httputil.ErrorResponse{Err: errors.New("thread ID is missing"), Code: http.StatusBadRequest}
 	}
 
-	var threadExist bool
-
-	err = db.Postgres.QueryRow(ctx, "SELECT EXISTS(SELECT 1 FROM threads WHERE id = $1)", threadID).Scan(&threadExist)
+	var channelID string
+	err = db.Postgres.QueryRow(ctx, "SELECT channel_id::text FROM threads WHERE id = $1", threadID).Scan(&channelID)
 	if err != nil {
-		return nil, &httputil.ErrorResponse{Err: err, Code: http.StatusInternalServerError}
+		return nil, &httputil.ErrorResponse{Err: errors.New("thread not found"), Code: http.StatusNotFound}
 	}
 
-	if !threadExist {
-		return nil, &httputil.ErrorResponse{Err: errors.New("thread not found"), Code: http.StatusNotFound}
+	// Thread messages inherit their parent channel's access boundary —
+	// without this, any authenticated user who obtains a thread ID could
+	// read the full message content of any thread in any server.
+	allowed, accessErr := members.VerifyChannelAccess(ctx, db, channelID)
+	if accessErr != nil {
+		return nil, &httputil.ErrorResponse{Err: accessErr, Code: http.StatusInternalServerError}
+	}
+	if !allowed {
+		return nil, &httputil.ErrorResponse{Err: errors.New("forbidden: you do not have access to this thread"), Code: http.StatusForbidden}
 	}
 
 	rows, err := db.Postgres.Query(ctx, queryAllThreadMessages, threadID)

@@ -48,7 +48,13 @@ export async function POST(req: Request) {
     try {
       const res = await fetch(`${apiUrl}/users/create`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          // Proves this call came from this Svix-verified route, not a
+          // direct client request — NEXT_PUBLIC_API_URL is public, so the
+          // Go endpoint is otherwise reachable by anyone.
+          "X-Internal-Secret": process.env.INTERNAL_API_SECRET ?? "",
+        },
         body: JSON.stringify({
           id,
           username: username,

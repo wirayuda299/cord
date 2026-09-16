@@ -6,7 +6,6 @@ import (
 	"errors"
 	"mime/multipart"
 	"net/http"
-	"os"
 
 	"github.com/cloudinary/cloudinary-go/v2"
 	"github.com/cloudinary/cloudinary-go/v2/api/uploader"
@@ -21,6 +20,7 @@ type UploadResponse struct {
 type UploadImagePayload struct {
 	Attachment []*multipart.FileHeader
 	Ctx        context.Context
+	Cld        *cloudinary.Cloudinary
 }
 
 func HandleUpload(p *UploadImagePayload) (*UploadResponse, *httputil.ErrorResponse) {
@@ -51,18 +51,6 @@ func HandleUpload(p *UploadImagePayload) (*UploadResponse, *httputil.ErrorRespon
 		}
 	}
 
-	cloudName := os.Getenv("CLOUDINARY_CLOUD_NAME")
-	apiKey := os.Getenv("CLOUDINARY_API_KEY")
-	apiSecret := os.Getenv("CLOUDINARY_API_SECRET")
-
-	cld, err := cloudinary.NewFromParams(cloudName, apiKey, apiSecret)
-	if err != nil {
-		return nil, &httputil.ErrorResponse{
-			Err:  err,
-			Code: http.StatusInternalServerError,
-		}
-	}
-
 	file, err := p.Attachment[0].Open()
 	if err != nil {
 		return nil, &httputil.ErrorResponse{
@@ -82,7 +70,7 @@ func HandleUpload(p *UploadImagePayload) (*UploadResponse, *httputil.ErrorRespon
 		return nil
 	}(file)
 
-	res, uploadErr := cld.Upload.Upload(p.Ctx, file, uploader.UploadParams{
+	res, uploadErr := p.Cld.Upload.Upload(p.Ctx, file, uploader.UploadParams{
 		Folder:         "discord",
 		Transformation: "c_fill,h_300,w_300",
 		Format:         "jpeg",

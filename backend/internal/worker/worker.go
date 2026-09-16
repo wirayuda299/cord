@@ -159,7 +159,7 @@ func handleJob(ctx context.Context, db *databases.Container, job queue.Job) erro
 			return err
 		}
 
-		if err := images.DeleteImage(ctx, p.PublicID); err != nil {
+		if err := images.DeleteImage(ctx, db.Cloudinary, p.PublicID); err != nil {
 			return err.Err
 		}
 

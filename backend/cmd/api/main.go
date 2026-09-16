@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"log"
-	"os"
 	"sync"
 
 	"github.com/clerk/clerk-sdk-go/v2"
@@ -14,15 +13,16 @@ import (
 )
 
 func main() {
-	if err := config.LoadEnv(); err != nil {
+	cfg, err := config.Load()
+	if err != nil {
 		panic(err)
 	}
 
-	clerk.SetKey(os.Getenv("CLERK_SECRET_KEY"))
+	clerk.SetKey(cfg.ClerkSecretKey)
 
 	ctx := context.Background()
 
-	container, err := databases.NewContainer(ctx)
+	container, err := databases.NewContainer(ctx, cfg)
 	if err != nil {
 		log.Println("Failed to init databases", err.Error())
 

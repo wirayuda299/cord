@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"crypto/subtle"
 	"encoding/json"
 	"net/http"
 
@@ -27,7 +28,21 @@ func (uh *UserHandler) FindUsersByName(w http.ResponseWriter, r *http.Request) {
 	httputil.EncodeResponse(w, "users found", http.StatusOK, result)
 }
 
+// CreateUser has no Clerk session to check — it's called server-to-server by
+// the Next.js webhook route after that route verifies the Clerk/Svix
+// signature, not by an end-user's browser. NEXT_PUBLIC_API_URL is a public,
+// client-bundled value though, so without this shared-secret check anyone
+// could call this endpoint directly, bypassing Svix verification entirely.
 func (uh *UserHandler) CreateUser(w http.ResponseWriter, r *http.Request) {
+	secret := uh.db.Config.InternalAPISecret
+	// Fail closed: an unset secret must never be treated as "no check
+	// required," or a misconfigured deployment would silently reopen this
+	// endpoint to the public internet.
+	if secret == "" || subtle.ConstantTimeCompare([]byte(r.Header.Get("X-Internal-Secret")), []byte(secret)) != 1 {
+		httputil.WriteErrorResponse(w, "unauthorized", http.StatusUnauthorized)
+		return
+	}
+
 	var p users.CreateUserPayload
 
 	if err := json.NewDecoder(r.Body).Decode(&p); err != nil {
