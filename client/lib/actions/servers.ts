@@ -121,7 +121,11 @@ export async function updateServer({
    }
 }
 
-export async function createServer(name: string): Promise<APIResponse> {
+export async function createServer(
+   name: string,
+   icon?: string,
+   iconAssetId?: string,
+): Promise<APIResponse> {
    const { getToken } = await auth.protect();
    if (name === "") {
       return { success: false, message: "Server name is required" };
@@ -138,6 +142,8 @@ export async function createServer(name: string): Promise<APIResponse> {
          },
          body: JSON.stringify({
             name,
+            icon: icon ?? "",
+            icon_asset_id: iconAssetId ?? "",
          }),
       });
 

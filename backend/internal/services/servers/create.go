@@ -14,7 +14,9 @@ import (
 )
 
 type ServerPayload struct {
-	Name string `json:"name"`
+	Name        string `json:"name"`
+	Icon        string `json:"icon"`
+	IconAssetID string `json:"icon_asset_id"`
 }
 
 func CreateServer(ctx context.Context, container *databases.Container, srv *ServerPayload) *httputil.ErrorResponse {
@@ -42,7 +44,7 @@ func CreateServer(ctx context.Context, container *databases.Container, srv *Serv
 	}()
 
 	var serverID string
-	if err := tx.QueryRow(ctx, "insert into servers(name,created_by,banner_colors) values($1,$2,$3) returning id;", srv.Name, userID, []string{"#1f1f1f", "#3a3a3a"}).Scan(&serverID); err != nil {
+	if err := tx.QueryRow(ctx, "insert into servers(name,created_by,banner_colors,logo,logo_id) values($1,$2,$3,$4,$5) returning id;", srv.Name, userID, []string{"#1f1f1f", "#3a3a3a"}, srv.Icon, srv.IconAssetID).Scan(&serverID); err != nil {
 		fmt.Println("Failed to create servers -> ", err.Error())
 		return &httputil.ErrorResponse{
 			Err:  err,

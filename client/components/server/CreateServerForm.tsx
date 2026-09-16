@@ -15,6 +15,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Field, FieldLabel } from "@/components/ui/field";
 import { createServer } from "@/lib/actions/servers";
+import { uploadImage } from "@/lib/actions/images";
 import { Controller, useForm } from "react-hook-form";
 import {
    createServerSchema,
@@ -44,7 +45,27 @@ export default function CreateServerForm() {
    const handleSubmit = async (data: CreateServerSchemaType) => {
       if (!data.name.trim()) return;
 
-      const res = await createServer(data.name);
+      let iconUrl = "";
+      let iconAssetId = "";
+
+      // The icon is cosmetic ("you can always change it later"), so a failed
+      // upload shouldn't block creating the server — warn and continue
+      // without it rather than silently dropping it with no feedback at all
+      // (which is what happened before: the attached file was never sent).
+      if (attachedFiles.length > 0) {
+         const uploaded = await uploadImage(attachedFiles[0].file);
+         if (uploaded.success && uploaded.data) {
+            iconUrl = uploaded.data.url;
+            iconAssetId = uploaded.data.public_id;
+         } else {
+            toast.add({
+               title: uploaded.message || "Failed to upload server icon",
+               type: "error",
+            });
+         }
+      }
+
+      const res = await createServer(data.name, iconUrl, iconAssetId);
       if (res && !res.success) {
          toast.add({ title: res.message, type: "error" });
          return;
