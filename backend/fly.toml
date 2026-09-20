@@ -7,6 +7,7 @@ app = 'cord-backend'
 primary_region = 'sin'
 
 [build]
+  dockerfile = "backend/Dockerfile"
   [build.args]
     GO_VERSION = '1.26.1'
 
