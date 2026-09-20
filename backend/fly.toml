@@ -1,4 +1,4 @@
-# fly.toml app configuration file generated for cord-backend on 2026-09-20T12:48:05Z
+# fly.toml app configuration file generated for cord-backend on 2026-09-20T12:58:43Z
 #
 # See https://fly.io/docs/reference/configuration/ for information about how to use this file.
 #
@@ -7,7 +7,8 @@ app = 'cord-backend'
 primary_region = 'sin'
 
 [build]
-  dockerfile = "backend/Dockerfile"
+  dockerfile = 'backend/Dockerfile'
+
   [build.args]
     GO_VERSION = '1.26.1'
 
